@@ -1,0 +1,29 @@
+# Keeps third-party code current (AGENTS.md: third-party code must keep working, not merely be pinned).
+# Vendored code in third_party/ isn't a package, so it is updated by hand as its UPSTREAM.md says.
+version: 2
+updates:
+  # Versions live in Directory.Packages.props. Dependabot doesn't refresh packages.lock.json, so a
+  # NuGet PR fails the locked restore until someone runs `dotnet restore --force-evaluate` on its
+  # branch and pushes the lock files (AGENTS.md). Bring such a PR up to date with GitHub's Update branch, not
+  # `@dependabot rebase`: projects in several folders share Directory.Packages.props, which can make a rebase close
+  # the PR as no longer updatable (dependabot-core issue 15699; CodeRabbit, PR #60).
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      nuget:
+        patterns: ["*"]
+    # Commits are conventional (AGENTS.md).
+    commit-message:
+      prefix: chore
+  # The workflow pins actions by commit, and Dependabot moves the pin and its version comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

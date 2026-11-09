@@ -1,0 +1,11 @@
+<Project>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageVersion Include="AssetRipper.Primitives" Version="3.2.0" />
+		<PackageVersion Include="xunit.v3" Version="4.0.2" />
+		<PackageVersion Include="xunit.v3.assert" Version="4.0.2" />
+		<PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
+	</ItemGroup>
+</Project>

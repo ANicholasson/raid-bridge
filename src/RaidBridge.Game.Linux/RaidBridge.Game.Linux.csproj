@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		The Linux memory adapter: finds the Game client under Steam's Proton and reads it with process_vm_readv only
+		(ADR-0002, #13). It is the only platform-specific project and references only the Game layer's memory port.
+	-->
+	<PropertyGroup>
+		<!-- process_vm_readv takes pointers to the buffer it fills. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="../RaidBridge.Game/RaidBridge.Game.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="RaidBridge.Game.Linux.Tests" />
+	</ItemGroup>
+</Project>

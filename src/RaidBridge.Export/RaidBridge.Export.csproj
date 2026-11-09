@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Writes Snapshots as JSON and keeps the player's salt file. It references only the Domain (ADR-0004). -->
+	<ItemGroup>
+		<ProjectReference Include="../RaidBridge.Domain/RaidBridge.Domain.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- The format's tests write a Snapshot without a file; everything else goes through SnapshotFile. -->
+		<InternalsVisibleTo Include="RaidBridge.Export.Tests" />
+	</ItemGroup>
+</Project>

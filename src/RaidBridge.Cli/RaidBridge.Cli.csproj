@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- The composition root: wires the adapters to the use case and turns failures into one-line errors (ADR-0004). -->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<AssemblyName>raid-bridge</AssemblyName>
+		<RootNamespace>RaidBridge.Cli</RootNamespace>
+		<Version>0.1.0</Version>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="../RaidBridge.Domain/RaidBridge.Domain.csproj" />
+		<ProjectReference Include="../RaidBridge.Export/RaidBridge.Export.csproj" />
+		<ProjectReference Include="../RaidBridge.Game/RaidBridge.Game.csproj" />
+		<ProjectReference Include="../RaidBridge.Game.Linux/RaidBridge.Game.Linux.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="RaidBridge.Cli.Tests" />
+		<!-- The adapter's live check runs the command as Program wires it. -->
+		<InternalsVisibleTo Include="RaidBridge.Game.Linux.Tests" />
+	</ItemGroup>
+</Project>

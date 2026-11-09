@@ -1,0 +1,36 @@
+name: Bug report
+description: raid-bridge stopped with an error, or a Snapshot doesn't match what the game shows.
+labels: [needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: Please don't paste a whole Snapshot, a memory capture, or anything that shows your account id, player name or clan name. The lines that are wrong are enough.
+  - type: input
+    id: version
+    attributes:
+      label: raid-bridge version
+      description: The `generator.version` from a Snapshot, or the commit you built from (`git rev-parse --short HEAD`).
+      placeholder: 0.1.0+3ad5287
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Linux distribution and Proton version
+      placeholder: Fedora 43, Proton 10.0
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: The command you ran and what it printed
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened, and what you expected
+      description: For a wrong value, name the part of the Snapshot and what the game's own screen showed.
+    validations:
+      required: true

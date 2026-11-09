@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "raidbridge.domain": {
+        "type": "Project"
+      },
+      "Samboy063.LibCpp2IL": {
+        "type": "Project",
+        "dependencies": {
+          "AssetRipper.Primitives": "[3.2.0, )"
+        }
+      },
+      "AssetRipper.Primitives": {
+        "type": "CentralTransitive",
+        "requested": "[3.2.0, )",
+        "resolved": "3.2.0",
+        "contentHash": "UtDpl72yG5/KUj3BsNP7k2sF13nqqeaJ4sTANZZd/gb+t9YULYYzcyNfxuvdptenlsQIUBmMwTVHUn6TZ61Jqg=="
+      }
+    }
+  }
+}

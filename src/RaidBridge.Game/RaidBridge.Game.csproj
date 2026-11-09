@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- The anti-corruption layer over the Game client (ADR-0004). Only Metadata/ sees LibCpp2IL. -->
+	<ItemGroup>
+		<ProjectReference Include="../RaidBridge.Domain/RaidBridge.Domain.csproj" />
+		<ProjectReference Include="../../third_party/LibCpp2IL/LibCpp2IL.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="RaidBridge.Game.Tests" />
+		<!-- The synthetic Game client describes its metadata through the internal IGameMetadata (spec #20). -->
+		<InternalsVisibleTo Include="RaidBridge.Game.Testing" />
+	</ItemGroup>
+</Project>

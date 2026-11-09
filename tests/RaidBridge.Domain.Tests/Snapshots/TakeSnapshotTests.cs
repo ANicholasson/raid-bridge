@@ -1,0 +1,113 @@
+using RaidBridge.Domain.Accounts;
+using RaidBridge.Domain.Arena;
+using RaidBridge.Domain.Artifacts;
+using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.Snapshots;
+
+namespace RaidBridge.Domain.Tests.Snapshots;
+
+public class TakeSnapshotTests
+{
+	private static readonly DateTimeOffset Now = new(2026, 10, 31, 21, 40, 0, TimeSpan.Zero);
+	private static readonly ClassicArena NoClassicArena = new(null, 0, 0, 0, 0, new([]));
+	private static readonly TagArena NoTagArena = new(null, 0, 0, 0, 0, []);
+
+	[Fact]
+	public void Hashes_the_account_id_with_the_salt_and_stamps_the_time()
+	{
+		var salt = new Salt(new byte[Salt.Length]);
+
+		var snapshot = new TakeSnapshot(new Source(new Account(new AccountId(7), [], [], [], [], [], [], [], NoClassicArena, NoTagArena)), new Salts(salt), new Clock(Now)).Run();
+
+		Assert.Equivalent(new Snapshot(Now, AccountIdHash.Of(new AccountId(7), salt), [], [], [], [], [], [], [], NoClassicArena, NoTagArena), snapshot, strict: true);
+	}
+
+	[Fact]
+	public void Sorts_the_champions_by_id()
+	{
+		var account = new Account(new AccountId(7), [Champion(12), Champion(3), Champion(7)], [], [], [], [], [], [], NoClassicArena, NoTagArena);
+
+		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
+
+		Assert.Equal([3, 7, 12], snapshot.Champions.Select(champion => champion.Id));
+	}
+
+	[Fact]
+	public void Sorts_the_unworn_artifacts_by_id()
+	{
+		var account = new Account(new AccountId(7), [], [Artifact(105), Artifact(101), Artifact(104)], [], [], [], [], [], NoClassicArena, NoTagArena);
+
+		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
+
+		Assert.Equal([101, 104, 105], snapshot.UnwornArtifacts.Select(artifact => artifact.Id));
+	}
+
+	/// <summary>The source gives them in the order of the game's enums, which no sort by name would keep.</summary>
+	[Fact]
+	public void Keeps_all_but_the_champions_and_unworn_artifacts_in_the_order_the_game_gives_them()
+	{
+		var account = new Account(
+			new AccountId(7),
+			[],
+			[],
+			[new("Silver", 1_250_000), new("Energy", 130)],
+			[new("Mystery", 14), new("Ancient", 2)],
+			[new("SkillUpgradeItemEpic", 1), new("HeroXpBooster100P_1Day", 3)],
+			[new("Magic", [new("Defence", 4), new("Attack", 2)]), new("Force", [new("Health", 1)])],
+			[new("DarkElves", [new("Legendary", [new([12, 3])])]), new("BannerLords", [new("Rare", [new([7])])])],
+			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7])),
+			new("BronzeIV", 820, 6, 2, 4, [new([12]), new([7, 3])]));
+
+		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
+
+		Assert.Equal(account.Resources, snapshot.Resources);
+		Assert.Equal(account.Shards, snapshot.Shards);
+		Assert.Equal(account.Items, snapshot.Items);
+		Assert.Equal(account.GreatHall, snapshot.GreatHall);
+		Assert.Equal(account.FactionGuardians, snapshot.FactionGuardians);
+		Assert.Equal(account.ClassicArena, snapshot.ClassicArena);
+		Assert.Equal(account.TagArena, snapshot.TagArena);
+	}
+
+	[Fact]
+	public void Loads_the_salt_before_reading_the_game()
+	{
+		var source = new Source(new Account(new AccountId(7), [], [], [], [], [], [], [], NoClassicArena, NoTagArena));
+		var salts = new BrokenSalts();
+
+		Assert.Throws<InvalidDataException>(() => new TakeSnapshot(source, salts, new Clock(Now)).Run());
+		Assert.False(source.WasRead);
+	}
+
+	private static Champion Champion(int id) =>
+		new(id, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, null, null, 0, [], [], false, "None", ChampionLocation.Roster, []);
+
+	private static Artifact Artifact(int id) =>
+		new(id, "Boots", "AttackSpeed", "Synthetic Speed", "Six", "Legendary", 16, null, null, new("Speed", 45, true, 0, 0), null, []);
+
+	private sealed class Source(Account account) : ISnapshotSource
+	{
+		public bool WasRead { get; private set; }
+
+		public Account Read()
+		{
+			WasRead = true;
+			return account;
+		}
+	}
+
+	private sealed class Salts(Salt salt) : ISaltStore
+	{
+		public Salt LoadOrCreate() => salt;
+	}
+
+	private sealed class BrokenSalts : ISaltStore
+	{
+		public Salt LoadOrCreate() => throw new InvalidDataException("broken salt");
+	}
+
+	private sealed class Clock(DateTimeOffset now) : TimeProvider
+	{
+		public override DateTimeOffset GetUtcNow() => now;
+	}
+}

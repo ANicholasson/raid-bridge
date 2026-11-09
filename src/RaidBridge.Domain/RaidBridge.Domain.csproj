@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- The Account model in the glossary's words. It references nothing (ADR-0004). -->
+</Project>

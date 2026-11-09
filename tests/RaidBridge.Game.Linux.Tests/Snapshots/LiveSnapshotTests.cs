@@ -1,0 +1,182 @@
+using System.Text.Json;
+using RaidBridge.Cli;
+using RaidBridge.Cli.Snapshots;
+using RaidBridge.Export.Accounts;
+
+namespace RaidBridge.Game.Linux.Tests.Snapshots;
+
+/// <summary>
+/// Gated: <c>raid-bridge snapshot</c>, wired as Program wires it, against the running Game client (spec #20). The salt
+/// and the Snapshot go to throwaway folders, so the run leaves the player's own salt alone.
+/// </summary>
+public sealed class LiveSnapshotTests : IDisposable
+{
+	private static readonly string[] Affinities = ["Magic", "Force", "Spirit", "Void"];
+
+	private readonly string _workingDirectory = Directory.CreateTempSubdirectory("raid-bridge-live-").FullName;
+	private readonly string _home = Directory.CreateTempSubdirectory("raid-bridge-live-home-").FullName;
+
+	[Fact]
+	public void Reads_the_account_id_from_the_running_game_client()
+	{
+		using var json = Snapshot();
+
+		Assert.Matches("^hmac-sha256:[0-9a-f]{64}$", json.RootElement.GetProperty("account").GetProperty("idHash").GetString());
+	}
+
+	/// <summary>
+	/// Every Champion has its Artifacts filed by slot, and the secondary Account's Champions wear at least one, so the
+	/// check can't pass by reading none (#26).
+	/// </summary>
+	[Fact]
+	public void Reads_the_artifacts_the_champions_wear()
+	{
+		using var json = Snapshot();
+
+		var artifacts = json.RootElement.GetProperty("champions").EnumerateArray()
+			.SelectMany(champion => champion.GetProperty("artifacts").EnumerateObject())
+			.ToList();
+
+		Assert.NotEmpty(artifacts);
+		Assert.All(artifacts, slot => Assert.Equal(slot.Name, slot.Value.GetProperty("slot").GetString()));
+	}
+
+	/// <summary>
+	/// The Artifacts no Champion wears are written, sorted by id, none of them also worn. The secondary Account has
+	/// some, so the check can't pass by reading none (#33).
+	/// </summary>
+	[Fact]
+	public void Reads_the_artifacts_no_champion_wears()
+	{
+		using var json = Snapshot();
+
+		var worn = json.RootElement.GetProperty("champions").EnumerateArray()
+			.SelectMany(champion => champion.GetProperty("artifacts").EnumerateObject())
+			.Select(slot => slot.Value.GetProperty("id").GetInt32());
+		var unworn = json.RootElement.GetProperty("unwornArtifacts").EnumerateArray()
+			.Select(artifact => artifact.GetProperty("id").GetInt32())
+			.ToList();
+
+		Assert.NotEmpty(unworn);
+		Assert.Equal(unworn.Order(), unworn);
+		Assert.Empty(unworn.Intersect(worn));
+	}
+
+	/// <summary>
+	/// The Resources, Shards and Items are written as objects of counts, none negative. Every Account holds silver and
+	/// energy, and the secondary Account holds a Shard and Items, so the check can't pass by reading none of any
+	/// (#34; CodeRabbit, PR #43).
+	/// </summary>
+	[Fact]
+	public void Reads_the_resources_shards_and_items()
+	{
+		using var json = Snapshot();
+
+		var resources = json.RootElement.GetProperty("resources").EnumerateObject().ToDictionary(resource => resource.Name, resource => resource.Value.GetDouble());
+		var shards = json.RootElement.GetProperty("shards").EnumerateObject().Select(shard => shard.Value.GetInt32()).ToList();
+		var items = json.RootElement.GetProperty("items").EnumerateObject().Select(item => item.Value.GetInt32()).ToList();
+
+		Assert.Contains("Silver", resources.Keys);
+		Assert.Contains("Energy", resources.Keys);
+		Assert.NotEmpty(shards);
+		Assert.NotEmpty(items);
+		Assert.All(resources.Values, amount => Assert.True(amount >= 0, $"{amount} is negative."));
+		Assert.All(shards.Concat(items), count => Assert.True(count >= 0, $"{count} is negative."));
+	}
+
+	/// <summary>
+	/// The Great Hall is written as an object of each Affinity's levels, none below 1; the reader holds each to the
+	/// highest the game's static data offers. The secondary Account has bought no level yet (a level costs Arena medals
+	/// it doesn't have, 2026-11-01), so it reads as {}, which matches its Great Hall screen. On the main Account the
+	/// levels read matched its Great Hall screen (#35, PR #44).
+	/// </summary>
+	[Fact]
+	public void Reads_the_great_hall()
+	{
+		using var json = Snapshot();
+
+		var written = json.RootElement.GetProperty("greatHall");
+		var greatHall = written.EnumerateObject().ToList();
+		var levels = greatHall.SelectMany(affinity => affinity.Value.EnumerateObject()).Select(level => level.Value.GetInt32()).ToList();
+
+		Assert.Equal(JsonValueKind.Object, written.ValueKind);
+		Assert.All(greatHall, affinity => Assert.NotEmpty(affinity.Value.EnumerateObject()));
+		Assert.All(greatHall, affinity => Assert.Contains(affinity.Name, Affinities));
+		Assert.All(levels, level => Assert.True(level >= 1, $"{level} is below 1."));
+	}
+
+	/// <summary>
+	/// The Faction Guardians are written as each Faction's slots by rarity, every slot one or two Champions of
+	/// <c>champions</c>, of that Faction and rarity, none guarding twice. It accepts {}, because the secondary Account,
+	/// one of the two live runs use, has placed none. On the main Account, with Guardians placed in five Factions (2026-11-01),
+	/// every assertion held, and so did one that the slots aren't empty (#36; Codex, PR #45).
+	/// </summary>
+	[Fact]
+	public void Reads_the_faction_guardians()
+	{
+		using var json = Snapshot();
+
+		var champions = json.RootElement.GetProperty("champions").EnumerateArray()
+			.ToDictionary(champion => champion.GetProperty("id").GetInt32(), champion => (Faction: champion.GetProperty("faction").GetString(), Rarity: champion.GetProperty("rarity").GetString()));
+		var guardians = json.RootElement.GetProperty("factionGuardians").EnumerateObject()
+			.SelectMany(faction => faction.Value.EnumerateObject().SelectMany(rarity => rarity.Value.EnumerateArray().Select(slot => (
+				Faction: faction.Name,
+				Rarity: rarity.Name,
+				ChampionIds: slot.EnumerateArray().Select(id => id.GetInt32()).ToList()))))
+			.ToList();
+		var championIds = guardians.SelectMany(slot => slot.ChampionIds).ToList();
+
+		Assert.Equal(JsonValueKind.Object, json.RootElement.GetProperty("factionGuardians").ValueKind);
+		Assert.All(guardians, slot => Assert.InRange(slot.ChampionIds.Count, 1, 2));
+		Assert.All(guardians, slot => Assert.All(slot.ChampionIds, id => Assert.Equal((slot.Faction, slot.Rarity), champions[id])));
+		Assert.Equal(championIds.Distinct(), championIds);
+	}
+
+	/// <summary>
+	/// Both Arenas are written with a league the game names or null, counts of 0 or more, and defence teams of
+	/// Champions in <c>champions</c>: one team of up to four in the Classic Arena, and up to three in the Tag Arena.
+	/// Proven on the main Account (2026-11-01): each Arena read the league and points the player's screens showed, the
+	/// Classic Arena its four defenders in the order the game's Defense screen shows them, and the Tag Arena three teams
+	/// of four (#37).
+	/// </summary>
+	[Fact]
+	public void Reads_the_classic_and_tag_arena()
+	{
+		using var json = Snapshot();
+
+		var champions = json.RootElement.GetProperty("champions").EnumerateArray().Select(champion => champion.GetProperty("id").GetInt32()).ToHashSet();
+		var classic = json.RootElement.GetProperty("classicArena");
+		var tag = json.RootElement.GetProperty("tagArena");
+		var teams = tag.GetProperty("defenceTeams").EnumerateArray().Select(Team).Prepend(Team(classic.GetProperty("defenceTeam"))).ToList();
+
+		Assert.All([classic, tag], arena =>
+		{
+			Assert.Contains(arena.GetProperty("league").ValueKind, new[] { JsonValueKind.String, JsonValueKind.Null });
+			Assert.All(["battles", "wins", "losses"], count => Assert.True(arena.GetProperty(count).GetInt32() >= 0, $"{count} is below 0."));
+		});
+		Assert.InRange(tag.GetProperty("defenceTeams").GetArrayLength(), 0, 3);
+		Assert.All(teams, team => Assert.InRange(team.Count, 0, 4));
+		Assert.All(teams, team => Assert.All(team, id => Assert.Contains(id, champions)));
+
+		static List<int> Team(JsonElement team) => [.. team.EnumerateArray().Select(id => id.GetInt32())];
+	}
+
+	public void Dispose()
+	{
+		Directory.Delete(_workingDirectory, recursive: true);
+		Directory.Delete(_home, recursive: true);
+	}
+
+	/// <summary>A Snapshot of the running Game client, written as the command line writes it.</summary>
+	private JsonDocument Snapshot()
+	{
+		LiveGame.RequireOptIn();
+		using var output = new StringWriter();
+		using var error = new StringWriter();
+
+		var exitCode = SnapshotCommand.Run(["snapshot"], Program.OpenGame, SaltFile.InConfigDirectory(null, _home), TimeProvider.System, output, error, _workingDirectory);
+
+		Assert.Equal((0, string.Empty), (exitCode, error.ToString()));
+		return JsonDocument.Parse(File.ReadAllBytes(output.ToString().Trim()));
+	}
+}

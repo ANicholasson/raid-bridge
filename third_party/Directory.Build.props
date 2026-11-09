@@ -1,0 +1,10 @@
+<Project>
+	<!-- Vendored code keeps upstream's style: the repo's build settings apply, but not its style analyzers (AGENTS.md). -->
+	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+	<PropertyGroup>
+		<RunAnalyzers>false</RunAnalyzers>
+		<EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+		<AnalysisLevel>none</AnalysisLevel>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+	</PropertyGroup>
+</Project>

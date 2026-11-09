@@ -1,0 +1,16 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+TestResults/
+*.trx
+
+# Real captures of game memory or metadata stay on the machine that made them.
+captures/
+*.capture
+global-metadata.dat
+GameAssembly.dll
+
+# Snapshots are real Account data, and raid-bridge writes them into the current folder.
+snapshot-*.json

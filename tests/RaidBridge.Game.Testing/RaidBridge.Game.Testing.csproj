@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		Test support the test projects share: the fake memory port, the contract suite every memory adapter passes, and
+		the synthetic Game client the reader is tested through (spec #20). Never referenced from src/.
+	-->
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="xunit.v3.assert" />
+		<PackageReference Include="xunit.v3.extensibility.core" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="../../src/RaidBridge.Game/RaidBridge.Game.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="Xunit" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- The IL2CPP kernel's own tests build tiny runtimes from the synthetic heap, runtime and metadata. -->
+		<InternalsVisibleTo Include="RaidBridge.Game.Tests" />
+	</ItemGroup>
+</Project>
