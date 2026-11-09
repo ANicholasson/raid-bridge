@@ -1,6 +1,6 @@
 # raid-bridge
 
-Reads a player's own RAID: Shadow Legends account out of the game client and exports it as JSON.
+Reads a player's own RAID: Shadow Legends account out of the game client and writes it as JSON Snapshots. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/3) -->
 
 ## Language
 
