@@ -1,6 +1,6 @@
 # Read the game client's memory, never run code in it
 
-raid-bridge gets Account data by reading the Game client's memory from outside, with read access only (each platform's adapter says how, ADR-0002), and works out where things live from the game's own metadata, on disk and as the runtime holds it (amended 2026-11-01). It never loads code into the Game client, hooks it, debugs it, writes to it or drives it. The point is helping a player understand their own Account: injection or automation would make it a cheat and ruin the game for the player it serves (decided 2026-10-27). Reading memory is still a grey area under Plarium's terms of service; injecting into the client is not.
+raid-bridge gets Account data by reading the Game client's memory from outside, with read access only (each platform's adapter says how, ADR-0002), and works out where things live from the game's own metadata, on disk and as the runtime holds it (amended 2026-11-01). It never loads code into the Game client, hooks it, debugs it, writes to it or drives it. The point is a tool for the player's own Account: injection or automation would make raid-bridge a cheat and ruin the game for the player it serves (decided 2026-10-27, amended 2026-11-09). Reading memory is still a grey area under Plarium's terms of service; injecting into the client is not.
 <!-- Read access per adapter: (CodeRabbit, PR #2) -->
 
 ## Considered Options

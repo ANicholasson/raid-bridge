@@ -9,7 +9,7 @@
 
 # Fork review: raid-toolkit-sdk (October 2026)
 
-A review of `main` at `491d9b6` (1 February 2024). That commit is also the upstream `v2.8.22.23238` release tag, so this is the code the last public release was built from. The goal of the fork: get account data out of RAID, with **no injection, no memory writes and no automation**.
+A review of `main` at `491d9b6` (1 February 2024). That commit is also the upstream `v2.8.22.23238` release tag, so this is the code the last public release was built from. The goal of the fork: get account data out of RAID for an AI companion, with **no injection, no memory writes and no automation**.
 
 ## 1. Headline: the core dependency injects into the game
 
