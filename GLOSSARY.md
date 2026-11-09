@@ -1,6 +1,6 @@
 # raid-bridge
 
-Reads a player's own RAID: Shadow Legends account out of the game client and exports it for an AI companion that helps them understand it.
+Reads a player's own RAID: Shadow Legends account out of the game client and exports it as JSON.
 
 ## Language
 
@@ -19,10 +19,6 @@ _Avoid_: hero (outside game type names), unit
 **Artifact**:
 A piece of equipment a Champion wears, accessories included.
 _Avoid_: gear, item
-
-**Companion**:
-The AI agent that reads Snapshots to help the player understand their Account. It never plays.
-_Avoid_: bot, assistant
 
 **Game client**:
 The RAID: Shadow Legends program running on the player's computer.

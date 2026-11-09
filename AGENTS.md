@@ -2,7 +2,7 @@
 
 ## What this project is
 
-raid-bridge reads the player's own RAID: Shadow Legends Account (Champions, Artifacts, Resources, its Arena defence teams and standings; other teams and battle results later) out of the Windows game client and writes it as JSON Snapshots for the player's Companion, an OpenClaw agent on a server they run. Data out only: the Companion helps them understand their Account and never plays for them. C# on .NET 10.
+raid-bridge reads the player's own RAID: Shadow Legends Account (Champions, Artifacts, Resources, its Arena defence teams and standings; other teams and battle results later) out of the Windows game client and writes it as JSON Snapshots for the player to use as they choose. Data out only: nothing here plays for them. C# on .NET 10.
 
 Status: `raid-bridge snapshot` writes a Snapshot holding the Account, its Champions, the Artifacts they wear, the Artifacts nobody wears, its Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena (#23, #25, #26, #33, #34, #35, #36, #37), read from the running Game client under Proton by the Linux memory adapter (`RaidBridge.Game.Linux`, #24); there is no Windows adapter yet. The reader parses the installed game's files (`RaidBridge.Game`'s `Metadata/`, #22). The format is in `docs/snapshot.md`.
 
