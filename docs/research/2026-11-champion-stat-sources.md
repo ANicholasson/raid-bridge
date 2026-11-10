@@ -101,11 +101,44 @@ Every route below starts at `ClientStaticData` (the fields are declared on its b
 
 No user or static field found in this dump names a league or clan stat bonus for a Champion. In battle setups, stage and battle modifiers go through `HeroSlotSetup.ModifiersSetup`. Whether the champion screen counts the Arena league or clan bonuses can only be settled on the screen.
 
-## Still open (needs the running Game client and the maintainer's screen)
+## Live check (2026-11-10)
 
-1. **The table values and shapes:** `BattleStats.Multipliers`, how a level or a count indexes each list, and whether each source is flat or a percentage.
-2. **The Arena defence breakdown:** are `HeroSlotSetup`'s `BuildingSetup`, `AcademySetup`, `BlessingSetup`, `RelicSetup` and `ArtifactSetups` filled for the defence-team Champions? If so, they check the formula source by source.
-3. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.
-4. **How the screen rounds** each stat.
+A read-only probe read the running Game client on the maintainer's Linux install through the Linux adapter, with each field's offset taken from its runtime class as the reader does. Every route above resolved. `ArtifactSetInfo` and `ArtifactSubSetInfo` are in `SharedModel.Meta.Artifacts.Sets`.
 
-Items 1 and 2 need a read of the running Game client's memory. Items 3 and 4 need the maintainer at the champion screen.
+### Units
+
+`Fixed` values are raw Q32.32, as the reader already handles. Percentages are fractions (0.10 for 10%), with one exception: a set's IgnoreDefence is held as 15, not 0.15. `BattleStats.ToPercent` is 100.
+
+### `BattleStats.Multipliers`
+
+**The metadata declares it `double[][]`, but in memory it is a `double[6,2]`**, a two-dimensional array, which IL2CPP lays out differently from an array of arrays. The reader has to support that shape and check it against the declared type. Its rows, one per rank: [1, 2], [1.6, 1.9], [2.432, 1.8], [3.50208, 1.7], [4.7628288, 1.7], [6.477447168, 1.7]. The first values grow by 1.6, 1.52, 1.44, 1.36 and 1.36 from rank to rank. How a level within a rank applies is still a guess, to check against one Champion's white numbers.
+
+### The tables
+
+- **Great Hall:** 6 stats with 10 levels each, entry _n_ − 1 for level _n_. HP, ATK and DEF give 2, 3, 4, 6, 8, 10, 12, 14, 17 and 20%. C.DMG gives 2% to 25%. ACC and RES give 5, 10, 15, 20, 30 and up to 80, flat.
+- **Faction Guardians:** 5 bonuses per rarity, one per slot: HP 10%, ATK 10%, DEF 10%, ACC and RES flat, and SPD flat. The flat ones grow with rarity: ACC and RES +7, +15, +30 and +45, and SPD +3, +6, +10 and +15, for Rare, Epic, Legendary and Mythical.
+- **Empowerment:** `Bonuses` and `EpicBonuses` hold 4 levels each. Whether a level's entry is that level's total or adds to the levels below is still open. For example, level 4 of `Bonuses` holds SPD +5, C.RATE 10% and C.DMG 30%, beside HP, ATK and DEF 10% and ACC and RES +10.
+- **Awakening:** `BlessingStatsByRarity` has Stars1 to Stars6 for each rarity, and the grades add up. For Legendary they are HP +7500, ATK +750, DEF +600, HP +1000 with C.DMG 38%, ACC and RES +75, and SPD +15.
+- **Masteries:** 13 entries in `MasteryBonusById`. One has `StatKindId` −1, which is no member of the enum, and is worth 15%. The constant `BonusSourceArtifactSet` is also −1, so that entry is the mastery that raises set bonuses (Lore of Steel). The reader has to treat −1 as that marker, not as a bad stat.
+- **Sets:** 71. `_maxArtifactCount` is 0 on all of them. A set with one stat uses `StatBonus`, and a set with two uses `StatBonuses` and leaves `StatBonus` null. Speed is 2 pieces for 12%, and Accuracy is 2 pieces for +40. The 13 sets with `ArtifactCount` 0 have 9 `SubSetInfos`, one for each piece count from 1 to 9: these are the sets that grow by the piece.
+
+### The Arena defence breakdown
+
+The breakdown is filled. On the Account read, across 4 defence teams and 16 places:
+
+- `BuildingSetup` (the Great Hall) is on all 16;
+- `ArtifactSetups` is on 15, each Artifact with its own percent and flat bonus;
+- `BlessingSetup` is on 5, and carries the Awakening bonus: a Stars5 Legendary showed flat HP +8500 (7500 + 1000), ATK +750, DEF +600, ACC +75 and RES +75, and C.DMG 38% as a percentage. One awakened Champion has none, which is still open;
+- `AcademySetup` (Faction Guardians) is on 1;
+- `RelicSetup` is on none, since no defence Champion wears a Relic;
+- `ModifiersSetup` is null everywhere.
+
+So the defence Champions give an exact oracle, source by source, for the Great Hall, Artifacts and Awakening, and for Faction Guardians on one Champion.
+
+## Still open (needs the maintainer's screen)
+
+1. **Base stats:** how `Multipliers` applies within a rank, checked against one Champion's white numbers.
+2. **Empowerment:** whether its levels add up.
+3. **The missing blessing setup** on one awakened defence Champion.
+4. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.
+5. **How the screen rounds** each stat.
