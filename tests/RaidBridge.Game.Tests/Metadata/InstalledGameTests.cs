@@ -10,7 +10,11 @@ namespace RaidBridge.Game.Tests.Metadata;
 /// </summary>
 public class InstalledGameTests
 {
-	/// <summary>Spec #20's path to the Account, as the installed game declares it at metadata v39.</summary>
+	/// <summary>
+	/// Spec #20's path to the Account, as the installed game declares it at metadata v39, and the routes the research for
+	/// Relics and Total stats found (https://github.com/ANicholasson/raid-bridge/issues/7 and
+	/// https://github.com/ANicholasson/raid-bridge/issues/9), which no reader takes yet.
+	/// </summary>
 	public static TheoryData<string, string, string, bool> AccountPath => new()
 	{
 		// The root: a static on the generic instance SingleInstance<AppModel>, AppModel's base class.
@@ -146,6 +150,84 @@ public class InstalledGameTests
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "LeagueId", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", false },
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "ArenaPoints", "System.Int64", false },
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "Arena3X3DefenseTeamSetup", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.TeamSetup>", false },
+		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
+		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
+		// Relics are a list of ids by Champion id, not a field of Hero.
+		{ "Client.Model.Guard.UserWrapper", "Relics", "Client.Model.Gameplay.Relics.RelicsWrapper", false },
+		{ "Client.Model.Gameplay.Relics.RelicsWrapper", "RelicsData", "Client.Model.Gameplay.Relics.UpdatableUserRelicData", false },
+		{ "Client.Model.Gameplay.Relics.UpdatableUserRelicData", "Relics", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.UserData.Relic>", false },
+		{ "Client.Model.Gameplay.Relics.UpdatableUserRelicData", "Stones", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.UserData.RelicStone>", false },
+		{ "Client.Model.Gameplay.Relics.UpdatableUserRelicData", "RelicDataByHeroId", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Relics.UserData.HeroRelicData>", false },
+		{ "SharedModel.Meta.Relics.UserData.HeroRelicData", "RelicIds", "System.Collections.Generic.List`1<System.Int32>", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "Id", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "TypeId", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "Rank", "SharedModel.Meta.Relics.StaticData.RelicRank", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "Level", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "IsActivated", "System.Nullable`1<System.Boolean>", false },
+		{ "SharedModel.Meta.Relics.UserData.Relic", "Sockets", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.UserData.RelicStoneSocket>", false },
+		{ "SharedModel.Meta.Relics.UserData.RelicStoneSocket", "ShapeKindId", "SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", false },
+		{ "SharedModel.Meta.Relics.UserData.RelicStoneSocket", "StoneId", "System.Nullable`1<System.Int32>", false },
+		{ "SharedModel.Meta.Relics.UserData.RelicStone", "Id", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.UserData.RelicStone", "TypeId", "System.Int32", false },
+		// Relic static data: types by id, and the stat values each level gives. RelicData is declared on ClientStaticData's
+		// base class, StaticData.
+		{ "SharedModel.Meta.ClientStaticData", "RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "_relicTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Relics.StaticData.RelicType>", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "_relicStoneTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Relics.StaticData.RelicStoneType>", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "StatValueByLevel", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.BonusValue>>", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "StatBonusOpeningLevels", "System.Collections.Generic.List`1<System.Int32>", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "SkillLevelByRelicLevel", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32>", false },
+		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "HeroActivatedRelicsLimit", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Id", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Rarity", "SharedModel.Meta.ItemRarity", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "SkillIdsByFaction", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus>", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "StatsBonus", "System.Collections.Generic.List`1<SharedModel.Battle.Effects.StatKindId>", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Sockets", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId>", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Id", "System.Int32", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
+		// Stat sources (https://github.com/ANicholasson/raid-bridge/issues/9, docs/research/2026-11-champion-stat-sources.md).
+		// Base stats are on each form of the Champion's own, possibly ascended, type, scaled by BattleStats' static Multipliers.
+		{ "SharedModel.Meta.Heroes.HeroForm", "BaseStats", "SharedModel.Meta.Heroes.BattleStats", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Health", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Attack", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Defence", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Speed", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Resistance", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Accuracy", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "CriticalChance", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "CriticalDamage", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.Heroes.BattleStats", "Multipliers", "System.Double[][]", true },
+		// The static bonus tables: masteries, sets, Faction Guardians and Empowerment, and Awakening.
+		{ "SharedModel.Meta.ClientStaticData", "MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", false },
+		{ "SharedModel.Meta.Masteries.StaticMasteryData", "MasteryBonusById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.General.StatBonus>", false },
+		{ "SharedModel.Meta.General.StatBonus", "StatKindId", "SharedModel.Battle.Effects.StatKindId", false },
+		{ "SharedModel.Meta.General.StatBonus", "Value", "Plarium.Common.Numerics.Fixed", false },
+		{ "SharedModel.Meta.General.StatBonus", "IsAbsolute", "System.Boolean", false },
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "ArtifactCount", "System.Int32", false },
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "StatBonus", "SharedModel.Meta.General.StatBonus", false },
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "StatBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.General.StatBonus>", false },
+		{ "SharedModel.Meta.ClientStaticData", "AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", false },
+		{ "SharedModel.Meta.Academy.Static.StaticAcademyData", "Guardians", "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", false },
+		{ "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", "BonusesByHeroRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>>", false },
+		{ "SharedModel.Meta.Academy.Static.StaticAcademyData", "Empower", "SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData", false },
+		{ "SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData", "Bonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>", false },
+		{ "SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData", "EpicBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>", false },
+		{ "SharedModel.Meta.Academy.Static.StatBonuses", "Bonuses", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, SharedModel.Meta.Artifacts.BonusValue>", false },
+		{ "SharedModel.Meta.ClientStaticData", "DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", false },
+		{ "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", "BlessingStatsByRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.DoubleAscend.Static.BlessingStats>>", false },
+		{ "SharedModel.Meta.DoubleAscend.Static.BlessingStats", "Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", false },
+		{ "SharedModel.Meta.DoubleAscend.Static.BlessingStats", "StatBonusByKindId", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, SharedModel.Meta.General.StatBonus>", false },
+		// The game's own bonus breakdown for a Champion in a battle setup, which the Arena defence teams are made of.
+		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "BuildingSetup", "SharedModel.Battle.Core.Setup.BuildingSetup", false },
+		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "AcademySetup", "SharedModel.Battle.Core.Setup.AcademySetup", false },
+		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "BlessingSetup", "SharedModel.Battle.Core.Setup.BlessingSetup", false },
+		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "RelicSetup", "SharedModel.Battle.Core.Setup.RelicSetup", false },
+		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "ArtifactSetups", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.ArtifactSetup>", false },
+		{ "SharedModel.Battle.Core.Setup.AcademySetup", "PercentBonus", "SharedModel.Meta.Heroes.BattleStats", false },
+		{ "SharedModel.Battle.Core.Setup.AcademySetup", "FlatBonus", "SharedModel.Meta.Heroes.BattleStats", false },
 		// The class library's collections, read through the fields their runtime classes hold.
 		{ "System.Collections.Generic.List`1", "_items", "T[]", false },
 		{ "System.Collections.Generic.List`1", "_size", "System.Int32", false },
@@ -162,7 +244,8 @@ public class InstalledGameTests
 	/// <summary>
 	/// A member of each enum a Snapshot is written with, and its value, as the installed game declares them at metadata
 	/// v39: a Champion's and an Artifact's, the keys of the Resources, Shards, Items, the Great Hall and the Faction
-	/// Guardians, and the Arena's leagues.
+	/// Guardians, and the Arena's leagues. The Relic enums are the ones the Relics work
+	/// (https://github.com/ANicholasson/raid-bridge/issues/8) will write.
 	/// </summary>
 	public static TheoryData<string, string, long> SnapshotEnums => new()
 	{
@@ -219,6 +302,12 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "GoldI", 21 },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "GoldV", 25 },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "Platinum", 30 },
+		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7): the rank's first and last members, and the socket
+		// shapes'. At v39 neither enum declares a member for 0.
+		{ "SharedModel.Meta.Relics.StaticData.RelicRank", "Rank1", 1 },
+		{ "SharedModel.Meta.Relics.StaticData.RelicRank", "Rank6", 6 },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", "Circle", 1 },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", "Pentagon", 5 },
 	};
 
 	/// <summary>Classes that aren't generic, whose runtime class the reader takes from their TypeInfo slot (#26).</summary>
@@ -238,6 +327,8 @@ public class InstalledGameTests
 		{ "Client.Model.Gameplay.Academy.Data.UpdatableUserAcademyData", "SharedModel.Meta.Academy.User.UserAcademyData" },
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "SharedModel.Meta.Battle.Arena3x3.UserArena3X3Data" },
 		{ "SharedModel.Meta.Battle.Arena3x3.UserArena3X3Data", "SharedModel.Meta.Battle.Arena.UserArenaData" },
+		{ "Client.Model.Gameplay.Relics.UpdatableUserRelicData", "SharedModel.Meta.Relics.UserData.UserRelicData" },
+		{ "SharedModel.Meta.ClientStaticData", "SharedModel.Meta.StaticData" },
 	};
 
 	private static readonly Lazy<GameMetadata> Installed = new(() => GameMetadata.Load(GameFiles.In(GameDirectory())));
