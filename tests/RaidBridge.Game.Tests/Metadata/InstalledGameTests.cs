@@ -14,8 +14,8 @@ public class InstalledGameTests
 	/// Spec #20's path to the Account, as the installed game declares it at metadata v39, and the routes the research for
 	/// Relics and Total stats found (https://github.com/ANicholasson/raid-bridge/issues/7 and
 	/// https://github.com/ANicholasson/raid-bridge/issues/9). The Relics reader takes the first
-	/// (https://github.com/ANicholasson/raid-bridge/issues/8), and the Base stats reader the second's Base stats
-	/// (https://github.com/ANicholasson/raid-bridge/issues/10).
+	/// (https://github.com/ANicholasson/raid-bridge/issues/8), and the stats readers the second's Base stats and sets
+	/// (https://github.com/ANicholasson/raid-bridge/issues/10, https://github.com/ANicholasson/raid-bridge/issues/11).
 	/// </summary>
 	public static TheoryData<string, string, string, bool> AccountPath => new()
 	{
@@ -223,6 +223,11 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "ArtifactCount", "System.Int32", false },
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "StatBonus", "SharedModel.Meta.General.StatBonus", false },
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "StatBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.General.StatBonus>", false },
+		// Sets that grow by the piece, and the second part of a Glyph (https://github.com/ANicholasson/raid-bridge/issues/11).
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "SubSetInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.Sets.ArtifactSubSetInfo>", false },
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSubSetInfo", "ArtifactCount", "System.Int32", false },
+		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSubSetInfo", "StatBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.General.StatBonus>", false },
+		{ "SharedModel.Meta.Artifacts.Bonuses.ArtifactBonus", "_rarityBasedPowerUpValue", "System.Nullable`1<Plarium.Common.Numerics.Fixed>", false },
 		{ "SharedModel.Meta.ClientStaticData", "AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", false },
 		{ "SharedModel.Meta.Academy.Static.StaticAcademyData", "Guardians", "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", false },
 		{ "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", "BonusesByHeroRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>>", false },

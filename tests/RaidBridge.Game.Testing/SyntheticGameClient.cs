@@ -389,10 +389,10 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("UnknownArtifact", 0), ("Helmet", 1), ("Chest", 2), ("Gloves", 3), ("Boots", 4), ("Weapon", 5), ("Shield", 6), ("Ring", 7), ("Cloak", 8), ("Banner", 9));
 		_metadata.Enum("SharedModel.Meta.Artifacts.ArtifactRankId", ("Unknown", 0), ("One", 1), ("Two", 2), ("Three", 3), ("Four", 4), ("Five", 5), ("Six", 6));
 		_metadata.Enum("SharedModel.Meta.ItemRarity", ("None", 0), ("Common", 1), ("Uncommon", 2), ("Rare", 3), ("Epic", 4), ("Legendary", 5), ("Mythical", 6));
-		_metadata.Enum("SharedModel.Meta.Artifacts.Sets.ArtifactSetKindId", ("None", 0), ("Hp", 1), ("AttackPower", 2), ("Defense", 3), ("AttackSpeed", 4));
+		_metadata.Enum("SharedModel.Meta.Artifacts.Sets.ArtifactSetKindId", ("None", 0), ("Hp", 1), ("AttackPower", 2), ("Defense", 3), ("AttackSpeed", 4), ("GrowthByPiece", 9));
 		_metadata.Enum(
 			"SharedModel.Battle.Effects.StatKindId",
-			("Health", 1), ("Attack", 2), ("Defence", 3), ("Speed", 4), ("Resistance", 5), ("Accuracy", 6), ("CriticalChance", 7), ("CriticalDamage", 8));
+			("Health", 1), ("Attack", 2), ("Defence", 3), ("Speed", 4), ("Resistance", 5), ("Accuracy", 6), ("CriticalChance", 7), ("CriticalDamage", 8), ("CriticalHeal", 9), ("IgnoreDefence", 10));
 		_metadata.Enum("SharedModel.Meta.Account.ResourceTypeId", ("Energy", 1), ("Silver", 2), ("Token", 3), ("Gem", 4));
 		_metadata.Enum("SharedModel.Meta.Shards.ShardTypeId", ("Mystery", 1), ("Ancient", 3), ("Legendary", 5), ("Void", 6), ("Mythical", 7));
 		_metadata.Enum(
@@ -519,13 +519,44 @@ public sealed partial class SyntheticGameClient : IDisposable
 		ulong Localization(IReadOnlyDictionary<string, string> texts) =>
 			_runtime.Dictionary(table, [.. texts.Select(text => (_runtime.String(text.Key), _runtime.String(text.Value)))]);
 
+		const string StatBonuses = "System.Collections.Generic.List`1<SharedModel.Meta.General.StatBonus>";
+		var statBonus = Declare(
+			"SharedModel.Meta.General",
+			"StatBonus",
+			systemObject,
+			"System.Object",
+			("StatKindId", "SharedModel.Battle.Effects.StatKindId", ValueTypeTypeCode, 0x10),
+			("IsAbsolute", "System.Boolean", BooleanTypeCode, 0x14),
+			("Value", Fixed, ValueTypeTypeCode, 0x18));
+		var subSetInfo = Declare(
+			"SharedModel.Meta.Artifacts.Sets",
+			"ArtifactSubSetInfo",
+			systemObject,
+			"System.Object",
+			("ArtifactCount", "System.Int32", Int32TypeCode, 0x10),
+			("StatBonuses", StatBonuses, GenericInstanceTypeCode, 0x18));
 		var setInfo = Declare(
 			"SharedModel.Meta.Artifacts.Sets",
 			"ArtifactSetInfo",
 			systemObject,
 			"System.Object",
 			("ArtifactSetKindId", "SharedModel.Meta.Artifacts.Sets.ArtifactSetKindId", ValueTypeTypeCode, 0x10),
-			("Name", "SharedModel.Common.Localization.SharedLTextKey", ClassTypeCode, 0x18));
+			("ArtifactCount", "System.Int32", Int32TypeCode, 0x14),
+			("Name", "SharedModel.Common.Localization.SharedLTextKey", ClassTypeCode, 0x18),
+			("StatBonus", "SharedModel.Meta.General.StatBonus", ClassTypeCode, 0x20),
+			("SubSetInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.Sets.ArtifactSubSetInfo>", GenericInstanceTypeCode, 0x28),
+			("StatBonuses", StatBonuses, GenericInstanceTypeCode, 0x30));
+		var statBonuses = _runtime.ListType(statBonus, "StatBonus", sizeof(ulong));
+		ulong StatBonusObject(SyntheticStatBonus bonus)
+		{
+			var bonusObject = _runtime.Object(statBonus, 0x20);
+			_heap.Int32(bonusObject + 0x10, bonus.Stat);
+			_heap.Bytes(bonusObject + 0x14, [Bool(bonus.Absolute)]);
+			_heap.Int64(bonusObject + 0x18, bonus.Value);
+			return bonusObject;
+		}
+
+		ulong StatBonusList(IReadOnlyList<SyntheticStatBonus> bonuses) => _runtime.List(statBonuses, [.. bonuses.Select(StatBonusObject)]);
 		var staticArtifactData = Declare(
 			"SharedModel.Meta.Artifacts",
 			"StaticArtifactData",
@@ -535,9 +566,23 @@ public sealed partial class SyntheticGameClient : IDisposable
 		var staticArtifactDataObject = _runtime.Object(staticArtifactData, 0x18);
 		_heap.Pointer(staticArtifactDataObject + 0x10, _runtime.List(_runtime.ListType(setInfo, "ArtifactSetInfo", sizeof(ulong)), [.. artifactData.Sets.Select(set =>
 		{
-			var setInfoObject = _runtime.Object(setInfo, 0x20);
+			var setInfoObject = _runtime.Object(setInfo, 0x38);
 			_heap.Int32(setInfoObject + 0x10, set.Kind);
+			_heap.Int32(setInfoObject + 0x14, set.SubSets is null ? set.PiecesPerSet : 0);
 			_heap.Pointer(setInfoObject + 0x18, Text(set.Name));
+			_heap.Pointer(setInfoObject + 0x20, set.Bonus is { } bonus ? StatBonusObject(bonus) : 0);
+			_heap.Pointer(setInfoObject + 0x30, StatBonusList(set.Bonuses));
+			if (set.SubSets is { } subSets)
+			{
+				_heap.Pointer(setInfoObject + 0x28, _runtime.List(_runtime.ListType(subSetInfo, "ArtifactSubSetInfo", sizeof(ulong)), [.. subSets.Select(subSet =>
+				{
+					var subSetObject = _runtime.Object(subSetInfo, 0x20);
+					_heap.Int32(subSetObject + 0x10, subSet.Pieces);
+					_heap.Pointer(subSetObject + 0x18, StatBonusList(subSet.Bonuses));
+					return subSetObject;
+				})]));
+			}
+
 			return setInfoObject;
 		})]));
 

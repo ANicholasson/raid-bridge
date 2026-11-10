@@ -19,7 +19,7 @@ public sealed class ChampionReadingTests : IDisposable
 
 	private readonly SyntheticGameClient _game = SyntheticGameClient.Create();
 
-	private static readonly ChampionStats NoStats = new(new Dictionary<Stat, double>());
+	private static readonly ChampionStats NoStats = new(new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>());
 
 	/// <summary>
 	/// HeroById holds a slot a removal freed, which is skipped. The names come from StaticDataLocalization (the

@@ -14,8 +14,8 @@ public sealed record SyntheticArtifactData(
 	IReadOnlyList<SyntheticArtifactSet> Sets)
 {
 	/// <summary>
-	/// The knight (hero 3) wears a weapon, a helmet that was ascended and a ring locked to the Dark Elves, with its
-	/// chest slot empty; the Deep Vault archer (hero 12) has only an empty slot. Nobody wears Artifact 104, plain boots,
+	/// The knight (hero 3) wears a weapon of the Speed set, and a helmet that was ascended and a ring locked to the Dark
+	/// Elves, which make a complete Life set, with its chest slot empty; the Deep Vault archer (hero 12) has only an empty slot. Nobody wears Artifact 104, plain boots,
 	/// or Artifact 105, a cloak locked to the High Elves with a Glyph on its Substat.
 	/// </summary>
 	public static SyntheticArtifactData Default { get; } = new(
@@ -65,8 +65,8 @@ public sealed record SyntheticArtifactData(
 		},
 		Sets:
 		[
-			new(1, new("l10n:artifact-set/name?id=1#static", "Synthetic Life")),
-			new(4, new("l10n:artifact-set/name?id=4#static", "Synthetic Speed")),
+			new(1, new("l10n:artifact-set/name?id=1#static", "Synthetic Life")) { Bonus = new(Stat: 1, Value: Q32(0.15), Absolute: false) },
+			new(4, new("l10n:artifact-set/name?id=4#static", "Synthetic Speed")) { Bonuses = [new(Stat: 4, Value: Q32(0.12), Absolute: false), new(Stat: 6, Value: Q32(40), Absolute: true)] },
 		]);
 
 	/// <summary>A number as the game's Fixed holds it, the nearest step of 2^-32.</summary>
@@ -106,8 +106,28 @@ public sealed record SyntheticArtifact(int Id, int Kind)
 	public SyntheticBonus? AscendBonus { get; init; }
 }
 
-/// <summary>An ArtifactBonus: its stat kind, its value and Glyph as raw Fixed longs, whether the value is absolute, and its level.</summary>
-public sealed record SyntheticBonus(int Stat, long Value, bool Absolute, long Glyph = 0, int Level = 0);
+/// <summary>
+/// An ArtifactBonus: its stat kind, its value and Glyph as raw Fixed longs, whether the value is absolute, and its
+/// level, with the second part of a Glyph the game can hold, <c>_rarityBasedPowerUpValue</c>, or null for none.
+/// </summary>
+public sealed record SyntheticBonus(int Stat, long Value, bool Absolute, long Glyph = 0, int Level = 0, long? RarityGlyph = null);
 
-/// <summary>An ArtifactSetInfo: its set kind and its name.</summary>
-public sealed record SyntheticArtifactSet(int Kind, SyntheticText Name);
+/// <summary>
+/// An ArtifactSetInfo: its set kind and its name, and what it gives. A set that takes <see cref="PiecesPerSet"/>
+/// pieces gives its single <see cref="Bonus"/>, or its <see cref="Bonuses"/> when it has none, for each such many; a set
+/// with <see cref="SubSets"/> grows by the piece, and takes 0.
+/// </summary>
+public sealed record SyntheticArtifactSet(int Kind, SyntheticText Name)
+{
+	public int PiecesPerSet { get; init; } = 2;
+
+	public SyntheticStatBonus? Bonus { get; init; }
+
+	public IReadOnlyList<SyntheticStatBonus> Bonuses { get; init; } = [];
+
+	/// <summary>The ArtifactSubSetInfos, each the number of pieces it is for and its StatBonuses, or null for no list at all.</summary>
+	public IReadOnlyList<(int Pieces, IReadOnlyList<SyntheticStatBonus> Bonuses)>? SubSets { get; init; }
+}
+
+/// <summary>A static StatBonus: its stat kind, its value as a raw Fixed long, and whether it is absolute.</summary>
+public sealed record SyntheticStatBonus(int Stat, long Value, bool Absolute);

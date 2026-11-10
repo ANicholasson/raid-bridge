@@ -2,6 +2,7 @@ using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Stats;
+using RaidBridge.Game.Artifacts;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
 
@@ -26,6 +27,7 @@ internal static class ChampionReader
 		ManagedObject staticData,
 		LocalizedNames names,
 		IReadOnlyDictionary<int, IReadOnlyList<Artifact>> equipped,
+		ArtifactSetBonuses sets,
 		IReadOnlyDictionary<int, IReadOnlyList<Relic>> relics)
 	{
 		var heroTypes = staticData
@@ -44,16 +46,19 @@ internal static class ChampionReader
 			.ByInt32Key();
 		// Read only once a Champion needs it, so an Account with none doesn't depend on it.
 		var baseStats = new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime));
-		var champions = heroes.Select(hero => Champion(hero.Key, hero.Value.Object(Hero), heroTypes, skillTypes, names, baseStats)).ToList();
+		var champions = heroes.Select(hero => Champion(
+			hero.Key,
+			hero.Value.Object(Hero),
+			new Worn(equipped.GetValueOrDefault(hero.Key, []), sets, relics.GetValueOrDefault(hero.Key, [])),
+			heroTypes,
+			skillTypes,
+			names,
+			baseStats)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
 		RefuseStrays(relics, heroes.Keys, "SharedModel.Meta.Relics.UserData.UserRelicData.RelicDataByHeroId gives Relics");
-		return [.. champions.Select(champion => champion with
-		{
-			Artifacts = equipped.GetValueOrDefault(champion.Id, []),
-			Relics = relics.GetValueOrDefault(champion.Id, []),
-		})];
+		return champions;
 	}
 
 	private static void RefuseStrays<T>(IReadOnlyDictionary<int, IReadOnlyList<T>> worn, IEnumerable<int> heroIds, string gives)
@@ -68,6 +73,7 @@ internal static class ChampionReader
 	private static Champion Champion(
 		int key,
 		ManagedObject hero,
+		Worn worn,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
@@ -106,10 +112,13 @@ internal static class ChampionReader
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
-			Artifacts: [],
-			Relics: [],
-			Stats: new ChampionStats(baseStats.Value.Of(id, type, typeId.Value, rank, level)));
+			Artifacts: worn.Artifacts,
+			Relics: worn.Relics,
+			Stats: StatsFormula.For(baseStats.Value.Of(id, type, typeId.Value, rank, level), worn.Artifacts, worn.Sets.For(id, worn.Artifacts)));
 	}
+
+	/// <summary>What a Champion wears: its Artifacts, in the game's order of slots, what their sets give, and its Relics.</summary>
+	private sealed record Worn(IReadOnlyList<Artifact> Artifacts, ArtifactSetBonuses Sets, IReadOnlyList<Relic> Relics);
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>
 	private static string Affinity(ManagedObject type, int typeId)
