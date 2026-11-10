@@ -80,6 +80,14 @@ _Avoid_: vault Artifact (the Vault holds Champions), spare, inventory
 A piece of equipment a Champion wears beside its Artifacts, with bonuses of its own. The materials it is crafted from are Resources.
 _Avoid_: Artifact (a Relic isn't one), relic item
 
+**Relic rank**:
+A Relic's own rank, one to six, which caps how far it can be levelled. It is not a Champion's Rank.
+_Avoid_: rank (alone, for a Relic), stars
+
+**Relic stone**:
+A stone set in one of a Relic's sockets, of the socket's shape. It adds skills, not stats.
+_Avoid_: gem, socket (the socket is the slot, not the stone)
+
 **Resource**:
 A currency or counter on the Account, such as silver, gems, energy, keys or tokens. The game's code keeps them as the account's resources.
 _Avoid_: currency (for the whole set), wallet
