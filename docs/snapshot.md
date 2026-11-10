@@ -2,11 +2,11 @@
 
 A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
-A Snapshot holds the Account, its Champions, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
+A Snapshot holds the Account, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty.
 
 ```json
 {
@@ -204,7 +204,21 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             }
           ]
         }
-      ]
+      ],
+      "stats": {
+        "bySource": {
+          "base": {
+            "Health": 12375,
+            "Attack": 660,
+            "Defence": 742,
+            "Speed": 101,
+            "Resistance": 40,
+            "Accuracy": 10,
+            "CriticalChance": 0.14999999990686774,
+            "CriticalDamage": 0.5
+          }
+        }
+      }
     },
     {
       "id": 7,
@@ -230,7 +244,21 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "marker": "None",
       "location": "Vault",
       "artifacts": {},
-      "relics": []
+      "relics": [],
+      "stats": {
+        "bySource": {
+          "base": {
+            "Health": 3780,
+            "Attack": 396,
+            "Defence": 216,
+            "Speed": 98,
+            "Resistance": 30,
+            "Accuracy": 0,
+            "CriticalChance": 0.14999999990686774,
+            "CriticalDamage": 0.5700000000651926
+          }
+        }
+      }
     },
     {
       "id": 12,
@@ -256,7 +284,21 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "marker": "None",
       "location": "DeepVault",
       "artifacts": {},
-      "relics": []
+      "relics": [],
+      "stats": {
+        "bySource": {
+          "base": {
+            "Health": 6300,
+            "Attack": 660,
+            "Defence": 360,
+            "Speed": 98,
+            "Resistance": 30,
+            "Accuracy": 0,
+            "CriticalChance": 0.14999999990686774,
+            "CriticalDamage": 0.5700000000651926
+          }
+        }
+      }
     }
   ],
   "unwornArtifacts": [
@@ -464,6 +506,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `skills`: its own passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below).
     - `factionSkills`: the passive effects it adds only for a wearer of a given Faction, each with that `faction`, such as `"DarkElves"`, its `typeId` and its `description`, in the order its type lists them, or `[]`. Every Relic lists them, worn or not, so a reader can tell which Faction a spare Relic suits, and whether a worn Relic's wearer gets them. Few Relic types have any.
     - `sockets`: its sockets, in the order the game keeps them, each with its `shape`, such as `"Circle"`, and the Relic `stone` in it, or `null` when it is empty.
+  - `stats`: the Champion's stats, worked out from what raid-bridge read (below). `bySource` holds what each Stat source gives it, each stat under its name, such as `"Speed"`, in the order of the numbers the game's code gives the stats. So far it holds one source, `base`: the Champion's Base stats at its rank, level and ascension, the white numbers on its champion screen, with all eight stats, `Health`, `Attack`, `Defence`, `Speed`, `Resistance`, `Accuracy`, `CriticalChance` and `CriticalDamage`. They are in the units of an Artifact's bonuses: points, and fractions for `CriticalChance` and `CriticalDamage`. The other Stat sources and the Total stats are still to come.
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.
@@ -497,7 +540,10 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 
 An Artifact's `value` and `glyph` are exactly what the game holds. The game keeps them in fixed point, as a whole number of steps of 2^-32, so a value the game shows as 6% is held as the nearest step, 0.0600000000558793â€¦, and written as the shortest number that reads back as exactly that step: `0.060000000055879354`. Round it to show it, never to store it.
 
-Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read: nothing is guessed or filled in, and a Champion's stats aren't written. A Relic's `bonuses` and `skillLevel` are the one thing worked out: the game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own. A run that can't read a value fails and writes no file.
+Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read or worked out from what it read: nothing is guessed or filled in. A run that can't read a value fails and writes no file. Two things are worked out:
+
+- A Relic's `bonuses` and `skillLevel`. The game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own.
+- A Champion's `stats`. The game keeps no stats on a Champion, so raid-bridge works them out (ADR-0005). Every number in them is the Account's own or the game's static data, read from the Game client like the names are. Only the way they add up is raid-bridge's: for `base`, the way the game's own code builds a Champion's Base stats. That code scales `Health`, `Attack` and `Defence` by the Champion's rank and level, rounds them to whole points as the game does, and multiplies `Health` by 15. It takes `Speed`, `Resistance` and `Accuracy` as the Champion's type holds them, and turns `CriticalChance` and `CriticalDamage` from whole percents into fractions. raid-bridge works in the game's own fixed point, so each value is the one the game itself holds, such as `0.14999999990686774` for the 15% the screen shows. To show a Base stat as the champion screen does, round a fraction to a whole percent: the points are whole already.
 
 ## Names
 

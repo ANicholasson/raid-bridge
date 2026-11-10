@@ -21,6 +21,7 @@ internal static class Unity6000Layout
 	public const int ClassStaticFields = 0xB8;
 	public const int ClassElementSize = 0x104;
 	public const int ClassFieldCount = 0x124;
+	public const int ClassRank = 0x132;
 	public const int ClassSize = 0x140;
 
 	public const int FieldInfoName = 0x0;
@@ -41,8 +42,13 @@ internal static class Unity6000Layout
 	public const int StringLength = 0x10;
 	public const int StringChars = 0x14;
 
+	public const int ArrayBounds = 0x10;
 	public const int ArrayMaxLength = 0x18;
 	public const int ArrayData = 0x20;
+
+	public const int ArrayBoundsSize = 0x10;
+	public const int ArrayBoundsLength = 0x0;
+	public const int ArrayBoundsLowerBound = 0x8;
 
 	public const byte BooleanTypeCode = 0x02;
 	public const byte Int32TypeCode = 0x08;

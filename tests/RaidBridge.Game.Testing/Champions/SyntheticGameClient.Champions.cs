@@ -7,6 +7,13 @@ namespace RaidBridge.Game.Testing;
 /// <summary>The heroes of a synthetic Game client, in HeroById, and what a bad read can do to them; the static data that types them is laid out with the rest of ClientStaticData.</summary>
 public sealed partial class SyntheticGameClient
 {
+	private const string BattleStats = "SharedModel.Meta.Heroes.BattleStats";
+
+	private static readonly string[] BattleStatNames =
+		["Health", "Attack", "Defence", "Speed", "Resistance", "Accuracy", "CriticalChance", "CriticalDamage", "CriticalHeal", "IgnoreDefence"];
+
+	private ulong _battleStatsStatics;
+	private ulong _rankMultipliers;
 	private readonly Dictionary<int, ulong> _skillLists = [];
 	private readonly Dictionary<int, ulong> _heroTypes = [];
 	private readonly Dictionary<int, ulong> _skillTypes = [];
@@ -26,6 +33,81 @@ public sealed partial class SyntheticGameClient
 
 	/// <summary>HeroById's count and free count disagree with its slots, as a torn or corrupt read might see them.</summary>
 	public void SetHeroByIdCounts(int count, int freeCount) => _runtime.SetDictionaryCounts(_heroById, count, freeCount);
+
+	/// <summary>BattleStats.Multipliers holds another number, as a game update or a corrupt read might.</summary>
+	public void SetRankMultiplier(int row, int column, double value) =>
+		_heap.Int64(SyntheticRuntime.Element(_rankMultipliers, (row * 2) + column, sizeof(double)), BitConverter.DoubleToInt64Bits(value));
+
+	/// <summary>BattleStats.Multipliers holds its twelve numbers in a one-dimensional <c>double[]</c>, as a game update might.</summary>
+	public void HoldRankMultipliersInOneDimension()
+	{
+		var arrayClass = _runtime.ArrayClass(_runtime.RuntimeClass("System.Double"), "Double", sizeof(double));
+		_heap.Bytes(arrayClass + ClassRank, [1]);
+		_heap.Pointer(_battleStatsStatics + 0x8, _runtime.Array(arrayClass, 12, sizeof(double)));
+	}
+
+	/// <summary>The bounds of BattleStats.Multipliers give it other lengths, as a game update or a corrupt read might.</summary>
+	public void SetRankMultipliersShape(int rows, int columns)
+	{
+		var bounds = _heap.ReadPointer(_rankMultipliers + ArrayBounds);
+		_heap.Pointer(bounds + ArrayBoundsLength, (ulong)rows);
+		_heap.Pointer(bounds + ArrayBoundsSize + ArrayBoundsLength, (ulong)columns);
+	}
+
+	/// <summary>
+	/// BattleStats, with a Fixed for each stat, and its statics: ToPercent, a Fixed, and Multipliers, which the
+	/// metadata declares a <c>double[][]</c> but which holds a <c>double[,]</c>, as the Game client does at v39
+	/// (https://github.com/ANicholasson/raid-bridge/issues/9). The reader reaches them through BattleStats' TypeInfo slot.
+	/// </summary>
+	private ulong LayOutTheBattleStats(SyntheticHeroData heroData)
+	{
+		var battleStats = _runtime.Class(
+			"SharedModel.Meta.Heroes",
+			"BattleStats",
+			_runtime.SystemObject,
+			[
+				.. BattleStatNames.Select((name, index) => new SyntheticField(name, ValueTypeTypeCode, 0x10 + (index * 0x8))),
+				new SyntheticField("ToPercent", ValueTypeTypeCode, 0x0, IsStatic: true),
+				new SyntheticField("Multipliers", SingleDimensionArrayTypeCode, 0x8, IsStatic: true),
+			]);
+		_metadata.Class(
+			BattleStats,
+			"System.Object",
+			[
+				.. BattleStatNames.Select(name => (name, Fixed, false)),
+				("ToPercent", Fixed, true),
+				("Multipliers", "System.Double[][]", true),
+			]);
+		TypeInfoSlot(BattleStats, BattleStatsTypeInfoRva, battleStats);
+
+		_battleStatsStatics = _heap.Allocate(0x10);
+		_heap.Pointer(battleStats + ClassStaticFields, _battleStatsStatics);
+		_heap.Int64(_battleStatsStatics, FixedRaw(heroData.ToPercent));
+		if (heroData.RankMultipliers is { } multipliers)
+		{
+			var systemDouble = _runtime.Class("System", "Double", _runtime.ValueType);
+			_rankMultipliers = _runtime.Matrix(_runtime.MatrixClass(systemDouble, "Double", sizeof(double)), multipliers);
+			_heap.Pointer(_battleStatsStatics + 0x8, _rankMultipliers);
+		}
+
+		return battleStats;
+	}
+
+	/// <summary>A BattleStats holding the stats, each as a Fixed.</summary>
+	private ulong BattleStatsObject(ulong battleStats, SyntheticBattleStats stats)
+	{
+		var battleStatsObject = _runtime.Object(battleStats, 0x60);
+		double[] values = [stats.Health, stats.Attack, stats.Defence, stats.Speed, stats.Resistance, stats.Accuracy, stats.CriticalChance, stats.CriticalDamage, stats.CriticalHeal, stats.IgnoreDefence];
+		for (var index = 0; index < values.Length; index++)
+		{
+			_heap.Int64(battleStatsObject + 0x10 + (ulong)(index * 0x8), FixedRaw(values[index]));
+		}
+
+		return battleStatsObject;
+	}
+
+	/// <summary>A number as the raw value of the Fixed nearest it below, as the game's (Fixed)double makes it.</summary>
+	private static long FixedRaw(double value) => (long)(value * (1L << 32));
 
 	/// <summary>UserWrapper's heroes: HeroesWrapper's HeroData, whose HeroById holds each hero by its id, after one slot a removal freed.</summary>
 	private ulong LayOutTheHeroes(SyntheticHeroData heroData)

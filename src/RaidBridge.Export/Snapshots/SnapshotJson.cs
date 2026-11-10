@@ -5,6 +5,7 @@ using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
+using RaidBridge.Domain.Stats;
 
 namespace RaidBridge.Export.Snapshots;
 
@@ -233,6 +234,24 @@ internal static class SnapshotJson
 		}
 
 		json.WriteEndArray();
+
+		json.WriteStartObject("stats");
+		json.WriteStartObject("bySource");
+		WriteStats(json, "base", champion.Stats.Base);
+		json.WriteEndObject();
+		json.WriteEndObject();
+		json.WriteEndObject();
+	}
+
+	/// <summary>One Stat source's stats, each under its name, in the game's order of stats.</summary>
+	private static void WriteStats(Utf8JsonWriter json, string source, IReadOnlyDictionary<Stat, double> stats)
+	{
+		json.WriteStartObject(source);
+		foreach (var (stat, value) in stats.OrderBy(stat => stat.Key))
+		{
+			json.WriteNumber(stat.ToString(), value);
+		}
+
 		json.WriteEndObject();
 	}
 

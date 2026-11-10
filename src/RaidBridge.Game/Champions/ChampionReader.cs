@@ -1,6 +1,7 @@
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
 using RaidBridge.Domain.Relics;
+using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
 
@@ -41,7 +42,9 @@ internal static class ChampionReader
 			.Object("HeroData", "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData")
 			.Dictionary("HeroById", $"System.Collections.Generic.Dictionary`2<System.Int32, {Hero}>")
 			.ByInt32Key();
-		var champions = heroes.Select(hero => Champion(hero.Key, hero.Value.Object(Hero), heroTypes, skillTypes, names)).ToList();
+		// Read only once a Champion needs it, so an Account with none doesn't depend on it.
+		var baseStats = new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime));
+		var champions = heroes.Select(hero => Champion(hero.Key, hero.Value.Object(Hero), heroTypes, skillTypes, names, baseStats)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
@@ -67,7 +70,8 @@ internal static class ChampionReader
 		ManagedObject hero,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
-		LocalizedNames names)
+		LocalizedNames names,
+		Lazy<BaseStatsReader> baseStats)
 	{
 		var id = hero.Int32("Id").Where(value => value == key && value > 0, $"the positive id HeroById keeps it under, {key}");
 		var typeId = hero.Int32("TypeId");
@@ -78,6 +82,8 @@ internal static class ChampionReader
 		_ = type.Int32("Id").Where(value => value == typeId.Value, $"the id HeroTypeById keeps it under, {typeId.Value}");
 		var doubleAscend = hero.ObjectOrNull("DoubleAscendData", "SharedModel.Meta.DoubleAscend.User.HeroDoubleAscendData");
 		var masteries = hero.ObjectOrNull("MasteryData", "SharedModel.Meta.Masteries.HeroMasteryData");
+		var rank = hero.EnumMember("Grade", "SharedModel.Meta.Heroes.HeroGrade");
+		var level = hero.Int32("Level");
 
 		return new(
 			Id: id,
@@ -86,8 +92,8 @@ internal static class ChampionReader
 			Rarity: type.Enum("Rarity", "SharedModel.Meta.Heroes.HeroRarity").Value,
 			Affinity: Affinity(type, typeId.Value),
 			Faction: type.Enum("Fraction", "SharedModel.Meta.Heroes.HeroFraction").Value,
-			Rank: hero.Enum("Grade", "SharedModel.Meta.Heroes.HeroGrade").Value,
-			Level: hero.Int32("Level").Where(level => level > 0, "a positive level"),
+			Rank: rank.Value.Name,
+			Level: level.Where(value => value > 0, "a positive level"),
 			// A Champion that was never awakened has no awakening data at all.
 			Awakening: doubleAscend?.Enum("Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade").Value,
 			Blessing: doubleAscend?.NullableEnum("BlessingId", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId").Value,
@@ -101,7 +107,8 @@ internal static class ChampionReader
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
 			Artifacts: [],
-			Relics: []);
+			Relics: [],
+			Stats: new ChampionStats(baseStats.Value.Of(id, type, typeId.Value, rank, level)));
 	}
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>

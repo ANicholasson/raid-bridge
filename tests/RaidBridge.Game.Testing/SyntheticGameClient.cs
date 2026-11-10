@@ -41,6 +41,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 	private const ulong GenericClassRva = 0x1000;
 	private const ulong FixedTypeInfoRva = 0x1100;
 	private const ulong ResolverTypeInfoRva = 0x1108;
+	private const ulong BattleStatsTypeInfoRva = 0x1110;
 	private const string Root = "Client.App.SingleInstance`1<Client.Model.AppModel>";
 	private const string Fixed = "Plarium.Common.Numerics.Fixed";
 	private const string Resolver = "SharedModel.Meta.Artifacts.ArtifactStorage.ArtifactStorageResolver";
@@ -417,7 +418,14 @@ public sealed partial class SyntheticGameClient : IDisposable
 			"System.Object",
 			("Key", "System.String", StringTypeCode, 0x10),
 			("DefaultValue", "System.String", StringTypeCode, 0x18));
-		var heroForm = Declare("SharedModel.Meta.Heroes", "HeroForm", systemObject, "System.Object", ("Element", "SharedModel.Meta.Heroes.Element", ValueTypeTypeCode, 0x10));
+		var battleStats = LayOutTheBattleStats(heroData);
+		var heroForm = Declare(
+			"SharedModel.Meta.Heroes",
+			"HeroForm",
+			systemObject,
+			"System.Object",
+			("Element", "SharedModel.Meta.Heroes.Element", ValueTypeTypeCode, 0x10),
+			("BaseStats", BattleStats, ClassTypeCode, 0x18));
 		var heroType = Declare(
 			"SharedModel.Meta.Heroes",
 			"HeroType",
@@ -480,10 +488,12 @@ public sealed partial class SyntheticGameClient : IDisposable
 			_heap.Pointer(heroTypeObject + 0x18, Text(type.Name));
 			_heap.Int32(heroTypeObject + 0x20, type.Fraction);
 			_heap.Int32(heroTypeObject + 0x24, type.Rarity);
-			_heap.Pointer(heroTypeObject + 0x28, _runtime.ReferenceArray(forms, [.. type.FormElements.Select(element =>
+			_heap.Pointer(heroTypeObject + 0x28, _runtime.ReferenceArray(forms, [.. type.FormElements.Select((element, index) =>
 			{
-				var form = _runtime.Object(heroForm, 0x18);
+				var form = _runtime.Object(heroForm, 0x20);
 				_heap.Int32(form + 0x10, element);
+				var stats = index == 0 ? type.BaseStats : SyntheticBattleStats.OtherForm;
+				_heap.Pointer(form + 0x18, stats is null ? 0 : BattleStatsObject(battleStats, stats));
 				return form;
 			})]));
 			return ((ulong)type.Id, heroTypeObject);

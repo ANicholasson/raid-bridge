@@ -21,6 +21,8 @@ internal sealed class Il2CppRuntime
 	/// <summary>Far deeper than any real nesting of classes, so a corrupt chain of declaring classes ends with an error.</summary>
 	private const int MaxNesting = 16;
 
+	private static readonly HashSet<byte> ValueTypeCode = [Il2CppTypeCode.ValueType];
+
 	private readonly IGameMemory _memory;
 	private readonly Dictionary<ulong, RuntimeClass> _classes = [];
 	private readonly Dictionary<string, RuntimeClass> _namedClasses = new(StringComparer.Ordinal);
@@ -42,7 +44,7 @@ internal sealed class Il2CppRuntime
 	/// </summary>
 	public ManagedObject StaticObject(string genericInstance, string fieldName, string declaredType, string objectClass)
 	{
-		var (address, where) = StaticField(GenericInstanceClass(genericInstance), genericInstance, fieldName, declaredType);
+		var (address, where) = StaticField(GenericInstanceClass(genericInstance), genericInstance, fieldName, declaredType, Il2CppTypeCode.References);
 		return Object(Pointer(address, () => where), where, address, objectClass);
 	}
 
@@ -53,9 +55,20 @@ internal sealed class Il2CppRuntime
 	/// </summary>
 	public ManagedObject? StaticObjectOrNull(string className, string fieldName, string declaredType, string objectClass)
 	{
-		var (address, where) = StaticField(ClassNamed(className), className, fieldName, declaredType);
+		var (address, where) = StaticField(ClassNamed(className), className, fieldName, declaredType, Il2CppTypeCode.References);
 		var pointer = Pointer(address, () => where);
 		return pointer == 0 ? null : Object(pointer, where, address, objectClass);
+	}
+
+	/// <summary>
+	/// The value type a static field of a class that isn't generic holds, such as <c>BattleStats.ToPercent</c>, a
+	/// <c>Plarium.Common.Numerics.Fixed</c>, read as its runtime class, which the TypeInfo slot of
+	/// <paramref name="valueType"/> gives.
+	/// </summary>
+	public ManagedObject StaticValue(string className, string fieldName, string valueType)
+	{
+		var (address, where) = StaticField(ClassNamed(className), className, fieldName, valueType, ValueTypeCode);
+		return Value(address, ClassNamed(valueType), valueType, where);
 	}
 
 	/// <summary>
@@ -243,10 +256,10 @@ internal sealed class Il2CppRuntime
 		return runtimeClass;
 	}
 
-	/// <summary>The address of a static reference field of <paramref name="runtimeClass"/>, read as <paramref name="className"/>.</summary>
-	private (ulong Address, string Where) StaticField(RuntimeClass runtimeClass, string className, string fieldName, string declaredType)
+	/// <summary>The address of a static field of <paramref name="runtimeClass"/> of one of <paramref name="typeCodes"/>, read as <paramref name="className"/>.</summary>
+	private (ulong Address, string Where) StaticField(RuntimeClass runtimeClass, string className, string fieldName, string declaredType, IReadOnlySet<byte> typeCodes)
 	{
-		var field = runtimeClass.Field(Expect(runtimeClass.FullName, fieldName, declaredType, isStatic: true), Il2CppTypeCode.References);
+		var field = runtimeClass.Field(Expect(runtimeClass.FullName, fieldName, declaredType, isStatic: true), typeCodes);
 		var staticFields = Pointer(runtimeClass.Address + (ulong)Layout.Class.StaticFields, () => $"the static fields of {className}");
 		if (staticFields == 0)
 		{
