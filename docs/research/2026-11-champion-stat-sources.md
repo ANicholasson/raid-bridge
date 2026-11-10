@@ -111,7 +111,7 @@ A read-only probe read the running Game client on the maintainer's Linux install
 
 ### `BattleStats.Multipliers`
 
-**The metadata declares it `double[][]`, but in memory it is a `double[6,2]`**, a two-dimensional array, which IL2CPP lays out differently from an array of arrays. The reader has to support that shape and check it against the declared type. Its rows, one per rank: [1, 2], [1.6, 1.9], [2.432, 1.8], [3.50208, 1.7], [4.7628288, 1.7], [6.477447168, 1.7]. The first values grow by 1.6, 1.52, 1.44, 1.36 and 1.36 from rank to rank. How a level within a rank applies is still a guess, to check against one Champion's white numbers.
+**The metadata declares it `double[][]`, but in memory it is a `double[6,2]`**, a two-dimensional array, which IL2CPP lays out differently from an array of arrays. The reader has to support that shape and check it against the declared type. Its rows, one per rank: [1, 2], [1.6, 1.9], [2.432, 1.8], [3.50208, 1.7], [4.7628288, 1.7], [6.477447168, 1.7]. The first values grow by 1.6, 1.52, 1.44, 1.36 and 1.36 from rank to rank. How a level within a rank applies them is settled in "How the game builds Base stats" below. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/18) -->
 
 ### The tables
 
