@@ -2,6 +2,7 @@ using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Numerics;
+using RaidBridge.Game.Stats;
 
 namespace RaidBridge.Game.Artifacts;
 
@@ -16,7 +17,8 @@ namespace RaidBridge.Game.Artifacts;
 /// each <c>ArtifactCount</c> pieces worn, so a set one piece short gives nothing.</item>
 /// </list>
 /// A bonus to a stat outside the eight the champion screen shows, such as a set's IgnoreDefence, isn't part of the
-/// Champion's stats, and its skill bonuses aren't stats either.
+/// Champion's stats, and its skill bonuses aren't stats either. Each Artifact's own bonuses are here too, so both
+/// Stat sources of what a Champion wears come from one place.
 /// </summary>
 internal sealed class ArtifactSetBonuses(IReadOnlyDictionary<string, ManagedObject> sets)
 {
@@ -24,7 +26,17 @@ internal sealed class ArtifactSetBonuses(IReadOnlyDictionary<string, ManagedObje
 	private const string SubSetInfo = "SharedModel.Meta.Artifacts.Sets.ArtifactSubSetInfo";
 	private const string StatKind = "SharedModel.Battle.Effects.StatKindId";
 
-	private static readonly Dictionary<string, Stat> StatsByName = Enum.GetValues<Stat>().ToDictionary(stat => stat.ToString(), StringComparer.Ordinal);
+	/// <summary>
+	/// An Artifact's bonuses as <c>ArtifactSetup.FromArtifact</c> takes them: its main stat, its ascension bonus and its
+	/// Substats, each with its Glyph added on.
+	/// </summary>
+	public static IEnumerable<StatBonus> Of(Artifact artifact) =>
+		new[] { artifact.Primary }
+			.Concat(artifact.AscensionBonus is { } ascension ? [ascension] : [])
+			.Concat(artifact.Substats)
+			.Select(bonus => (Stat: StatNames.Of(bonus.Stat, $"A bonus of Artifact {artifact.Id}"), Bonus: bonus))
+			.Where(bonus => bonus.Stat is not null)
+			.Select(bonus => new StatBonus(bonus.Stat!.Value, bonus.Bonus.Value + bonus.Bonus.Glyph, bonus.Bonus.Flat));
 
 	/// <summary>The bonuses the sets of the Artifacts <paramref name="worn"/> give Champion <paramref name="championId"/>.</summary>
 	public IReadOnlyList<StatBonus> For(int championId, IReadOnlyList<Artifact> worn) =>
@@ -41,26 +53,28 @@ internal sealed class ArtifactSetBonuses(IReadOnlyDictionary<string, ManagedObje
 		if (subSets.Count > 0)
 		{
 			var forPieces = subSets.Where(subSet => subSet.Int32("ArtifactCount").Value == pieces).ToList();
+			// With no entry for the pieces worn, the game itself would divide by the set's ArtifactCount of 0.
 			return forPieces.Count == 1
-				? Own(set).Concat(List(forPieces[0]))
+				? OwnBonuses(set, setId).Concat(ListedBonuses(forPieces[0], setId))
 				: throw new GameDataException(
 					$"Champion {championId} wears {pieces} pieces of the set {setId}, whose {forPieces.Count} SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo.SubSetInfos for that many pieces aren't one.");
 		}
 
 		var perSet = set.Int32("ArtifactCount").Where(count => count > 0, $"the positive number of pieces a set of {setId} takes, since it has no SubSetInfos");
-		return Enumerable.Repeat(Own(set), pieces / perSet).SelectMany(bonuses => bonuses);
+		return Enumerable.Repeat(OwnBonuses(set, setId), pieces / perSet).SelectMany(bonuses => bonuses);
 	}
 
 	/// <summary>A set's own bonuses: its single StatBonus, or else its list of them.</summary>
-	private static IReadOnlyList<StatBonus> Own(ManagedObject set) =>
-		set.ObjectOrNull("StatBonus", StatBonusClass) is { } single ? [.. Translate([single])] : List(set);
+	private static IReadOnlyList<StatBonus> OwnBonuses(ManagedObject set, string setId) =>
+		set.ObjectOrNull("StatBonus", StatBonusClass) is { } single ? [.. Translated([single], setId)] : ListedBonuses(set, setId);
 
-	private static IReadOnlyList<StatBonus> List(ManagedObject owner) =>
-		[.. Translate(owner.ListOrNull("StatBonuses", $"System.Collections.Generic.List`1<{StatBonusClass}>")?.Objects(StatBonusClass) ?? [])];
+	/// <summary>The bonuses in a set's, or one of its entries', StatBonuses.</summary>
+	private static IReadOnlyList<StatBonus> ListedBonuses(ManagedObject owner, string setId) =>
+		[.. Translated(owner.ListOrNull("StatBonuses", $"System.Collections.Generic.List`1<{StatBonusClass}>")?.Objects(StatBonusClass) ?? [], setId)];
 
-	private static IEnumerable<StatBonus> Translate(IEnumerable<ManagedObject> bonuses) =>
+	private static IEnumerable<StatBonus> Translated(IEnumerable<ManagedObject> bonuses, string setId) =>
 		bonuses
-			.Select(bonus => (Stat: bonus.Enum("StatKindId", StatKind).Value, Bonus: bonus))
-			.Where(bonus => StatsByName.ContainsKey(bonus.Stat))
-			.Select(bonus => new StatBonus(StatsByName[bonus.Stat], FixedPoint.Of(bonus.Bonus, "Value"), bonus.Bonus.Boolean("IsAbsolute").Value));
+			.Select(bonus => (Stat: StatNames.Of(bonus.Enum("StatKindId", StatKind).Value, $"A bonus of the set {setId}"), Bonus: bonus))
+			.Where(bonus => bonus.Stat is not null)
+			.Select(bonus => new StatBonus(bonus.Stat!.Value, FixedPoint.Of(bonus.Bonus, "Value"), bonus.Bonus.Boolean("IsAbsolute").Value));
 }

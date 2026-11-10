@@ -105,6 +105,16 @@ public sealed class ArtifactStatsReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Artifacts\.Artifact\._setKindId at 0x[0-9A-F]+ is Hp, which isn't a set in the game's StaticArtifactData\.SetInfos\.$");
 	}
 
+	/// <summary>A stat a game update adds is refused, not dropped, since raid-bridge can't tell whether the screen shows it.</summary>
+	[Fact]
+	public void Refuses_a_bonus_to_a_stat_the_reader_does_not_know()
+	{
+		using var game = Wearing(setKind: 9, pieces: 1, GrowingSet with { SubSets = [(1, [new(Stat: 11, Value: Q32(5), Absolute: true)])] });
+		game.AddEnumMember("SharedModel.Battle.Effects.StatKindId", "Vigour", 11);
+
+		RefusesMatching(game, @"^A bonus of the set GrowthByPiece raises Vigour, a stat raid-bridge doesn't know\.$");
+	}
+
 	/// <summary>The game adds both parts of a Glyph it can hold onto the bonus, so the Snapshot's Glyph is both.</summary>
 	[Fact]
 	public void Adds_the_rarity_based_part_of_a_glyph()

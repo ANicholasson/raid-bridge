@@ -49,7 +49,7 @@ internal static class ChampionReader
 		var champions = heroes.Select(hero => Champion(
 			hero.Key,
 			hero.Value.Object(Hero),
-			new Worn(equipped.GetValueOrDefault(hero.Key, []), sets, relics.GetValueOrDefault(hero.Key, [])),
+			Worn(hero.Key, equipped.GetValueOrDefault(hero.Key, []), sets, relics.GetValueOrDefault(hero.Key, [])),
 			heroTypes,
 			skillTypes,
 			names,
@@ -73,7 +73,7 @@ internal static class ChampionReader
 	private static Champion Champion(
 		int key,
 		ManagedObject hero,
-		Worn worn,
+		Wearing worn,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
@@ -114,11 +114,14 @@ internal static class ChampionReader
 			Location: Location(hero, id),
 			Artifacts: worn.Artifacts,
 			Relics: worn.Relics,
-			Stats: StatsFormula.For(baseStats.Value.Of(id, type, typeId.Value, rank, level), worn.Artifacts, worn.Sets.For(id, worn.Artifacts)));
+			Stats: StatsFormula.For(baseStats.Value.Of(id, type, typeId.Value, rank, level), worn.ArtifactBonuses, worn.SetBonuses));
 	}
 
-	/// <summary>What a Champion wears: its Artifacts, in the game's order of slots, what their sets give, and its Relics.</summary>
-	private sealed record Worn(IReadOnlyList<Artifact> Artifacts, ArtifactSetBonuses Sets, IReadOnlyList<Relic> Relics);
+	/// <summary>What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts and their sets give it.</summary>
+	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics);
+
+	private static Wearing Worn(int championId, IReadOnlyList<Artifact> artifacts, ArtifactSetBonuses sets, IReadOnlyList<Relic> relics) =>
+		new(artifacts, [.. artifacts.SelectMany(ArtifactSetBonuses.Of)], sets.For(championId, artifacts), relics);
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>
 	private static string Affinity(ManagedObject type, int typeId)

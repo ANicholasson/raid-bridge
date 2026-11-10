@@ -1,5 +1,3 @@
-using RaidBridge.Domain.Artifacts;
-
 namespace RaidBridge.Domain.Stats;
 
 /// <summary>
@@ -16,20 +14,21 @@ namespace RaidBridge.Domain.Stats;
 /// </summary>
 public static class StatsFormula
 {
-	private static readonly Dictionary<string, Stat> StatsByName = Enum.GetValues<Stat>().ToDictionary(stat => stat.ToString(), StringComparer.Ordinal);
-
-	/// <summary>A Champion's stats from its Base stats, the Artifacts it wears, and what their sets give it.</summary>
-	public static ChampionStats For(IReadOnlyDictionary<Stat, double> baseStats, IEnumerable<Artifact> artifacts, IEnumerable<StatBonus> setBonuses) =>
+	/// <summary>
+	/// A Champion's stats from its Base stats, the bonuses of the Artifacts it wears, each with its Glyph, and what
+	/// their sets give it.
+	/// </summary>
+	public static ChampionStats For(IReadOnlyDictionary<Stat, double> baseStats, IEnumerable<StatBonus> artifactBonuses, IEnumerable<StatBonus> setBonuses) =>
 		new(
 			Base: baseStats,
-			Artifacts: Add(baseStats, artifacts.SelectMany(Bonuses)),
+			Artifacts: Add(baseStats, artifactBonuses),
 			Sets: Add(baseStats, setBonuses));
 
 	/// <summary>
 	/// What the bonuses add to each stat they raise. A stat no bonus raises is left out, so bonuses that raise nothing
 	/// give nothing.
 	/// </summary>
-	public static IReadOnlyDictionary<Stat, double> Add(IReadOnlyDictionary<Stat, double> baseStats, IEnumerable<StatBonus> bonuses)
+	private static SortedDictionary<Stat, double> Add(IReadOnlyDictionary<Stat, double> baseStats, IEnumerable<StatBonus> bonuses)
 	{
 		var added = new SortedDictionary<Stat, double>();
 		foreach (var bonus in bonuses)
@@ -42,15 +41,4 @@ public static class StatsFormula
 
 		return added;
 	}
-
-	/// <summary>
-	/// An Artifact's main stat, Substats and ascension bonus, each with its Glyph. A stat outside the eight the champion
-	/// screen shows, which no Artifact raises today, isn't part of the Champion's stats.
-	/// </summary>
-	private static IEnumerable<StatBonus> Bonuses(Artifact artifact) =>
-		new[] { artifact.Primary }
-			.Concat(artifact.AscensionBonus is { } ascension ? [ascension] : [])
-			.Concat(artifact.Substats)
-			.Where(bonus => StatsByName.ContainsKey(bonus.Stat))
-			.Select(bonus => new StatBonus(StatsByName[bonus.Stat], bonus.Value + bonus.Glyph, bonus.Flat));
 }
