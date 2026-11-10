@@ -12,7 +12,7 @@ namespace RaidBridge.Game.Relics;
 /// (https://github.com/ANicholasson/raid-bridge/issues/8, docs/research/2026-11-relics.md):
 /// <c>_userWrapper.Relics.RelicsData</c>'s <c>Relics</c> and <c>Stones</c>, every one the Account owns, and its
 /// <c>RelicDataByHeroId[championId].RelicIds</c>, the Relics each Champion wears. Every Relic no Champion wears is an
-/// unworn Relic, and every stone no socket names is an unsocketed one. A Relic holds no stat values of its own: each
+/// Unworn Relic, and every stone no socket names is in no socket. A Relic holds no stat values of its own: each
 /// stat its type raises whose opening level it has reached gives the static table's value at the Relic's level. The
 /// cached <c>_type</c> fields are never read: types come from the static data, by id.
 /// </summary>
@@ -35,7 +35,8 @@ internal static class RelicReader
 
 	/// <summary>
 	/// <paramref name="champions"/> with the Relics each wears, the Relics no Champion wears, and the Relic stones in no
-	/// socket, each sorted by id. A worn Relic's Faction skills are its wearer's Faction's.
+	/// socket, each sorted by id. A worn Relic's Faction skills are its wearer's Faction's, so this reader takes the
+	/// Champions already read and gives each its Relics, where the Artifact reader hands its own to the Champion reader.
 	/// </summary>
 	public static AccountRelics Read(ManagedObject userWrapper, ManagedObject staticData, LocalizedNames names, IReadOnlyList<Champion> champions)
 	{
@@ -55,8 +56,8 @@ internal static class RelicReader
 		var worn = wornBy.ToDictionary(
 			champion => champion.Key,
 			champion => (IReadOnlyList<Relic>)[.. champion.Value.Select(id => Build(id, factions[champion.Key]))]);
-		var wearers = wornBy.SelectMany(champion => champion.Value).ToHashSet();
-		IReadOnlyList<Relic> unworn = [.. relics.Keys.Where(id => !wearers.Contains(id)).Order().Select(id => Build(id, wearerFaction: null))];
+		var wornIds = wornBy.SelectMany(champion => champion.Value).ToHashSet();
+		IReadOnlyList<Relic> unworn = [.. relics.Keys.Where(id => !wornIds.Contains(id)).Order().Select(id => Build(id, wearerFaction: null))];
 
 		return new(
 			[.. champions.Select(champion => champion with { Relics = worn.GetValueOrDefault(champion.Id, []) })],
@@ -133,7 +134,8 @@ internal static class RelicReader
 		var id = relic.Int32("Id").Value;
 		var typeId = relic.Int32("TypeId");
 		var type = tables.Value.RelicTypeOf(typeId);
-		var level = relic.Int32("Level").Where(value => value >= 0, "a level of 0 or more");
+		var level = relic.Int32("Level");
+		_ = level.Where(value => value >= 0, "a level of 0 or more");
 
 		return new(
 			Id: id,
@@ -141,7 +143,7 @@ internal static class RelicReader
 			Name: names.Of(type, "Name", $"Relic type {typeId.Value}"),
 			Rarity: type.Enum("Rarity", Rarity).Value,
 			Rank: relic.Enum("Rank", Rank).Value,
-			Level: level,
+			Level: level.Value,
 			Bonuses: Bonuses(type, typeId.Value, level, tables.Value),
 			Skills: Skills(type, typeId.Value, wearerFaction, names),
 			Sockets: [.. relic.List("Sockets", $"System.Collections.Generic.List`1<{StoneSocket}>").Objects(StoneSocket).Select(socket => SocketFrom(socket, id, stones, socketed, tables, names))]);
@@ -152,7 +154,7 @@ internal static class RelicReader
 	/// the static data's first opening level, its second at the second, and so on; the value is the stat's static list
 	/// at the Relic's level, which is its index (live check, docs/research/2026-11-relics.md).
 	/// </summary>
-	private static List<RelicBonus> Bonuses(ManagedObject type, int typeId, int level, Tables tables)
+	private static List<RelicBonus> Bonuses(ManagedObject type, int typeId, FieldValue<int> level, Tables tables)
 	{
 		var stats = type.List("StatsBonus", $"System.Collections.Generic.List`1<{StatKind}>").EnumMembers(StatKind);
 		if (stats.Count > tables.OpeningLevels.Count)
@@ -164,20 +166,20 @@ internal static class RelicReader
 		var bonuses = new List<RelicBonus>();
 		for (var index = 0; index < stats.Count; index++)
 		{
-			if (level < tables.OpeningLevels[index])
+			if (level.Value < tables.OpeningLevels[index])
 			{
 				continue;
 			}
 
 			var stat = stats[index].Value;
-			var values = tables.ValuesOf(stat, stats[index]);
-			if (level >= values.Count)
+			var values = tables.ValuesOf(stat, stats[index], typeId);
+			if (level.Value >= values.Count)
 			{
 				throw new GameDataException(
-					$"A Relic of type {typeId} is at level {level}, but {StaticRelicData}.StatValueByLevel[{stat.Name}] holds values for levels 0 to {values.Count - 1}.");
+					$"{level}, but {StaticRelicData}.StatValueByLevel[{stat.Name}], which its type {typeId} raises, holds values for levels 0 to {values.Count - 1}.");
 			}
 
-			var value = values[level];
+			var value = values[level.Value];
 			bonuses.Add(new(stat.Name, FixedPoint.Of(value, "_value"), value.Boolean("_isAbsolute").Value));
 		}
 
@@ -246,7 +248,7 @@ internal static class RelicReader
 
 		if (!socketed.TryAdd(id, relicId))
 		{
-			throw new GameDataException($"Relic stone {id} is in a socket of Relic {socketed[id]} and one of Relic {relicId}.");
+			throw new GameDataException($"Relic stone {id} is in a socket of Relic {socketed[id]} and one of Relic {relicId}: {stoneId}.");
 		}
 
 		var stone = StoneFrom(stoneObject, tables, names);
@@ -294,13 +296,14 @@ internal static class RelicReader
 		public ManagedObject StoneTypeOf(FieldValue<int> typeId) => Type(_stoneTypes.Value, typeId, StoneType, "_relicStoneTypeById");
 
 		/// <summary>The value each level of a stat gives, from level 0, or an error naming the type's stat when the table has none.</summary>
-		public IReadOnlyList<ManagedObject> ValuesOf(GameEnumMember stat, FieldValue<GameEnumMember> raisedBy)
+		public IReadOnlyList<ManagedObject> ValuesOf(GameEnumMember stat, FieldValue<GameEnumMember> raisedBy, int typeId)
 		{
 			if (!_valuesByStat.TryGetValue(stat, out var values))
 			{
 				values = _values.Value.TryGetValue(stat, out var entry)
 					? entry.List().Objects(BonusValue)
-					: throw new GameDataException($"{raisedBy.Field} at 0x{raisedBy.Address:X} is {stat.Name}, which {StaticRelicData}.StatValueByLevel holds no values for.");
+					: throw new GameDataException(
+						$"Relic type {typeId}'s StatsBonus raises {stat.Name}, which {StaticRelicData}.StatValueByLevel holds no values for: {raisedBy.Field} at 0x{raisedBy.Address:X}.");
 				_valuesByStat[stat] = values;
 			}
 
@@ -319,5 +322,5 @@ internal static class RelicReader
 	}
 }
 
-/// <summary>The Account's Champions, each with the Relics it wears, the Relics no Champion wears, and the Relic stones in no socket, both by id.</summary>
+/// <summary>The Account's Champions, each with the Relics it wears, the Unworn Relics, and the Relic stones in no socket, both by id.</summary>
 internal sealed record AccountRelics(IReadOnlyList<Champion> Champions, IReadOnlyList<Relic> Unworn, IReadOnlyList<RelicStone> Unsocketed);

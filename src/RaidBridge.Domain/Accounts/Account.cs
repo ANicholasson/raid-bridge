@@ -10,7 +10,7 @@ namespace RaidBridge.Domain.Accounts;
 
 /// <summary>
 /// One player's Account, as the Game client holds it: its id, every Champion on it with the Artifacts and Relics each
-/// wears, the Artifacts and the Relics no Champion wears, the Relic stones in no socket, its Resources, Shards and
+/// wears, the Unworn Artifacts and the Unworn Relics, the Relic stones in no socket, its Resources, Shards and
 /// Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena. Each Artifact, Relic and Relic stone on
 /// the Account is in exactly one of those places, a stone in a socket being in that socket's Relic. Each Faction
 /// Guardian is one of its Champions, in one slot, and so is each Champion in an Arena defence team. The Resources,

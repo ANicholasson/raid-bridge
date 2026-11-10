@@ -11,8 +11,9 @@ namespace RaidBridge.Domain.Snapshots;
 
 /// <summary>
 /// Everything raid-bridge read from one Account at one moment. The Account id is in it only as its hash, the
-/// Champions, the Unworn Artifacts, the Relics no Champion wears and the Relic stones in no socket are sorted by id, and the Resources, Shards, Items, the Great Hall and the
-/// Faction Guardians keep the game's order, so two Snapshots diff cleanly.
+/// Champions, the Unworn Artifacts, the Unworn Relics and the Relic stones in no socket are sorted by id, and the
+/// Resources, Shards, Items, the Great Hall and the Faction Guardians keep the game's order, so two Snapshots diff
+/// cleanly.
 /// </summary>
 public sealed record Snapshot(
 	DateTimeOffset CapturedAt,

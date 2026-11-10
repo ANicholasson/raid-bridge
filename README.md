@@ -2,11 +2,11 @@
 
 [![verify](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml/badge.svg)](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml)
 
-Reads your own RAID: Shadow Legends account data (champions, artifacts, resources, Great Hall, Faction Guardians, and Arena defence teams and standings) from the game client running on your computer and exports it as JSON snapshots.
+Reads your own RAID: Shadow Legends account data (champions, artifacts, relics, resources, Great Hall, Faction Guardians, and Arena defence teams and standings) from the game client running on your computer and exports it as JSON snapshots.
 
 Data out only. raid-bridge never injects code into the game, never writes to its memory and never automates play.
 
-Status: early. `raid-bridge snapshot` writes a Snapshot holding the account, its champions, the artifacts they wear, the artifacts nobody wears, its resources, shards and items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena. It reads the running game on Linux, where the Windows game runs under Steam's Proton, with no setup and no root. There is no Windows reader yet. The format is in [docs/snapshot.md](docs/snapshot.md).
+Status: early. `raid-bridge snapshot` writes a Snapshot holding the account, its champions, the artifacts and relics they wear, the artifacts and relics nobody wears, the relic stones in no socket, its resources, shards and items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena. It reads the running game on Linux, where the Windows game runs under Steam's Proton, with no setup and no root. There is no Windows reader yet. The format is in [docs/snapshot.md](docs/snapshot.md).
 
 ## Fair play and risk
 

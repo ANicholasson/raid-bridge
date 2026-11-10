@@ -194,7 +194,7 @@ public sealed class RelicReadingTests : IDisposable
 			Relics = [.. Relics.Relics.Select(relic => relic.Id == 203 ? relic with { Sockets = [new(Shape: 1, StoneId: 301)] } : relic)],
 		});
 
-		Refuses(game, "Relic stone 301 is in a socket of Relic 201 and one of Relic 203.");
+		RefusesMatching(game, @"^Relic stone 301 is in a socket of Relic 201 and one of Relic 203: SharedModel\.Meta\.Relics\.UserData\.RelicStoneSocket\.StoneId at 0x[0-9A-F]+ is 301\.$");
 	}
 
 	/// <summary>Every socketed stone fits its socket on the Account read (live check, docs/research/2026-11-relics.md).</summary>
@@ -239,7 +239,9 @@ public sealed class RelicReadingTests : IDisposable
 			Relics = [.. Relics.Relics.Select(relic => relic.Id == 203 ? relic with { Level = 19 } : relic)],
 		});
 
-		Refuses(game, "A Relic of type 2 is at level 19, but SharedModel.Meta.Relics.StaticData.StaticRelicData.StatValueByLevel[Health] holds values for levels 0 to 18.");
+		RefusesMatching(
+			game,
+			@"^SharedModel\.Meta\.Relics\.UserData\.Relic\.Level at 0x[0-9A-F]+ is 19, but SharedModel\.Meta\.Relics\.StaticData\.StaticRelicData\.StatValueByLevel\[Health\], which its type 2 raises, holds values for levels 0 to 18\.$");
 	}
 
 	[Fact]
@@ -252,7 +254,7 @@ public sealed class RelicReadingTests : IDisposable
 
 		RefusesMatching(
 			game,
-			@"^System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+ is Resistance, which SharedModel\.Meta\.Relics\.StaticData\.StaticRelicData\.StatValueByLevel holds no values for\.$");
+			@"^Relic type 2's StatsBonus raises Resistance, which SharedModel\.Meta\.Relics\.StaticData\.StaticRelicData\.StatValueByLevel holds no values for: System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+\.$");
 	}
 
 	[Fact]
