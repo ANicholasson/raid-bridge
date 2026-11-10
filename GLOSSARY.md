@@ -40,6 +40,18 @@ _Avoid_: fraction, race
 A Champion's second progression, raised with Souls and capped by how far the Champion has ascended. It is separate from rank. The game's code calls it double ascend. <!-- (Codex, PR #17) -->
 _Avoid_: double ascend
 
+**Blessing**:
+A power the player gives an awakened Champion, such as Necromancy. The game's code keeps it with the Champion's double ascend data.
+_Avoid_: buff
+
+**Empowerment**:
+Further power a Champion gains, by level, 0 for none. The game's code calls it the empower level. <!-- No rank named: (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+_Avoid_: empower level
+
+**Mastery**:
+One of the bonuses a Champion learns from its mastery trees, each kept by its id.
+_Avoid_: talent, perk
+
 **Roster**:
 The Champions on an Account that are in neither the Vault nor the Deep Vault: the ones the player uses.
 _Avoid_: inventory
@@ -63,6 +75,10 @@ _Avoid_: power-up
 **Unworn Artifact**:
 An Artifact on the Account that no Champion wears.
 _Avoid_: vault Artifact (the Vault holds Champions), spare, inventory
+
+**Relic**:
+A piece of equipment a Champion wears beside its Artifacts, with bonuses of its own. The materials it is crafted from are Resources.
+_Avoid_: Artifact (a Relic isn't one), relic item
 
 **Resource**:
 A currency or counter on the Account, such as silver, gems, energy, keys or tokens. The game's code keeps them as the account's resources.
@@ -91,3 +107,15 @@ _Avoid_: arena (when Tag Arena could be meant)
 **Tag Arena**:
 The Arena where three teams of up to four Champions each face another player's three teams, in three battles. The game's code calls it the 3x3 arena. <!-- (CodeRabbit, PR #40) -->
 _Avoid_: 3v3, arena3x3
+
+**Base stats**:
+A Champion's own stats at its rank, level and ascension, before any bonus: the white numbers on the champion screen. Two Champions of one type, rank and level can differ by ascension. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+_Avoid_: raw stats, unscaled stats
+
+**Stat source**:
+One thing that adds to a Champion's stats beyond its Base stats, such as its Artifacts, its set bonuses, its masteries or the Great Hall.
+_Avoid_: bonus (alone, since an Artifact's bonuses are one source)
+
+**Total stats**:
+A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. <!-- The Arena league isn't named either way: research settles it (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+_Avoid_: effective stats, battle stats
