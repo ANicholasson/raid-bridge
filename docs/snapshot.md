@@ -150,6 +150,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           "rarity": "Epic",
           "rank": "Rank5",
           "level": 15,
+          "skillLevel": 5,
           "bonuses": [
             {
               "stat": "Attack",
@@ -171,8 +172,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             {
               "typeId": 3000000,
               "description": "Wearer deals more damage."
-            },
+            }
+          ],
+          "factionSkills": [
             {
+              "faction": "DarkElves",
               "typeId": 3200000,
               "description": "Dark Elves strike first."
             }
@@ -313,6 +317,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "rarity": "Legendary",
       "rank": "Rank3",
       "level": 0,
+      "skillLevel": 1,
       "bonuses": [
         {
           "stat": "Health",
@@ -326,6 +331,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           "description": "Wearer gains Turn Meter."
         }
       ],
+      "factionSkills": [],
       "sockets": [
         {
           "shape": "Pentagon",
@@ -453,8 +459,10 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `typeId` and `name`: its type, and its name as the Game client shows it (below).
     - `rarity` and `rank`: such as `"Legendary"` and `"Rank3"`. A Relic's rank, one to six, is its own, not a Champion's: it caps the Relic's level.
     - `level`: a number, from 0.
+    - `skillLevel`: the level its passive effects are at, from 1, which the game's own table gives for the Relic's level: it rises at set levels (0, 6, 9, 12, 15 and 18 in the game's data today), so a Relic between two of them has the lower one's.
     - `bonuses`: the stats it raises, in its type's order, each with `stat`, `value` and `flat` as an Artifact's bonus has them, without `glyph` or `rolls`. A Relic's type raises three stats, which open one at a time as it levels (at levels 0, 9 and 15 in the game's data today): a stat that hasn't opened yet is left out.
-    - `skills`: its passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below): its type's own, then, for a worn Relic, any its wearer's Faction adds.
+    - `skills`: its own passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below).
+    - `factionSkills`: the passive effects it adds only for a wearer of a given Faction, each with that `faction`, such as `"DarkElves"`, its `typeId` and its `description`, in the order its type lists them, or `[]`. Every Relic lists them, worn or not, so a reader can tell which Faction a spare Relic suits, and whether a worn Relic's wearer gets them. Few Relic types have any.
     - `sockets`: its sockets, in the order the game keeps them, each with its `shape`, such as `"Circle"`, and the Relic `stone` in it, or `null` when it is empty.
 
   Each Relic stone has:
@@ -489,13 +497,13 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 
 An Artifact's `value` and `glyph` are exactly what the game holds. The game keeps them in fixed point, as a whole number of steps of 2^-32, so a value the game shows as 6% is held as the nearest step, 0.0600000000558793â€¦, and written as the shortest number that reads back as exactly that step: `0.060000000055879354`. Round it to show it, never to store it.
 
-Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read: nothing is guessed or filled in, and a Champion's stats aren't written. A Relic's `bonuses` are the one thing worked out: the game holds no stat values on a Relic, only its type and level, so each bonus is the value the game's own static table gives that stat at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own. A run that can't read a value fails and writes no file.
+Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read: nothing is guessed or filled in, and a Champion's stats aren't written. A Relic's `bonuses` and `skillLevel` are the one thing worked out: the game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own. A run that can't read a value fails and writes no file.
 
 ## Names
 
 A Champion's, a skill's, an Artifact set's, a Relic's and a Relic stone's name, and a Relic skill's `description`, is the text the Game client shows for it, in the language the player set: raid-bridge looks its key up in the client's loaded localization tables, and takes the default text the game gives the key when neither table holds it. If there is neither, the run fails rather than write a made-up name.
 
-A Relic's or a stone's skill has no name of its own in the game's data, only placeholder text such as "Skill 3000000 name", so it is written with the description the Relic's screen shows instead: the description of its Relic type, of the Faction's entry that adds it, or of its stone's type. The description belongs to that source, so if a source ever lists more than one skill, each carries the same text; in the game's data today each Relic type and each stone type lists one. The description is the text as the game holds it, so it may carry the Game client's rich-text tags, such as `<color=#1ee600>2%</color>` around a number the screen shows in colour, written with JSON's escapes as `\u003Ccolor=#1ee600\u003E2%\u003C/color\u003E`.
+A Relic's or a stone's skill has no name of its own in the game's data, only placeholder text such as "Skill 3000000 name", so it is written with the description the Relic's screen shows instead: the description of its Relic type, of the Faction's entry that adds it, or of its stone's type. The description belongs to that source, so if a source ever lists more than one skill, each carries the same text; in the game's data today each Relic type and each stone type lists one. The game holds a description with rich-text tags that only style it on screen, such as `<color=#1ee600>2%</color>` around a number shown in colour, and they are left out, so `"Wearer deals <color=#1ee600>2%</color> more damage"` is written `"Wearer deals 2% more damage"`.
 
 ## The Account id hash
 

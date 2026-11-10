@@ -110,7 +110,8 @@ public sealed partial class SyntheticGameClient
 			("_relicTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Relics.StaticData.RelicType>", GenericInstanceTypeCode, 0x10),
 			("_relicStoneTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Relics.StaticData.RelicStoneType>", GenericInstanceTypeCode, 0x18),
 			("StatValueByLevel", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.BonusValue>>", GenericInstanceTypeCode, 0x20),
-			("StatBonusOpeningLevels", Ints, GenericInstanceTypeCode, 0x28));
+			("StatBonusOpeningLevels", Ints, GenericInstanceTypeCode, 0x28),
+			("SkillLevelByRelicLevel", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32>", GenericInstanceTypeCode, 0x30));
 		var statKind = _runtime.Class("SharedModel.Battle.Effects", "StatKindId", _runtime.ValueType);
 
 		var ints = _runtime.ListType(_runtime.SystemInt32, "Int32", sizeof(int));
@@ -212,11 +213,12 @@ public sealed partial class SyntheticGameClient
 				return valueObject;
 			})])))]);
 
-		var staticRelicDataObject = _runtime.Object(staticRelicData, 0x30);
+		var staticRelicDataObject = _runtime.Object(staticRelicData, 0x38);
 		_heap.Pointer(staticRelicDataObject + 0x10, _runtime.Dictionary(byInt, [.. relicTypes]));
 		_heap.Pointer(staticRelicDataObject + 0x18, _runtime.Dictionary(byInt, [.. stoneTypes]));
 		_heap.Pointer(staticRelicDataObject + 0x20, values);
 		_heap.Pointer(staticRelicDataObject + 0x28, IntList(relicData.OpeningLevels));
+		_heap.Pointer(staticRelicDataObject + 0x30, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, Int32TypeCode), [.. relicData.SkillLevelByRelicLevel.Select(level => ((ulong)level.Key, (ulong)level.Value))]));
 		Slot("SharedModel.Meta.StaticData.RelicData", _clientStaticData + 0x40, staticRelicDataObject);
 	}
 }

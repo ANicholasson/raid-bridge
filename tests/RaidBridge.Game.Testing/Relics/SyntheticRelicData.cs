@@ -16,13 +16,16 @@ public sealed record SyntheticRelicData(
 	IReadOnlyList<SyntheticRelicType> RelicTypes,
 	IReadOnlyList<SyntheticRelicStoneType> StoneTypes,
 	IReadOnlyDictionary<int, IReadOnlyList<SyntheticBonusValue>> StatValueByLevel,
-	IReadOnlyList<int> OpeningLevels)
+	IReadOnlyList<int> OpeningLevels,
+	IReadOnlyDictionary<int, int> SkillLevelByRelicLevel)
 {
 	/// <summary>
 	/// The knight (hero 3, a Dark Elf) wears two Relics: a grail at level 9, whose third stat is still locked, with a
 	/// stone in its socket, and a harp at level 15, with one socket empty and one holding a stone. The Vault archer
 	/// (hero 7) has no entry, and the Deep Vault archer (hero 12) an empty list. Nobody wears Relic 203, a harp at level
-	/// 0, whose sockets are empty, and no socket holds stones 305 and 303, listed out of order.
+	/// 0, whose sockets are empty, and no socket holds stones 305 and 303, listed out of order. The harp's type adds
+	/// skills for the High Elves and the Dark Elves. The skill levels rise at Relic levels 0, 6, 9, 12, 15 and 18, held out
+	/// of order.
 	/// </summary>
 	public static SyntheticRelicData Default { get; } = new(
 		Relics:
@@ -35,7 +38,7 @@ public sealed record SyntheticRelicData(
 		RelicIdsByHeroId: new Dictionary<int, IReadOnlyList<int>> { [12] = [], [3] = [202, 201] },
 		RelicTypes:
 		[
-			new(1, new("l10n:relic/name?id=1#static", "Synthetic Grail"), new("l10n:relic/description?id=1#static", "Wearer deals more damage."), Rarity: 3, Stats: [2, 1, 8], SkillIds: [3000000]),
+			new(1, new("l10n:relic/name?id=1#static", "Synthetic Grail"), new("l10n:relic/description?id=1#static", "Wearer deals <color=#1ee600>2%</color> more damage."), Rarity: 3, Stats: [2, 1, 8], SkillIds: [3000000]),
 			new(2, new("l10n:relic/name?id=2#static", "Synthetic Harp"), new("l10n:relic/description?id=2#static", "Wearer gains Turn Meter."), Rarity: 5, Stats: [1, 5, 4], SkillIds: [3000001])
 			{
 				FactionSkills =
@@ -58,7 +61,8 @@ public sealed record SyntheticRelicData(
 			[5] = Levels(level => new(SyntheticArtifactData.Q32(16 + (4 * level)), Absolute: true)),
 			[8] = Levels(level => new(SyntheticArtifactData.Q32(0.06 + (0.02 * level)), Absolute: false)),
 		},
-		OpeningLevels: [0, 9, 15]);
+		OpeningLevels: [0, 9, 15],
+		SkillLevelByRelicLevel: new Dictionary<int, int> { [9] = 3, [0] = 1, [15] = 5, [6] = 2, [12] = 4, [18] = 6 });
 
 	/// <summary>Relics the Account doesn't hold at all, and no stone, as an Account that never got one.</summary>
 	public static SyntheticRelicData None { get; } = Default with { Relics = [], Stones = [], RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() };

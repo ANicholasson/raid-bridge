@@ -246,6 +246,7 @@ internal static class SnapshotJson
 		json.WriteString("rarity", relic.Rarity);
 		json.WriteString("rank", relic.Rank);
 		json.WriteNumber("level", relic.Level);
+		json.WriteNumber("skillLevel", relic.SkillLevel);
 
 		json.WriteStartArray("bonuses");
 		foreach (var bonus in relic.Bonuses)
@@ -259,6 +260,18 @@ internal static class SnapshotJson
 
 		json.WriteEndArray();
 		WriteRelicSkills(json, relic.Skills);
+
+		json.WriteStartArray("factionSkills");
+		foreach (var skill in relic.FactionSkills)
+		{
+			json.WriteStartObject();
+			json.WriteString("faction", skill.Faction);
+			json.WriteNumber("typeId", skill.TypeId);
+			json.WriteString("description", skill.Description);
+			json.WriteEndObject();
+		}
+
+		json.WriteEndArray();
 
 		json.WriteStartArray("sockets");
 		foreach (var socket in relic.Sockets)

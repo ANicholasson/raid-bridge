@@ -39,8 +39,8 @@ public partial class SnapshotFormatTests
 	private static readonly RelicStone Spark = new(301, 11, "Synthetic Spark", "Rare", "Circle", [new(4000010, "Turn Meter effects are stronger.")]);
 
 	/// <summary>
-	/// A grail at level 15, every stat open, CriticalDamage as a fraction; its own skill and the one its wearer's Faction
-	/// adds; a stone in one socket and the other empty. 0.36 is the nearest Fixed to it, 1546188227 / 2^32.
+	/// A grail at level 15, every stat open, CriticalDamage as a fraction; its own skill and the one it adds for a Dark
+	/// Elf; a stone in one socket and the other empty. 0.36 is the nearest Fixed to it, 1546188227 / 2^32.
 	/// </summary>
 	private static readonly Relic KnightRelic = new(
 		201,
@@ -49,12 +49,14 @@ public partial class SnapshotFormatTests
 		"Epic",
 		"Rank5",
 		15,
+		5,
 		[new("Attack", 308, true), new("Health", 5400, true), new("CriticalDamage", 1546188227 / 4294967296.0, false)],
-		[new(3000000, "Wearer deals more damage."), new(3200000, "Dark Elves strike first.")],
+		[new(3000000, "Wearer deals more damage.")],
+		[new("DarkElves", 3200000, "Dark Elves strike first.")],
 		[new("Circle", Spark), new("Diamond", null)]);
 
 	/// <summary>A harp at level 0: only its first stat is open, and its one socket is empty.</summary>
-	private static readonly Relic UnwornRelic = new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], [new("Pentagon", null)]);
+	private static readonly Relic UnwornRelic = new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, 1, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], [], [new("Pentagon", null)]);
 
 	[Fact]
 	public void The_documented_example_is_what_the_writer_writes()

@@ -17,19 +17,22 @@ public sealed class RelicReadingTests : IDisposable
 	private static readonly RelicStone Spark301 = new(301, 11, "Synthetic Spark", "Rare", "Circle", [new(4000010, "Turn Meter effects are stronger.")]);
 	private static readonly RelicStone Star302 = new(302, 12, "Synthetic Star", "Legendary", "Pentagon", [new(4000011, "Speed rises with each buff.")]);
 
+	/// <summary>The skills the harp's type adds for a wearer of each Faction it lists, in its order.</summary>
+	private static readonly RelicFactionSkill[] HarpFactionSkills = [new("HighElves", 3100001, "High Elves heal more."), new("DarkElves", 3200001, "Dark Elves strike first.")];
+
 	/// <summary>
-	/// The knight's Relics, in the order the game lists them: the harp at level 15, with every stat open and the skill
-	/// its Dark Elf wearer adds after its own, and the grail at level 9, whose CriticalDamage opens only at 15.
+	/// The knight's Relics, in the order the game lists them: the harp at level 15, with every stat open, and the grail
+	/// at level 9, whose CriticalDamage opens only at 15, its description without the game's colour tags.
 	/// </summary>
 	private static readonly Relic[] KnightWears =
 	[
-		new(202, 2, "Synthetic Harp", "Legendary", "Rank6", 15, [new("Health", 5400, true), new("Resistance", 76, true), new("Speed", 18, true)], [new(3000001, "Wearer gains Turn Meter."), new(3200001, "Dark Elves strike first.")], [new("Diamond", null), new("Pentagon", Star302)]),
-		new(201, 1, "Synthetic Grail", "Rare", "Rank2", 9, [new("Attack", 206, true), new("Health", 3600, true)], [new(3000000, "Wearer deals more damage.")], [new("Circle", Spark301)]),
+		new(202, 2, "Synthetic Harp", "Legendary", "Rank6", 15, 5, [new("Health", 5400, true), new("Resistance", 76, true), new("Speed", 18, true)], [new(3000001, "Wearer gains Turn Meter.")], HarpFactionSkills, [new("Diamond", null), new("Pentagon", Star302)]),
+		new(201, 1, "Synthetic Grail", "Rare", "Rank2", 9, 3, [new("Attack", 206, true), new("Health", 3600, true)], [new(3000000, "Wearer deals 2% more damage.")], [], [new("Circle", Spark301)]),
 	];
 
-	/// <summary>A harp nobody wears, at level 0: only its first stat is open, and having no wearer it adds no Faction skill.</summary>
+	/// <summary>A harp nobody wears, at level 0: only its first stat is open, and it lists every Faction's skills all the same.</summary>
 	private static readonly Relic UnwornHarp =
-		new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], [new("Diamond", null), new("Pentagon", null)]);
+		new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, 1, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], HarpFactionSkills, [new("Diamond", null), new("Pentagon", null)]);
 
 	private readonly SyntheticGameClient _game = SyntheticGameClient.Create();
 
@@ -86,37 +89,29 @@ public sealed class RelicReadingTests : IDisposable
 		Assert.Equal([201, 202, 203], account.UnwornRelics.Select(relic => relic.Id));
 	}
 
-	/// <summary>An unworn Relic has no wearer, so no Faction's skills are its.</summary>
-	[Fact]
-	public void Reads_an_unworn_relic_with_its_own_skills_only()
-	{
-		using var game = SyntheticGameClient.Create(relicData: Relics with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() });
-
-		var harp = game.Source().Read().UnwornRelics.Single(relic => relic.Id == 202);
-
-		Assert.Equal([3000001], harp.Skills.Select(skill => skill.TypeId));
-	}
-
 	/// <summary>Most Relic types hold null for their Faction skills (live check, https://github.com/ANicholasson/raid-bridge/issues/8).</summary>
 	[Fact]
-	public void Reads_a_worn_relic_whose_type_has_no_faction_skills_with_its_own_only()
+	public void Reads_a_relic_whose_type_has_no_faction_skills_with_none()
 	{
 		using var game = SyntheticGameClient.Create(relicData: Relics with { RelicTypes = [.. Relics.RelicTypes.Select(type => type with { FactionSkills = null })] });
 
-		var harp = game.Source().Read().Champions.Single(champion => champion.Id == 3).Relics.Single(relic => relic.Id == 202);
-
-		Assert.Equal([3000001], harp.Skills.Select(skill => skill.TypeId));
+		Assert.All(game.Source().Read().UnwornRelics, relic => Assert.Empty(relic.FactionSkills));
 	}
 
-	/// <summary>An archer is a Banner Lord, which the harp lists no skills for.</summary>
-	[Fact]
-	public void Reads_a_relic_worn_by_a_faction_its_type_adds_nothing_for_with_its_own_skills_only()
+	/// <summary>A skill level rises at the Relic levels the table keys it by, so a level between two keys takes the lower one's.</summary>
+	[Theory]
+	[InlineData(0, 1)]
+	[InlineData(5, 1)]
+	[InlineData(8, 2)]
+	[InlineData(18, 6)]
+	public void Reads_the_skill_level_of_the_highest_step_the_relic_has_reached(int level, int skillLevel)
 	{
-		using var game = SyntheticGameClient.Create(relicData: Relics with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>> { [7] = [202] } });
+		using var game = SyntheticGameClient.Create(relicData: Relics with
+		{
+			Relics = [.. Relics.Relics.Select(relic => relic.Id == 203 ? relic with { Level = level } : relic)],
+		});
 
-		var harp = game.Source().Read().Champions.Single(champion => champion.Id == 7).Relics.Single();
-
-		Assert.Equal([3000001], harp.Skills.Select(skill => skill.TypeId));
+		Assert.Equal(skillLevel, game.Source().Read().UnwornRelics.Single().SkillLevel);
 	}
 
 	/// <summary>A percentage is held as a Fixed fraction, written exactly as the static table holds it.</summary>
@@ -300,7 +295,17 @@ public sealed class RelicReadingTests : IDisposable
 			RelicTypes = [.. Relics.RelicTypes.Select(type => type.FactionSkills is { } skills ? type with { FactionSkills = [.. skills, skills[1]] } : type)],
 		});
 
-		Refuses(game, "Relic type 2's SkillIdsByFaction lists DarkElves 2 times.");
+		RefusesMatching(game, @"^Relic type 2's SkillIdsByFaction lists DarkElves twice: SharedModel\.Meta\.Relics\.StaticData\.RelicFactionSkillBonus\.FractionId at 0x[0-9A-F]+ is DarkElves\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_relic_level_below_every_skill_level_step()
+	{
+		using var game = SyntheticGameClient.Create(relicData: Relics with { SkillLevelByRelicLevel = new Dictionary<int, int> { [6] = 2 } });
+
+		RefusesMatching(
+			game,
+			@"^SharedModel\.Meta\.Relics\.UserData\.Relic\.Level at 0x[0-9A-F]+ is 0, but SharedModel\.Meta\.Relics\.StaticData\.StaticRelicData\.SkillLevelByRelicLevel gives no skill level at or below it\.$");
 	}
 
 	[Fact]

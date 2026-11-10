@@ -1,4 +1,4 @@
-using RaidBridge.Domain.Champions;
+using System.Text.RegularExpressions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
@@ -16,7 +16,7 @@ namespace RaidBridge.Game.Relics;
 /// stat its type raises whose opening level it has reached gives the static table's value at the Relic's level. The
 /// cached <c>_type</c> fields are never read: types come from the static data, by id.
 /// </summary>
-internal static class RelicReader
+internal static partial class RelicReader
 {
 	private const string Relic = "SharedModel.Meta.Relics.UserData.Relic";
 	private const string Stone = "SharedModel.Meta.Relics.UserData.RelicStone";
@@ -34,11 +34,11 @@ internal static class RelicReader
 	private const string Ints = "System.Collections.Generic.List`1<System.Int32>";
 
 	/// <summary>
-	/// <paramref name="champions"/> with the Relics each wears, the Relics no Champion wears, and the Relic stones in no
-	/// socket, each sorted by id. A worn Relic's Faction skills are its wearer's Faction's, so this reader takes the
-	/// Champions already read and gives each its Relics, where the Artifact reader hands its own to the Champion reader.
+	/// The Relics each Champion wears, by the Champion's id, the Unworn Relics, and the Relic stones in no socket, each
+	/// sorted by id. The Champion reader gives each Champion its Relics, as it does its Artifacts, and refuses Relics
+	/// given to a Champion the Account doesn't hold.
 	/// </summary>
-	public static AccountRelics Read(ManagedObject userWrapper, ManagedObject staticData, LocalizedNames names, IReadOnlyList<Champion> champions)
+	public static AccountRelics Read(ManagedObject userWrapper, ManagedObject staticData, LocalizedNames names)
 	{
 		var relicData = userWrapper
 			.Object("Relics", "Client.Model.Gameplay.Relics.RelicsWrapper")
@@ -47,20 +47,17 @@ internal static class RelicReader
 
 		var stones = ById(relicData.List("Stones", $"System.Collections.Generic.List`1<{Stone}>").Objects(Stone), "Relic stone", "Stones");
 		var relics = ById(relicData.List("Relics", $"System.Collections.Generic.List`1<{Relic}>").Objects(Relic), "Relic", "Relics");
-		var wornBy = WornBy(relicData, relics, champions);
+		var wornBy = WornBy(relicData, relics);
 
 		var socketed = new Dictionary<int, int>();
-		Relic Build(int id, string? wearerFaction) => RelicFrom(relics[id], wearerFaction, stones, socketed, tables, names);
+		Relic Build(int id) => RelicFrom(relics[id], stones, socketed, tables, names);
 
-		var factions = champions.ToDictionary(champion => champion.Id, champion => champion.Faction);
-		var worn = wornBy.ToDictionary(
-			champion => champion.Key,
-			champion => (IReadOnlyList<Relic>)[.. champion.Value.Select(id => Build(id, factions[champion.Key]))]);
+		var worn = wornBy.ToDictionary(champion => champion.Key, champion => (IReadOnlyList<Relic>)[.. champion.Value.Select(Build)]);
 		var wornIds = wornBy.SelectMany(champion => champion.Value).ToHashSet();
-		IReadOnlyList<Relic> unworn = [.. relics.Keys.Where(id => !wornIds.Contains(id)).Order().Select(id => Build(id, wearerFaction: null))];
+		IReadOnlyList<Relic> unworn = [.. relics.Keys.Where(id => !wornIds.Contains(id)).Order().Select(Build)];
 
 		return new(
-			[.. champions.Select(champion => champion with { Relics = worn.GetValueOrDefault(champion.Id, []) })],
+			worn,
 			unworn,
 			[.. stones.Keys.Where(id => !socketed.ContainsKey(id)).Order().Select(id => StoneFrom(stones[id], tables, names))]);
 	}
@@ -83,12 +80,11 @@ internal static class RelicReader
 
 	/// <summary>
 	/// The ids of the Relics each Champion wears, in the game's order. Each must be a Relic the Account owns, worn by one
-	/// Champion only, and each Champion one the Account holds, or a torn read could hide a Relic or show it twice.
+	/// Champion only, or a torn read could hide a Relic or show it twice.
 	/// </summary>
-	private static Dictionary<int, IReadOnlyList<int>> WornBy(ManagedObject relicData, Dictionary<int, ManagedObject> relics, IReadOnlyList<Champion> champions)
+	private static Dictionary<int, IReadOnlyList<int>> WornBy(ManagedObject relicData, Dictionary<int, ManagedObject> relics)
 	{
 		const string Where = "SharedModel.Meta.Relics.UserData.UserRelicData.RelicDataByHeroId";
-		var championIds = champions.Select(champion => champion.Id).ToHashSet();
 		var wearers = new Dictionary<int, int>();
 		var wornBy = new Dictionary<int, IReadOnlyList<int>>();
 		foreach (var (championId, entry) in relicData
@@ -112,11 +108,6 @@ internal static class RelicReader
 				ids.Add(id.Value);
 			}
 
-			if (ids.Count > 0 && !championIds.Contains(championId))
-			{
-				throw new GameDataException($"{Where} gives Relics to Champion {championId}, which HeroById doesn't hold.");
-			}
-
 			wornBy[championId] = ids;
 		}
 
@@ -125,7 +116,6 @@ internal static class RelicReader
 
 	private static Relic RelicFrom(
 		ManagedObject relic,
-		string? wearerFaction,
 		Dictionary<int, ManagedObject> stones,
 		Dictionary<int, int> socketed,
 		Lazy<Tables> tables,
@@ -144,8 +134,10 @@ internal static class RelicReader
 			Rarity: type.Enum("Rarity", Rarity).Value,
 			Rank: relic.Enum("Rank", Rank).Value,
 			Level: level.Value,
+			SkillLevel: tables.Value.SkillLevelAt(level),
 			Bonuses: Bonuses(type, typeId.Value, level, tables.Value),
-			Skills: Skills(type, typeId.Value, wearerFaction, names),
+			Skills: [.. SkillsOf(type, $"Relic type {typeId.Value}", names)],
+			FactionSkills: FactionSkillsOf(type, typeId.Value, names),
 			Sockets: [.. relic.List("Sockets", $"System.Collections.Generic.List`1<{StoneSocket}>").Objects(StoneSocket).Select(socket => SocketFrom(socket, id, stones, socketed, tables, names))]);
 	}
 
@@ -187,29 +179,26 @@ internal static class RelicReader
 	}
 
 	/// <summary>
-	/// The type's own skills, each described by the type's description, then the skills the wearer's Faction adds, each
-	/// described by that Faction's entry. An unworn Relic has no wearer, so only its own. Most types hold no Faction
-	/// list at all (live check, https://github.com/ANicholasson/raid-bridge/issues/8).
+	/// The skills the type adds for a wearer of each Faction it lists, in its order, each described by that Faction's
+	/// entry. Every Relic lists them, worn or not, so a tool can tell which Faction a Relic suits. Most types hold no
+	/// Faction list at all (live check, https://github.com/ANicholasson/raid-bridge/issues/8).
 	/// </summary>
-	private static List<RelicSkill> Skills(ManagedObject type, int typeId, string? wearerFaction, LocalizedNames names)
+	private static List<RelicFactionSkill> FactionSkillsOf(ManagedObject type, int typeId, LocalizedNames names)
 	{
-		var skills = SkillsOf(type, $"Relic type {typeId}", names).ToList();
-		if (wearerFaction is null)
+		var skills = new List<RelicFactionSkill>();
+		var factions = new HashSet<string>(StringComparer.Ordinal);
+		foreach (var entry in type.ListOrNull("SkillIdsByFaction", $"System.Collections.Generic.List`1<{FactionSkills}>")?.Objects(FactionSkills) ?? [])
 		{
-			return skills;
+			var faction = entry.Enum("FractionId", "SharedModel.Meta.Heroes.HeroFraction");
+			if (!factions.Add(faction.Value))
+			{
+				throw new GameDataException($"Relic type {typeId}'s SkillIdsByFaction lists {faction.Value} twice: {faction}.");
+			}
+
+			skills.AddRange(SkillsOf(entry, $"Relic type {typeId}'s {faction.Value} skills", names).Select(skill => new RelicFactionSkill(faction.Value, skill.TypeId, skill.Description)));
 		}
 
-		var factionSkills = type
-			.ListOrNull("SkillIdsByFaction", $"System.Collections.Generic.List`1<{FactionSkills}>")?
-			.Objects(FactionSkills)
-			.Where(entry => entry.Enum("FractionId", "SharedModel.Meta.Heroes.HeroFraction").Value == wearerFaction)
-			.ToList() ?? [];
-		return factionSkills.Count switch
-		{
-			0 => skills,
-			1 => [.. skills, .. SkillsOf(factionSkills[0], $"Relic type {typeId}'s {wearerFaction} skills", names)],
-			_ => throw new GameDataException($"Relic type {typeId}'s SkillIdsByFaction lists {wearerFaction} {factionSkills.Count} times."),
-		};
+		return skills;
 	}
 
 	/// <summary>The skills a Relic type, a Faction's entry or a stone type lists, each with the description it gives.</summary>
@@ -221,9 +210,16 @@ internal static class RelicReader
 			return [];
 		}
 
-		var description = names.Of(owner, "Description", named);
+		var description = RichText().Replace(names.Of(owner, "Description", named), string.Empty);
 		return [.. ids.Select(id => new RelicSkill(id.Where(value => value > 0, "a positive skill type id"), description))];
 	}
+
+	/// <summary>
+	/// The Game client's rich-text tags, such as <c>&lt;color=#1ee600&gt;</c> around a number its screen shows in colour.
+	/// They style the text and say nothing, so a description is written without them, as the screen reads.
+	/// </summary>
+	[GeneratedRegex("</?(?:color|b|i|u|size)(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+	private static partial Regex RichText();
 
 	/// <summary>A socket, and the stone it names, which must be one the Account owns, in no other socket, of the socket's shape.</summary>
 	private static RelicSocket SocketFrom(
@@ -284,10 +280,27 @@ internal static class RelicReader
 
 		private readonly Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>> _valuesByStat = [];
 
+		private readonly Lazy<IReadOnlyList<(int Level, int SkillLevel)>> _skillLevels = new(() =>
+			[.. relicData
+				.Dictionary("SkillLevelByRelicLevel", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32>")
+				.ByInt32Key()
+				.Select(entry => (Level: entry.Key, SkillLevel: entry.Value.Int32().Where(value => value > 0, "a positive skill level")))
+				.OrderBy(entry => entry.Level)]);
+
 		private readonly Lazy<IReadOnlyList<int>> _openingLevels = new(() =>
 			[.. relicData.List("StatBonusOpeningLevels", Ints).Int32s().Select(level => level.Where(value => value >= 0, "an opening level of 0 or more"))]);
 
 		public IReadOnlyList<int> OpeningLevels => _openingLevels.Value;
+
+		/// <summary>
+		/// The skill level a Relic at <paramref name="level"/> has: the one the highest Relic level in
+		/// <c>SkillLevelByRelicLevel</c> at or below it gives, since the table's keys are the levels a skill rises at
+		/// (live check, docs/research/2026-11-relics.md).
+		/// </summary>
+		public int SkillLevelAt(FieldValue<int> level) =>
+			_skillLevels.Value.LastOrDefault(entry => entry.Level <= level.Value) is { SkillLevel: > 0 } found
+				? found.SkillLevel
+				: throw new GameDataException($"{level}, but {StaticRelicData}.SkillLevelByRelicLevel gives no skill level at or below it.");
 
 		/// <summary>A Relic type by its id, which must be the id the static data keeps it under.</summary>
 		public ManagedObject RelicTypeOf(FieldValue<int> typeId) => Type(_relicTypes.Value, typeId, RelicType, "_relicTypeById");
@@ -322,5 +335,5 @@ internal static class RelicReader
 	}
 }
 
-/// <summary>The Account's Champions, each with the Relics it wears, the Unworn Relics, and the Relic stones in no socket, both by id.</summary>
-internal sealed record AccountRelics(IReadOnlyList<Champion> Champions, IReadOnlyList<Relic> Unworn, IReadOnlyList<RelicStone> Unsocketed);
+/// <summary>The Relics each Champion wears, by the Champion's id, in the game's order, the Unworn Relics, and the Relic stones in no socket, both by id.</summary>
+internal sealed record AccountRelics(IReadOnlyDictionary<int, IReadOnlyList<Relic>> WornBy, IReadOnlyList<Relic> Unworn, IReadOnlyList<RelicStone> Unsocketed);
