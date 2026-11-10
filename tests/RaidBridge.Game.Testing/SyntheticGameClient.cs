@@ -133,6 +133,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 	/// <summary>A game update dropped a member from an enum.</summary>
 	public void RemoveEnumMember(string enumName, string memberName) => _metadata.RemoveEnumMember(enumName, memberName);
 
+	/// <summary>A game update added a member to an enum.</summary>
+	public void AddEnumMember(string enumName, string memberName, long value) => _metadata.AddEnumMember(enumName, memberName, value);
+
 	/// <summary>A runtime class names another as the class it is nested in, as a corrupt read might see it.</summary>
 	public void SetDeclaringType(string className, ulong declaringType) => _heap.Pointer(_runtime.RuntimeClass(className) + ClassDeclaringType, declaringType);
 

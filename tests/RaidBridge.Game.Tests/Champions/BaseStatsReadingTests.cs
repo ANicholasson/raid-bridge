@@ -134,6 +134,15 @@ public sealed class BaseStatsReadingTests : IDisposable
 		RefusesMatching(_game, @"^The game's class SharedModel\.Meta\.Heroes\.BattleStats has no field Accuracy, base classes included\.$");
 	}
 
+	/// <summary>A stat the game adds among the eight, or renames, stops the run rather than shift the stats raid-bridge writes.</summary>
+	[Fact]
+	public void Refuses_a_stat_the_reader_does_not_know()
+	{
+		_game.AddEnumMember("SharedModel.Battle.Effects.StatKindId", "Vigour", 0);
+
+		RefusesMatching(_game, @"^The game's SharedModel\.Battle\.Effects\.StatKindId begins with Vigour, Health, Attack, Defence, Speed, Resistance, Accuracy, CriticalChance, where raid-bridge knows the eight stats Health, Attack, Defence, Speed, Resistance, Accuracy, CriticalChance, CriticalDamage\.$");
+	}
+
 	[Fact]
 	public void Refuses_missing_multipliers()
 	{

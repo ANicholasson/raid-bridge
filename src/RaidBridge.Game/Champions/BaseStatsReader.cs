@@ -22,8 +22,8 @@ namespace RaidBridge.Game.Champions;
 /// here (https://github.com/ANicholasson/raid-bridge/issues/9).
 /// </summary>
 /// <remarks>
-/// The 15 and the 10 levels a star gives a rank aren't in the game's static data: they are the game's own code's, in
-/// <c>BuildFromBase</c> and <c>BattleStats.CalcValue</c>, so they are this formula's shape (asked of the maintainer,
+/// The 15 and the 10 levels for each step of rank aren't in the game's static data: they are the game's own code's, in
+/// <c>BuildFromBase</c> and <c>BattleStats.CalcValue</c>, so they are this formula's shape (decided with the maintainer,
 /// 2026-11-10). <c>BuildFromBase</c> divides by a literal 100 too, which <c>ToPercent</c> also holds; raid-bridge
 /// takes <c>ToPercent</c>, which the Game client keeps in memory.
 /// </remarks>
@@ -32,12 +32,13 @@ internal sealed class BaseStatsReader
 	private const string BattleStats = "SharedModel.Meta.Heroes.BattleStats";
 	private const string HeroForm = "SharedModel.Meta.Heroes.HeroForm";
 	private const string Fixed = "Plarium.Common.Numerics.Fixed";
+	private const string StatKind = "SharedModel.Battle.Effects.StatKindId";
 
 	/// <summary>What <c>BuildFromBase</c> multiplies a scaled Health by.</summary>
 	private const int HealthFactor = 15;
 
-	/// <summary>How many levels <c>CalcValue</c> spreads a rank's growth over, for each star of the rank.</summary>
-	private const int LevelsPerStar = 10;
+	/// <summary>How many levels <c>CalcValue</c> spreads a rank's growth over, times the rank's number: 10 for rank 1, 60 for rank 6.</summary>
+	private const int LevelsPerRankNumber = 10;
 
 	private readonly ManagedMatrix _multipliers;
 	private readonly long _toPercent;
@@ -48,9 +49,20 @@ internal sealed class BaseStatsReader
 		_toPercent = toPercent;
 	}
 
-	/// <summary>The static scaling the game builds Base stats with.</summary>
+	/// <summary>
+	/// The static scaling the game builds Base stats with, once the game's own <c>StatKindId</c> is checked to begin
+	/// with the eight stats raid-bridge knows, in its order, so a stat the game adds or renames among them stops the run.
+	/// </summary>
 	public static BaseStatsReader Read(Il2CppRuntime game)
 	{
+		var known = Enum.GetNames<Stat>();
+		var declared = game.Metadata.Enum(StatKind).Members.OrderBy(member => member.Value).Take(known.Length).Select(member => member.Name).ToList();
+		if (!declared.SequenceEqual(known, StringComparer.Ordinal))
+		{
+			throw new GameDataException(
+				$"The game's {StatKind} begins with {string.Join(", ", declared)}, where raid-bridge knows the eight stats {string.Join(", ", known)}.");
+		}
+
 		var where = $"{BattleStats}.Multipliers";
 		var multipliers = new ManagedMatrix(
 			game.StaticObjectOrNull(BattleStats, "Multipliers", "System.Double[][]", "System.Array")
@@ -68,19 +80,19 @@ internal sealed class BaseStatsReader
 	/// <summary>The Base stats of a Champion of <paramref name="heroType"/> at <paramref name="rank"/> and <paramref name="level"/>.</summary>
 	public IReadOnlyDictionary<Stat, double> Of(int championId, ManagedObject heroType, int typeId, FieldValue<GameEnumMember> rank, FieldValue<int> level)
 	{
-		var stars = (int)rank.Value.Value;
-		if (stars < 1 || stars > _multipliers.Rows)
+		var rankNumber = (int)rank.Value.Value;
+		if (rankNumber < 1 || rankNumber > _multipliers.Rows)
 		{
 			throw new GameDataException($"Champion {championId} is at {rank.Value.Name}, but {_multipliers.Where} holds the multipliers of {_multipliers.Rows} ranks.");
 		}
 
-		var levels = LevelsPerStar * stars;
+		var levels = LevelsPerRankNumber * rankNumber;
 		_ = level.Where(value => value >= 1 && value <= levels, $"a level from 1 to {levels}, the levels of {rank.Value.Name}");
 
-		var start = Multiplier(stars - 1, 0);
-		var growth = Multiplier(stars - 1, 1);
-		var scale = FixedPoint.FromDouble(Math.Pow(growth, (level.Value - 1.0) / (levels - 1)), $"{_multipliers.Where}[{stars - 1}, 1] to the power of the level");
-		long Scaled(long value) => FixedPoint.RoundToEven(FixedPoint.Multiply(FixedPoint.Multiply(value, FixedPoint.FromDouble(start, $"{_multipliers.Where}[{stars - 1}, 0]")), scale));
+		var start = Multiplier(rankNumber - 1, 0);
+		var growth = Multiplier(rankNumber - 1, 1);
+		var scale = FixedPoint.FromDouble(Math.Pow(growth, (level.Value - 1.0) / (levels - 1)), $"{_multipliers.Where}[{rankNumber - 1}, 1] to the power of the level");
+		long Scaled(long value) => FixedPoint.RoundToEven(FixedPoint.Multiply(FixedPoint.Multiply(value, FixedPoint.FromDouble(start, $"{_multipliers.Where}[{rankNumber - 1}, 0]")), scale));
 
 		// HeroType.DefaultBaseStats is the first form's, which the champion screen shows.
 		var forms = heroType.Array("Forms", $"{HeroForm}[]");

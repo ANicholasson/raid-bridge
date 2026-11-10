@@ -125,7 +125,7 @@ A Champion's own stats at its rank, level and ascension, before any bonus: the w
 _Avoid_: raw stats, unscaled stats
 
 **Stat source**:
-One thing that adds to a Champion's stats beyond its Base stats, such as its Artifacts, its set bonuses, its masteries or the Great Hall.
+One thing that adds to a Champion's stats beyond its Base stats, such as its Artifacts, its set bonuses, its masteries or the Great Hall. A Snapshot's `bySource` holds the Base stats under `base`, beside the Stat sources, so a Champion's stats are the sum of its parts.
 _Avoid_: bonus (alone, since an Artifact's bonuses are one source)
 
 **Total stats**:

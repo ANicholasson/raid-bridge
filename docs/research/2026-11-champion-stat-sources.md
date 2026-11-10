@@ -155,7 +155,7 @@ The arithmetic is `Plarium.Common.Numerics.Fixed`'s, in Q32.32:
 
 So the base CriticalChance of 15 is held as 644245094 / 2^32, 0.14999999990686774.
 
-Three numbers in the formula are the code's, not static data: the 15, the 10 levels per star, and the 100. The 100 is also `BattleStats.ToPercent`, a static the Game client holds, so the reader takes that. Treating the 15 and the 10 as the formula's shape was put to the maintainer on 2026-11-10.
+Three numbers in the formula are the code's, not static data: the 15, the 10 levels per star, and the 100. The 100 is also `BattleStats.ToPercent`, a static the Game client holds, so the reader takes that. The maintainer agreed on 2026-11-10 to treat the 15 and the 10 as the formula's shape.
 
 Two notes on the sections above. `BattleStats.Multipliers` isn't a table by level like the file Raid Toolkit ships: each row is a rank's start and growth, and the levels between come from the formula. And at v39 `HeroType` has no `AscendLevel` field, only a getter, so ascension is part of the type, as said.
 
@@ -165,7 +165,7 @@ For the sources still to come, `SharedModel.Meta.Heroes.Extensions.BattleStatsEx
 
 ## Still open (needs the maintainer's screen)
 
-1. **Base stats:** settled above, to be checked on three more Champions of other ranks and levels for https://github.com/ANicholasson/raid-bridge/issues/10.
+1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
 2. **Empowerment:** whether its levels add up.
 3. **The missing blessing setup** on one awakened defence Champion.
 4. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.

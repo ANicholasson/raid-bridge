@@ -21,7 +21,7 @@ internal sealed class Il2CppRuntime
 	/// <summary>Far deeper than any real nesting of classes, so a corrupt chain of declaring classes ends with an error.</summary>
 	private const int MaxNesting = 16;
 
-	private static readonly HashSet<byte> ValueTypeCode = [Il2CppTypeCode.ValueType];
+	private static readonly HashSet<byte> ValueTypeCodes = [Il2CppTypeCode.ValueType];
 
 	private readonly IGameMemory _memory;
 	private readonly Dictionary<ulong, RuntimeClass> _classes = [];
@@ -67,7 +67,7 @@ internal sealed class Il2CppRuntime
 	/// </summary>
 	public ManagedObject StaticValue(string className, string fieldName, string valueType)
 	{
-		var (address, where) = StaticField(ClassNamed(className), className, fieldName, valueType, ValueTypeCode);
+		var (address, where) = StaticField(ClassNamed(className), className, fieldName, valueType, ValueTypeCodes);
 		return Value(address, ClassNamed(valueType), valueType, where);
 	}
 

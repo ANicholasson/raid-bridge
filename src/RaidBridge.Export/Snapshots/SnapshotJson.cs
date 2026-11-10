@@ -243,11 +243,11 @@ internal static class SnapshotJson
 		json.WriteEndObject();
 	}
 
-	/// <summary>One Stat source's stats, each under its name, in the game's order of stats.</summary>
+	/// <summary>The stats one part of <c>bySource</c> gives, each under its name, in the game's order of stats.</summary>
 	private static void WriteStats(Utf8JsonWriter json, string source, IReadOnlyDictionary<Stat, double> stats)
 	{
 		json.WriteStartObject(source);
-		foreach (var (stat, value) in stats.OrderBy(stat => stat.Key))
+		foreach (var (stat, value) in stats.OrderBy(entry => entry.Key))
 		{
 			json.WriteNumber(stat.ToString(), value);
 		}
