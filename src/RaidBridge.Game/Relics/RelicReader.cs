@@ -228,10 +228,12 @@ internal static partial class RelicReader
 			: plain;
 	}
 
-	[GeneratedRegex("</?color(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+	// Linear in the text's length whatever the game holds, where backtracking could take quadratic time on many
+	// unclosed tags (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/17).
+	[GeneratedRegex("</?color(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking)]
 	private static partial Regex ColourTag();
 
-	[GeneratedRegex("</?[A-Za-z][^>]*>", RegexOptions.CultureInvariant)]
+	[GeneratedRegex("</?[A-Za-z][^>]*>", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking)]
 	private static partial Regex AnyTag();
 
 	/// <summary>A socket, and the stone it names, which must be one the Account owns, in no other socket, of the socket's shape.</summary>
