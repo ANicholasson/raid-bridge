@@ -2,7 +2,7 @@
 
 [![verify](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml/badge.svg)](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml)
 
-Reads your own RAID: Shadow Legends account data (champions, artifacts, resources, Great Hall, Faction Guardians, and Arena defence teams and standings) from the game client running on your computer and exports it as JSON snapshots, so an AI companion can help you understand it.
+Reads your own RAID: Shadow Legends account data (champions, artifacts, resources, Great Hall, Faction Guardians, and Arena defence teams and standings) from the game client running on your computer and exports it as JSON snapshots.
 
 Data out only. raid-bridge never injects code into the game, never writes to its memory and never automates play.
 
@@ -48,7 +48,7 @@ raid-bridge snapshot
 
 It writes `snapshot-<UTC time as yyyyMMddTHHmmssZ>.json` into the current folder, never overwriting a file, and prints its path. `--out PATH` writes somewhere else; inside a git clone, only `snapshot-*.json` names are ignored, so keep other names outside it. <!-- (CodeRabbit, PR #56) --> raid-bridge finds the game's files from the running game; `--game-dir DIR` names the folder holding `Raid.exe` instead.
 
-A Snapshot carries no account id, player name or clan name. The account is identified only by a keyed hash of its id (`account.idHash`), so your Companion can tell your accounts apart without learning their ids. The key is a random salt made on the first run at `$XDG_CONFIG_HOME/raid-bridge/salt` (by default `~/.config/raid-bridge/salt`). Keep it: a new salt gives the same account a new hash.
+A Snapshot carries no account id, player name or clan name. The account is identified only by a keyed hash of its id (`account.idHash`), so whatever reads your Snapshots can tell your accounts apart without learning their ids. The key is a random salt made on the first run at `$XDG_CONFIG_HOME/raid-bridge/salt` (by default `~/.config/raid-bridge/salt`). Keep it: a new salt gives the same account a new hash.
 
 ## Developing
 

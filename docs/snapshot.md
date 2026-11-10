@@ -1,6 +1,6 @@
 # The Snapshot format
 
-A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player gives that file to their Companion. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
+A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
 A Snapshot holds the Account, its Champions, the Artifacts each Champion wears, the Artifacts no Champion wears, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
 
@@ -381,13 +381,13 @@ A Champion's, a skill's and an Artifact set's name is the text the Game client s
 - the key is the player's salt, 32 bytes;
 - the message is the Account id written as a decimal number with no sign, separator or padding, in UTF-8. The id `123456789` is the nine bytes of the text `123456789`.
 
-The same Account always gets the same hash on the same machine, so the Companion can tell that Snapshots belong together. Without the salt, nobody can work out the id from the hash or check whether a hash belongs to a given id.
+The same Account always gets the same hash on the same machine, so anything reading the Snapshots can tell they belong together. Without the salt, nobody can work out the id from the hash or check whether a hash belongs to a given id.
 
 ## The salt
 
 raid-bridge makes the salt on its first run: 32 random bytes in `$XDG_CONFIG_HOME/raid-bridge/salt`, or `~/.config/raid-bridge/salt` when `XDG_CONFIG_HOME` isn't set. The file is readable by the player only (mode 0600), and raid-bridge never prints or logs it.
 
-Keep that file. If it is lost or deleted, the next run makes a new salt, and from then on every hash is different: the Companion can no longer tell that new Snapshots come from the same Account as the old ones. raid-bridge never replaces a salt file it finds, and refuses to run if the file isn't a salt. On Linux and macOS it also refuses to run if other users may read or change the salt: the file may grant nothing to its group or others, and its folder no write to them. Windows has no such modes, so there the check doesn't run. <!-- (CodeRabbit, PR #42) -->
+Keep that file. If it is lost or deleted, the next run makes a new salt, and from then on every hash is different: the hashes no longer show that new Snapshots come from the same Account as the old ones. raid-bridge never replaces a salt file it finds, and refuses to run if the file isn't a salt. On Linux and macOS it also refuses to run if other users may read or change the salt: the file may grant nothing to its group or others, and its folder no write to them. Windows has no such modes, so there the check doesn't run. <!-- (CodeRabbit, PR #42) -->
 
 ## The file
 

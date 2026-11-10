@@ -5,7 +5,7 @@ Thank you for considering it. raid-bridge is small and has hard rules, so this g
 ## Before you start
 
 - Read the standing constraints in [AGENTS.md](AGENTS.md#standing-constraints). raid-bridge only reads: a change that writes to the game, runs code in it, sends it input, asks for a login or sends anything anywhere but the one endpoint the player configures won't be merged, however useful it is. <!-- (CodeRabbit, PR #65) -->
-- A new feature, such as another part of the Account to read: open an issue first and say what you want in a Snapshot and what your Companion would do with it.
+- A new feature, such as another part of the Account to read: open an issue first and say what you want in a Snapshot and what you would do with it.
 - A bug: a pull request with a failing test is welcome straight away. If raid-bridge stopped with an error or a Snapshot is wrong, the bug-report form asks for what we need.
 
 ## Working on it
