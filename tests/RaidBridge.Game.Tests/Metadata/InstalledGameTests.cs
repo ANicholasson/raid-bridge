@@ -14,7 +14,8 @@ public class InstalledGameTests
 	/// Spec #20's path to the Account, as the installed game declares it at metadata v39, and the routes the research for
 	/// Relics and Total stats found (https://github.com/ANicholasson/raid-bridge/issues/7 and
 	/// https://github.com/ANicholasson/raid-bridge/issues/9). The Relics reader takes the first
-	/// (https://github.com/ANicholasson/raid-bridge/issues/8); no reader takes the second yet.
+	/// (https://github.com/ANicholasson/raid-bridge/issues/8), and the Base stats reader the second's Base stats
+	/// (https://github.com/ANicholasson/raid-bridge/issues/10).
 	/// </summary>
 	public static TheoryData<string, string, string, bool> AccountPath => new()
 	{
@@ -200,7 +201,8 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus", "Description", "SharedModel.Common.Localization.SharedLTextKey", false },
 		// Stat sources (https://github.com/ANicholasson/raid-bridge/issues/9, docs/research/2026-11-champion-stat-sources.md).
-		// Base stats are on each form of the Champion's own, possibly ascended, type, scaled by BattleStats' static Multipliers.
+		// Base stats are on the first form of the Champion's own, possibly ascended, type, scaled by BattleStats' static
+		// Multipliers, which the Game client holds as a double[,], and divided into fractions by its static ToPercent.
 		{ "SharedModel.Meta.Heroes.HeroForm", "BaseStats", "SharedModel.Meta.Heroes.BattleStats", false },
 		{ "SharedModel.Meta.Heroes.BattleStats", "Health", "Plarium.Common.Numerics.Fixed", false },
 		{ "SharedModel.Meta.Heroes.BattleStats", "Attack", "Plarium.Common.Numerics.Fixed", false },
@@ -211,6 +213,7 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Heroes.BattleStats", "CriticalChance", "Plarium.Common.Numerics.Fixed", false },
 		{ "SharedModel.Meta.Heroes.BattleStats", "CriticalDamage", "Plarium.Common.Numerics.Fixed", false },
 		{ "SharedModel.Meta.Heroes.BattleStats", "Multipliers", "System.Double[][]", true },
+		{ "SharedModel.Meta.Heroes.BattleStats", "ToPercent", "Plarium.Common.Numerics.Fixed", true },
 		// The static bonus tables: masteries, sets, Faction Guardians and Empowerment, and Awakening.
 		{ "SharedModel.Meta.ClientStaticData", "MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", false },
 		{ "SharedModel.Meta.Masteries.StaticMasteryData", "MasteryBonusById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.General.StatBonus>", false },
@@ -326,6 +329,7 @@ public class InstalledGameTests
 	{
 		"SharedModel.Meta.Artifacts.ArtifactStorage.ArtifactStorageResolver",
 		"Plarium.Common.Numerics.Fixed",
+		"SharedModel.Meta.Heroes.BattleStats",
 	};
 
 	/// <summary>Classes the path reaches through a base class or an interface-typed field, not a field of their own type.</summary>

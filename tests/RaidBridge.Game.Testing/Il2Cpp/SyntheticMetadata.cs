@@ -38,6 +38,13 @@ internal sealed class SyntheticMetadata(GameVersions versions) : IGameMetadata
 		_enums[fullName] = declared with { Members = [.. declared.Members.Where(member => member.Name != name)] };
 	}
 
+	/// <summary>A game update added a member to an enum.</summary>
+	public void AddEnumMember(string fullName, string name, long value)
+	{
+		var declared = _enums[fullName];
+		_enums[fullName] = declared with { Members = [.. declared.Members, new GameEnumMember(name, value)] };
+	}
+
 	public void Rename(string fullName, string newName)
 	{
 		var (baseClass, fields) = _classes[fullName];

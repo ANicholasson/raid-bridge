@@ -135,9 +135,37 @@ The breakdown is filled. On the Account read, across 4 defence teams and 16 plac
 
 So the defence Champions give an exact oracle, source by source, for the Great Hall, Artifacts and Awakening, and for Faction Guardians on one Champion.
 
+## How the game builds Base stats (settled 2026-11-10)
+
+For https://github.com/ANicholasson/raid-bridge/issues/10. The installed v39 `GameAssembly.dll` was disassembled at the methods LibCpp2IL locates, read from the file on disk, never from the Game client. `BattleStats.BuildFromBase(HeroGrade grade, int level)` builds the white numbers from a form's `BaseStats`:
+
+- `Health`, `Attack` and `Defence` each go through `BattleStats.CalcValue(baseStat, grade, level)`, which is `FixedMath.Round(baseStat * (Fixed)Multipliers[grade - 1, 0] * (Fixed)Math.Pow(Multipliers[grade - 1, 1], (level - 1.0) / (10 * grade - 1)), MidpointRounding.ToEven)`. So the first value of a rank's row is its start, the second its growth over the rank's levels, and the result is a whole number.
+- `Health` is then multiplied by 15.
+- `Speed`, `Resistance` and `Accuracy` are copied as they are.
+- `CriticalChance`, `CriticalDamage`, `CriticalHeal` and `IgnoreDefence` are divided by 100. `BaseStats` holds them as whole percents, such as 15, and the result is a fraction.
+
+`HeroType.DefaultBaseStats` is `Forms[0].BaseStats`. A Champion's level runs from 1 to 10 times its stars.
+
+The arithmetic is `Plarium.Common.Numerics.Fixed`'s, in Q32.32:
+
+- `(Fixed)double` truncates `value * 2^32`;
+- a product is rounded down to a step;
+- a quotient is computed to one bit past a step, plus one, then shifted down, so it rounds to the nearest step, a half step rounding up;
+- `FixedMath.Round` with `ToEven` rounds a half to the even whole number.
+
+So the base CriticalChance of 15 is held as 644245094 / 2^32, 0.14999999990686774.
+
+Three numbers in the formula are the code's, not static data: the 15, the 10 levels per star, and the 100. The 100 is also `BattleStats.ToPercent`, a static the Game client holds, so the reader takes that. The maintainer agreed on 2026-11-10 to treat the 15 and the 10 as the formula's shape.
+
+Two notes on the sections above. `BattleStats.Multipliers` isn't a table by level like the file Raid Toolkit ships: each row is a rank's start and growth, and the levels between come from the formula. And at v39 `HeroType` has no `AscendLevel` field, only a getter, so ascension is part of the type, as said.
+
+With this formula, the reader gave the screen's sample below exactly: an Epic at rank 6 and level 60 with HP 18,990, ATK 749, DEF 1,288, SPD 102, C.RATE 15%, C.DMG 50%, RES 30 and ACC 0. It is Demytha, whose base is HP 115, ATK 68 and DEF 117.
+
+For the sources still to come, `SharedModel.Meta.Heroes.Extensions.BattleStatsExtensions` has one method per source, each taking the Base stats: `CalcArtifactsBonus`, `CalcRelicsBonus`, `CalcBuildingsBonus` (the Great Hall), `CalcBlessingBonus`, `CalcArenaBonus` (by `ArenaLeagueId`), `CalcAcademyBonus` (Faction Guardians) and `CalcEmpowerBonus`. `BattleStats.UpdateWithBonuses` takes a percent and a flat part from each. They are the map for the later tickets, read the same way.
+
 ## Still open (needs the maintainer's screen)
 
-1. **Base stats:** how `Multipliers` applies within a rank, checked against one Champion's white numbers. One sample from the screen (2026-11-10): an Epic at rank 6 and level 60 shows HP 18,990, ATK 749, DEF 1,288, SPD 102, C.RATE 15%, C.DMG 50%, RES 30 and ACC 0 in white.
+1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
 2. **Empowerment:** whether its levels add up.
 3. **The missing blessing setup** on one awakened defence Champion.
 4. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.

@@ -6,6 +6,7 @@ using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
+using RaidBridge.Domain.Stats;
 using RaidBridge.Export.Snapshots;
 
 namespace RaidBridge.Export.Tests.Snapshots;
@@ -66,9 +67,9 @@ public partial class SnapshotFormatTests
 			new DateTimeOffset(2026, 10, 31, 21, 40, 0, TimeSpan.Zero),
 			AccountIdHash.Of(new AccountId(123456789), salt),
 			[
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic]),
-				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], []),
-				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], []),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], new(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5))),
+				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], new(Base(3780, 396, 216, 98, 30, 0, 0.14999999990686774, 0.5700000000651926))),
+				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], [], new(Base(6300, 660, 360, 98, 30, 0, 0.14999999990686774, 0.5700000000651926))),
 			],
 			WornByNobody,
 			[UnwornRelic],
@@ -150,6 +151,20 @@ public partial class SnapshotFormatTests
 
 		Assert.Contains("\"Energy\": 0.30000000000000004", written, StringComparison.Ordinal);
 	}
+
+	/// <summary>Base stats in the game's order of stats, as the Game client's own arithmetic gives them for the made-up scaling of the example.</summary>
+	private static Dictionary<Stat, double> Base(double health, double attack, double defence, double speed, double resistance, double accuracy, double criticalChance, double criticalDamage) =>
+		new()
+		{
+			[Stat.Health] = health,
+			[Stat.Attack] = attack,
+			[Stat.Defence] = defence,
+			[Stat.Speed] = speed,
+			[Stat.Resistance] = resistance,
+			[Stat.Accuracy] = accuracy,
+			[Stat.CriticalChance] = criticalChance,
+			[Stat.CriticalDamage] = criticalDamage,
+		};
 
 	private static string DocumentedExample()
 	{

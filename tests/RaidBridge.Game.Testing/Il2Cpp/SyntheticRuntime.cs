@@ -152,6 +152,36 @@ internal sealed class SyntheticRuntime
 
 	public static ulong Element(ulong array, int index, int elementSize) => array + ArrayData + (ulong)(index * elementSize);
 
+	/// <summary>The class of a two-dimensional array of <paramref name="elementClass"/>, a <c>T[,]</c>.</summary>
+	public ulong MatrixClass(ulong elementClass, string elementName, int elementSize)
+	{
+		var address = Class("System", $"{elementName}[,]", SystemArray);
+		Heap.Pointer(address + ClassElementClass, elementClass);
+		Heap.Int32(address + ClassElementSize, elementSize);
+		Heap.Bytes(address + ClassRank, [2]);
+		return address;
+	}
+
+	/// <summary>A <c>double[,]</c> of the values, its two lengths in its bounds and its elements row by row.</summary>
+	public ulong Matrix(ulong matrixClass, double[,] values)
+	{
+		var (rows, columns) = (values.GetLength(0), values.GetLength(1));
+		var array = Array(matrixClass, rows * columns, sizeof(double));
+		var bounds = Heap.Allocate(2 * ArrayBoundsSize);
+		Heap.Pointer(bounds + ArrayBoundsLength, (ulong)rows);
+		Heap.Pointer(bounds + ArrayBoundsSize + ArrayBoundsLength, (ulong)columns);
+		Heap.Pointer(array + ArrayBounds, bounds);
+		for (var row = 0; row < rows; row++)
+		{
+			for (var column = 0; column < columns; column++)
+			{
+				Heap.Int64(Element(array, (row * columns) + column, sizeof(double)), BitConverter.DoubleToInt64Bits(values[row, column]));
+			}
+		}
+
+		return array;
+	}
+
 	/// <summary>An array of references to the objects.</summary>
 	public ulong ReferenceArray(ulong arrayClass, IReadOnlyList<ulong> objects)
 	{

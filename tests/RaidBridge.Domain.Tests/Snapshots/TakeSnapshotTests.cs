@@ -4,6 +4,7 @@ using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
+using RaidBridge.Domain.Stats;
 
 namespace RaidBridge.Domain.Tests.Snapshots;
 
@@ -95,7 +96,7 @@ public class TakeSnapshotTests
 	}
 
 	private static Champion Champion(int id) =>
-		new(id, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, null, null, 0, [], [], false, "None", ChampionLocation.Roster, [], []);
+		new(id, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, null, null, 0, [], [], false, "None", ChampionLocation.Roster, [], [], new(new Dictionary<Stat, double>()));
 
 	private static Artifact Artifact(int id) =>
 		new(id, "Boots", "AttackSpeed", "Synthetic Speed", "Six", "Legendary", 16, null, null, new("Speed", 45, true, 0, 0), null, []);
