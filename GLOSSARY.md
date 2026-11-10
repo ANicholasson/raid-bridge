@@ -85,7 +85,7 @@ A Relic's own rank, one to six, which caps how far it can be levelled. It is not
 _Avoid_: rank (alone, for a Relic), stars
 
 **Relic stone**:
-A stone set in one of a Relic's sockets, of the socket's shape. It adds skills, not stats.
+A stone the Account owns, with a shape. It goes in a Relic's socket of the same shape, or sits in no socket. It adds skills, not stats. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/16) -->
 _Avoid_: gem, socket (the socket is the slot, not the stone)
 
 **Resource**:
