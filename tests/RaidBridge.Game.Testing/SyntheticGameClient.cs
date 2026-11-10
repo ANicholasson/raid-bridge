@@ -11,6 +11,7 @@ using RaidBridge.Game.Testing.FactionGuardians;
 using RaidBridge.Game.Testing.GreatHall;
 using RaidBridge.Game.Testing.Il2Cpp;
 using RaidBridge.Game.Testing.Memory;
+using RaidBridge.Game.Testing.Relics;
 using RaidBridge.Game.Testing.Resources;
 using static RaidBridge.Game.Testing.Il2Cpp.Unity6000Layout;
 
@@ -19,8 +20,8 @@ namespace RaidBridge.Game.Testing;
 /// <summary>
 /// A running Game client made up for tests: its install folder in a temporary directory, its memory in a
 /// <see cref="FakeGameMemory"/> with the game's objects laid out as Unity 6000.3.18f1's IL2CPP runtime lays them out,
-/// the heroes of a <see cref="SyntheticHeroData"/>, the Artifacts of a <see cref="SyntheticArtifactData"/> and the
-/// Resources, Shards and Items of a <see cref="SyntheticResourceData"/>, the Great Hall of a
+/// the heroes of a <see cref="SyntheticHeroData"/>, the Artifacts of a <see cref="SyntheticArtifactData"/>, the Relics
+/// of a <see cref="SyntheticRelicData"/>, the Resources, Shards and Items of a <see cref="SyntheticResourceData"/>, the Great Hall of a
 /// <see cref="SyntheticGreatHallData"/>, the Faction Guardians of a <see cref="SyntheticGuardianData"/> and the Classic
 /// and Tag Arena of a <see cref="SyntheticArenaData"/> among them, and a matching description of its metadata. Every id
 /// and name is synthetic (spec #20). The methods that break it stand for what a game update or a bad read can do.
@@ -61,6 +62,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		string unityVersion,
 		SyntheticHeroData heroData,
 		SyntheticArtifactData artifactData,
+		SyntheticRelicData relicData,
 		SyntheticResourceData resourceData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
@@ -73,7 +75,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_heap = new SyntheticHeap(Memory, 0x2_0000_0000, 0x40000);
 		_runtime = new SyntheticRuntime(_heap);
 		_metadata = new SyntheticMetadata(new GameVersions(39, unityVersion));
-		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, resourceData, greatHallData, guardianData, arenaData);
+		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, relicData, resourceData, greatHallData, guardianData, arenaData);
 	}
 
 	/// <summary>The install folder, holding GameAssembly.dll and the other files the reader looks for.</summary>
@@ -92,6 +94,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		string unityVersion = UnityVersion,
 		SyntheticHeroData? heroData = null,
 		SyntheticArtifactData? artifactData = null,
+		SyntheticRelicData? relicData = null,
 		SyntheticResourceData? resourceData = null,
 		SyntheticGreatHallData? greatHallData = null,
 		SyntheticGuardianData? guardianData = null,
@@ -102,6 +105,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			unityVersion,
 			heroData ?? SyntheticHeroData.Default,
 			artifactData ?? SyntheticArtifactData.Default,
+			relicData ?? SyntheticRelicData.Default,
 			resourceData ?? SyntheticResourceData.Default,
 			greatHallData ?? SyntheticGreatHallData.Default,
 			guardianData ?? SyntheticGuardianData.Default,
@@ -266,6 +270,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		long userIdOnUser,
 		SyntheticHeroData heroData,
 		SyntheticArtifactData artifactData,
+		SyntheticRelicData relicData,
 		SyntheticResourceData resourceData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
@@ -308,7 +313,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("Village", "Client.Model.Gameplay.Village.VillageWrapper", ClassTypeCode, 0x48),
 			("Academy", "Client.Model.Gameplay.Academy.AcademyWrapper", ClassTypeCode, 0x50),
 			("Arena", "Client.Model.Gameplay.Battle.ArenaWrapper", ClassTypeCode, 0x58),
-			("Arena3x3", "Client.Model.Gameplay.Arena3x3.Arena3x3Wrapper", ClassTypeCode, 0x60));
+			("Arena3x3", "Client.Model.Gameplay.Arena3x3.Arena3x3Wrapper", ClassTypeCode, 0x60),
+			("Relics", "Client.Model.Gameplay.Relics.RelicsWrapper", ClassTypeCode, 0x68));
 		var user = Declare("Client.Model.Gameplay.User", "User", systemObject, "System.Object", ("Id", "System.Int64", Int64TypeCode, 0x20));
 		var socialWrapper = Declare(
 			"Client.Model.Gameplay.Social",
@@ -324,7 +330,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.App.SingleInstance`1._instance", statics, appModelObject);
 		_heap.Int64(appModelObject + 0x48, userId);
 
-		var userWrapperObject = _runtime.Object(userWrapper, 0x68);
+		var userWrapperObject = _runtime.Object(userWrapper, 0x70);
 		Slot("Client.Model.AppModel._userWrapper", appModelObject + 0x18, userWrapperObject);
 		var userObject = _runtime.Object(user, 0x28);
 		Slot("Client.Model.Guard.UserWrapper.User", userWrapperObject + 0x18, userObject);
@@ -344,6 +350,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		LayOutTheGreatHall(userWrapperObject, greatHallData);
 		LayOutTheFactionGuardians(userWrapperObject, guardianData);
 		LayOutTheArena(userWrapperObject, arenaData);
+		LayOutTheRelics(userWrapperObject, relicData);
 	}
 
 	/// <summary>The class library's classes the reader looks into, and the game's enums, as the metadata declares them.</summary>
@@ -387,6 +394,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum(
 			"SharedModel.Meta.BlackMarket.BlackMarketItemId",
 			("HeroXpBooster100P_1Day", 3001), ("SkillUpgradeItemRare", 5001), ("SkillUpgradeItemEpic", 5002), ("HeroRankUpItemGrade2", 6501));
+		_metadata.Enum("SharedModel.Meta.Relics.StaticData.RelicRank", ("Rank1", 1), ("Rank2", 2), ("Rank3", 3), ("Rank4", 4), ("Rank5", 5), ("Rank6", 6));
+		_metadata.Enum("SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", ("Circle", 1), ("Triangle", 2), ("Square", 3), ("Diamond", 4), ("Pentagon", 5));
 		_metadata.Enum(
 			"SharedModel.Meta.Battle.Arena.ArenaLeagueId",
 			("None", 0), ("BronzeI", 1), ("BronzeIV", 4), ("SilverIII", 13), ("GoldII", 22), ("Platinum", 30));
@@ -401,7 +410,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		const string Table = "System.Collections.Generic.Dictionary`2<System.String, System.String>";
 		var systemObject = _runtime.SystemObject;
 
-		var textKey = Declare(
+		_ = Declare(
 			"SharedModel.Common.Localization",
 			"SharedLTextKey",
 			systemObject,
@@ -444,7 +453,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			systemObject,
 			"System.Object",
 			("HeroData", "SharedModel.Meta.Heroes.StaticHeroData", ClassTypeCode, 0x10),
-			("SkillData", "SharedModel.Meta.Skills.StaticSkillData", ClassTypeCode, 0x18));
+			("SkillData", "SharedModel.Meta.Skills.StaticSkillData", ClassTypeCode, 0x18),
+			("RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", ClassTypeCode, 0x40));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -460,14 +470,6 @@ public sealed partial class SyntheticGameClient : IDisposable
 			systemObject,
 			"System.Object",
 			("<StaticData>k__BackingField", "SharedModel.Meta.ClientStaticData", ClassTypeCode, 0x10));
-
-		ulong Text(SyntheticText text)
-		{
-			var key = _runtime.Object(textKey, 0x20);
-			_heap.Pointer(key + 0x10, _runtime.String(text.Key));
-			_heap.Pointer(key + 0x18, _runtime.String(text.DefaultValue));
-			return key;
-		}
 
 		var forms = _runtime.ArrayClass(heroForm, "HeroForm", sizeof(ulong));
 		var heroTypes = heroData.HeroTypes.Select(type =>
@@ -526,7 +528,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x40);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x48);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);
@@ -537,6 +539,15 @@ public sealed partial class SyntheticGameClient : IDisposable
 		var managerObject = _runtime.Object(manager, 0x18);
 		_heap.Pointer(managerObject + 0x10, clientStaticDataObject);
 		return managerObject;
+	}
+
+	/// <summary>A SharedLTextKey holding the text's key and default text.</summary>
+	private ulong Text(SyntheticText text)
+	{
+		var key = _runtime.Object(_runtime.RuntimeClass("SharedModel.Common.Localization.SharedLTextKey"), 0x20);
+		_heap.Pointer(key + 0x10, _runtime.String(text.Key));
+		_heap.Pointer(key + 0x18, _runtime.String(text.DefaultValue));
+		return key;
 	}
 
 	/// <summary>The TypeInfo slot the binary keeps for a class, holding the runtime class as the IL2CPP runtime leaves it once it has set the class up.</summary>

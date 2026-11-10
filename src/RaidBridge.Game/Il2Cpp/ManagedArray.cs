@@ -1,3 +1,5 @@
+using RaidBridge.Game.Metadata;
+
 namespace RaidBridge.Game.Il2Cpp;
 
 /// <summary>
@@ -42,6 +44,13 @@ internal sealed class ManagedArray
 	{
 		var (where, address) = Element(index, sizeof(int), "System.Int32");
 		return new(_array.Runtime.Int32(address, () => where), where, address);
+	}
+
+	/// <summary>The enum value at <paramref name="index"/>, in an array of the game's <paramref name="enumType"/>, as the member it stands for.</summary>
+	public FieldValue<GameEnumMember> EnumMember(int index, string enumType)
+	{
+		var (where, address) = Element(index, sizeof(int), enumType);
+		return ManagedObject.EnumAt(_array.Runtime, address, enumType, where);
 	}
 
 	/// <summary>The value type held unboxed at <paramref name="index"/>, which must be of <paramref name="className"/>.</summary>

@@ -1,5 +1,6 @@
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.Relics;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
 
@@ -18,12 +19,13 @@ internal static class ChampionReader
 	private const string Skill = "SharedModel.Meta.Skills.Skill";
 	private const string SkillType = "SharedModel.Meta.Skills.SkillType";
 
-	/// <summary>Every Champion, each with the Artifacts <paramref name="equipped"/> says it wears, by the Champion's id.</summary>
+	/// <summary>Every Champion, each with the Artifacts <paramref name="equipped"/> and the Relics <paramref name="relics"/> say it wears, by the Champion's id.</summary>
 	public static IReadOnlyList<Champion> Read(
 		ManagedObject userWrapper,
 		ManagedObject staticData,
 		LocalizedNames names,
-		IReadOnlyDictionary<int, IReadOnlyList<Artifact>> equipped)
+		IReadOnlyDictionary<int, IReadOnlyList<Artifact>> equipped,
+		IReadOnlyDictionary<int, IReadOnlyList<Relic>> relics)
 	{
 		var heroTypes = staticData
 			.Object("HeroData", "SharedModel.Meta.Heroes.StaticHeroData")
@@ -41,12 +43,23 @@ internal static class ChampionReader
 			.ByInt32Key();
 		var champions = heroes.Select(hero => Champion(hero.Key, hero.Value.Object(Hero), heroTypes, skillTypes, names)).ToList();
 
-		// Artifacts worn by a Champion the Account doesn't have would be dropped without a word.
-		var strays = equipped.Where(champion => champion.Value.Count > 0).Select(champion => champion.Key).Except(heroes.Keys).Order().ToList();
-		return strays.Count == 0
-			? [.. champions.Select(champion => champion with { Artifacts = equipped.GetValueOrDefault(champion.Id, []) })]
-			: throw new GameDataException(
-				$"SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts to Champion {string.Join(" and ", strays)}, which HeroById doesn't hold.");
+		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
+		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
+		RefuseStrays(relics, heroes.Keys, "SharedModel.Meta.Relics.UserData.UserRelicData.RelicDataByHeroId gives Relics");
+		return [.. champions.Select(champion => champion with
+		{
+			Artifacts = equipped.GetValueOrDefault(champion.Id, []),
+			Relics = relics.GetValueOrDefault(champion.Id, []),
+		})];
+	}
+
+	private static void RefuseStrays<T>(IReadOnlyDictionary<int, IReadOnlyList<T>> worn, IEnumerable<int> heroIds, string gives)
+	{
+		var strays = worn.Where(champion => champion.Value.Count > 0).Select(champion => champion.Key).Except(heroIds).Order().ToList();
+		if (strays.Count > 0)
+		{
+			throw new GameDataException($"{gives} to Champion {string.Join(" and ", strays)}, which HeroById doesn't hold.");
+		}
 	}
 
 	private static Champion Champion(
@@ -87,7 +100,8 @@ internal static class ChampionReader
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
-			Artifacts: []);
+			Artifacts: [],
+			Relics: []);
 	}
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>

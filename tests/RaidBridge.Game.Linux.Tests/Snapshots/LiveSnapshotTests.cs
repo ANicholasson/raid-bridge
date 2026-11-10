@@ -161,6 +161,37 @@ public sealed class LiveSnapshotTests : IDisposable
 		static List<int> Team(JsonElement team) => [.. team.EnumerateArray().Select(id => id.GetInt32())];
 	}
 
+	/// <summary>
+	/// Every Relic is written once, the unworn ones and the stones in no socket sorted by id, every bonus a stat the
+	/// Relic's level has opened, and every stone in a socket of its own shape, in that socket only. It accepts an Account
+	/// with no Relics. On the main Account (2026-11-10), which wears one Relic and holds another and 19 stones, every
+	/// assertion held, and the worn Unholy Grail's Attack +104 and the unworn Harp of Kasbiel's Health +900 matched its
+	/// Relic screens (https://github.com/ANicholasson/raid-bridge/issues/8).
+	/// </summary>
+	[Fact]
+	public void Reads_the_relics_and_relic_stones()
+	{
+		using var json = Snapshot();
+
+		var worn = json.RootElement.GetProperty("champions").EnumerateArray().SelectMany(champion => champion.GetProperty("relics").EnumerateArray()).ToList();
+		var unworn = json.RootElement.GetProperty("unwornRelics").EnumerateArray().ToList();
+		var relics = worn.Concat(unworn).ToList();
+		var sockets = relics.SelectMany(relic => relic.GetProperty("sockets").EnumerateArray()).ToList();
+		var socketed = sockets.Where(socket => socket.GetProperty("stone").ValueKind == JsonValueKind.Object).Select(socket => socket.GetProperty("stone")).ToList();
+		var unsocketed = json.RootElement.GetProperty("unsocketedRelicStones").EnumerateArray().Select(stone => stone.GetProperty("id").GetInt32()).ToList();
+		var unwornIds = unworn.Select(relic => relic.GetProperty("id").GetInt32()).ToList();
+		var stoneIds = socketed.Select(stone => stone.GetProperty("id").GetInt32()).Concat(unsocketed).ToList();
+
+		Assert.Equal(relics.Count, relics.Select(relic => relic.GetProperty("id").GetInt32()).Distinct().Count());
+		Assert.Equal(unwornIds.Order(), unwornIds);
+		Assert.Equal(unsocketed.Order(), unsocketed);
+		Assert.Equal(stoneIds.Count, stoneIds.Distinct().Count());
+		Assert.All(relics, relic => Assert.InRange(relic.GetProperty("bonuses").GetArrayLength(), 1, 3));
+		Assert.All(sockets.Where(socket => socket.GetProperty("stone").ValueKind == JsonValueKind.Object), socket =>
+			Assert.Equal(socket.GetProperty("shape").GetString(), socket.GetProperty("stone").GetProperty("shape").GetString()));
+		Assert.All(relics.SelectMany(relic => relic.GetProperty("skills").EnumerateArray()), skill => Assert.False(string.IsNullOrEmpty(skill.GetProperty("description").GetString())));
+	}
+
 	public void Dispose()
 	{
 		Directory.Delete(_workingDirectory, recursive: true);

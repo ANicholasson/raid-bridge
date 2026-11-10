@@ -84,6 +84,10 @@ _Avoid_: Artifact (a Relic isn't one), relic item
 A Relic's own rank, one to six, which caps how far it can be levelled. It is not a Champion's Rank.
 _Avoid_: rank (alone, for a Relic), stars
 
+**Unworn Relic**:
+A Relic on the Account that no Champion wears.
+_Avoid_: spare Relic, inventory
+
 **Relic stone**:
 A stone the Account owns, with a shape. It goes in a Relic's socket of the same shape, or sits in no socket. It adds skills, not stats. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/16) -->
 _Avoid_: gem, socket (the socket is the slot, not the stone)
