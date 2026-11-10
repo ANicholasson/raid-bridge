@@ -45,7 +45,7 @@ A power the player gives an awakened Champion, such as Necromancy. The game's co
 _Avoid_: buff
 
 **Empowerment**:
-Further power a Champion gains past six stars, by level, 0 for none. The game's code calls it the empower level.
+Further power a Champion gains, by level, 0 for none. The game's code calls it the empower level. <!-- No rank named: (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: empower level
 
 **Mastery**:
@@ -109,7 +109,7 @@ The Arena where three teams of up to four Champions each face another player's t
 _Avoid_: 3v3, arena3x3
 
 **Base stats**:
-A Champion's own stats at its rank and level, before any bonus: the white numbers on the champion screen.
+A Champion's own stats at its rank, level and ascension, before any bonus: the white numbers on the champion screen. Two Champions of one type, rank and level can differ by ascension. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: raw stats, unscaled stats
 
 **Stat source**:
@@ -117,5 +117,5 @@ One thing that adds to a Champion's stats beyond its Base stats, such as its Art
 _Avoid_: bonus (alone, since an Artifact's bonuses are one source)
 
 **Total stats**:
-A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as the Arena league's or a leader skill's, isn't part of them.
+A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. <!-- The Arena league isn't named either way: research settles it (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: effective stats, battle stats
