@@ -210,16 +210,29 @@ internal static partial class RelicReader
 			return [];
 		}
 
-		var description = RichText().Replace(names.Of(owner, "Description", named), string.Empty);
+		var description = PlainText(names.Of(owner, "Description", named), named);
 		return [.. ids.Select(id => new RelicSkill(id.Where(value => value > 0, "a positive skill type id"), description))];
 	}
 
 	/// <summary>
-	/// The Game client's rich-text tags, such as <c>&lt;color=#1ee600&gt;</c> around a number its screen shows in colour.
-	/// They style the text and say nothing, so a description is written without them, as the screen reads.
+	/// A description without the Game client's colour tags, such as <c>&lt;color=#1ee600&gt;</c> around a number its
+	/// screen shows in colour: they style the text and say nothing, so it is written as the screen reads. Every one of
+	/// the 232 Relic, Faction and stone descriptions holds those tags and no other (live check, 2026-11-10), so any
+	/// other tag is refused rather than written, or dropped with what it might mean.
 	/// </summary>
-	[GeneratedRegex("</?(?:color|b|i|u|size)(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-	private static partial Regex RichText();
+	private static string PlainText(string description, string named)
+	{
+		var plain = ColourTag().Replace(description, string.Empty);
+		return AnyTag().Match(plain) is { Success: true } tag
+			? throw new GameDataException($"The description of {named} holds the tag {tag.Value}, which raid-bridge doesn't know: \"{description}\".")
+			: plain;
+	}
+
+	[GeneratedRegex("</?color(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+	private static partial Regex ColourTag();
+
+	[GeneratedRegex("</?[A-Za-z][^>]*>", RegexOptions.CultureInvariant)]
+	private static partial Regex AnyTag();
 
 	/// <summary>A socket, and the stone it names, which must be one the Account owns, in no other socket, of the socket's shape.</summary>
 	private static RelicSocket SocketFrom(
@@ -297,10 +310,13 @@ internal static partial class RelicReader
 		/// <c>SkillLevelByRelicLevel</c> at or below it gives, since the table's keys are the levels a skill rises at
 		/// (live check, docs/research/2026-11-relics.md).
 		/// </summary>
-		public int SkillLevelAt(FieldValue<int> level) =>
-			_skillLevels.Value.LastOrDefault(entry => entry.Level <= level.Value) is { SkillLevel: > 0 } found
-				? found.SkillLevel
+		public int SkillLevelAt(FieldValue<int> level)
+		{
+			var reached = _skillLevels.Value.Where(entry => entry.Level <= level.Value).ToList();
+			return reached.Count > 0
+				? reached[^1].SkillLevel
 				: throw new GameDataException($"{level}, but {StaticRelicData}.SkillLevelByRelicLevel gives no skill level at or below it.");
+		}
 
 		/// <summary>A Relic type by its id, which must be the id the static data keeps it under.</summary>
 		public ManagedObject RelicTypeOf(FieldValue<int> typeId) => Type(_relicTypes.Value, typeId, RelicType, "_relicTypeById");

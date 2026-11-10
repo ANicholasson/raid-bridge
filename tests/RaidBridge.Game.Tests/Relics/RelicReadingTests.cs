@@ -89,6 +89,38 @@ public sealed class RelicReadingTests : IDisposable
 		Assert.Equal([201, 202, 203], account.UnwornRelics.Select(relic => relic.Id));
 	}
 
+	/// <summary>Equivalent ignores order, so the type's order is pinned on its own (code review, https://github.com/ANicholasson/raid-bridge/pull/17).</summary>
+	[Fact]
+	public void Reads_the_faction_skills_in_the_order_the_type_lists_them()
+	{
+		var harp = _game.Source().Read().UnwornRelics.Single();
+
+		Assert.Equal(["HighElves", "DarkElves"], harp.FactionSkills.Select(skill => skill.Faction));
+	}
+
+	[Fact]
+	public void Reads_a_stone_description_without_its_colour_tags()
+	{
+		using var game = SyntheticGameClient.Create(relicData: Relics with
+		{
+			StoneTypes = [.. Relics.StoneTypes.Select(type => type.Id == 11 ? type with { Description = new("l10n:relic-stone/description?id=11#static", "Turn Meter rises <color=#1ee600>10%</color> faster.") } : type)],
+		});
+
+		Assert.Equal("Turn Meter rises 10% faster.", game.Source().Read().UnsocketedRelicStones[0].Skills.Single().Description);
+	}
+
+	/// <summary>Only colour tags were found live; any other tag might mean something, so it is refused.</summary>
+	[Fact]
+	public void Refuses_a_description_holding_a_tag_other_than_colour()
+	{
+		using var game = SyntheticGameClient.Create(relicData: Relics with
+		{
+			StoneTypes = [.. Relics.StoneTypes.Select(type => type.Id == 11 ? type with { Description = new("l10n:relic-stone/description?id=11#static", "Turn Meter rises <sprite=3> faster.") } : type)],
+		});
+
+		Refuses(game, "The description of Relic stone type 11 holds the tag <sprite=3>, which raid-bridge doesn't know: \"Turn Meter rises <sprite=3> faster.\".");
+	}
+
 	/// <summary>Most Relic types hold null for their Faction skills (live check, https://github.com/ANicholasson/raid-bridge/issues/8).</summary>
 	[Fact]
 	public void Reads_a_relic_whose_type_has_no_faction_skills_with_none()
