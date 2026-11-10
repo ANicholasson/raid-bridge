@@ -4,6 +4,7 @@ using RaidBridge.Game.Testing.Arena;
 using RaidBridge.Game.Testing.Artifacts;
 using RaidBridge.Game.Testing.Champions;
 using RaidBridge.Game.Testing.FactionGuardians;
+using RaidBridge.Game.Testing.Relics;
 
 namespace RaidBridge.Game.Tests.Champions;
 
@@ -20,7 +21,7 @@ public sealed class ChampionReadingTests : IDisposable
 	/// <summary>
 	/// HeroById holds a slot a removal freed, which is skipped. The names come from StaticDataLocalization (the
 	/// knight, strike and volley), ClientLocalization (the archer) and a key's default text (the guard). The Artifacts
-	/// they wear are ArtifactReadingTests' concern.
+	/// and the Relics they wear are ArtifactReadingTests' and RelicReadingTests' concern.
 	/// </summary>
 	[Fact]
 	public void Reads_every_champion_with_its_names_and_location()
@@ -30,11 +31,11 @@ public sealed class ChampionReadingTests : IDisposable
 		Assert.Equivalent(
 			new Champion[]
 			{
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, []),
-				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, []),
-				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, []),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, [], []),
+				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], []),
+				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], []),
 			},
-			champions.OrderBy(champion => champion.Id).Select(champion => champion with { Artifacts = [] }),
+			champions.OrderBy(champion => champion.Id).Select(champion => champion with { Artifacts = [], Relics = [] }),
 			strict: true);
 	}
 
@@ -44,6 +45,7 @@ public sealed class ChampionReadingTests : IDisposable
 		using var game = SyntheticGameClient.Create(
 			heroData: Heroes with { Heroes = [] },
 			artifactData: SyntheticArtifactData.Default with { SlotsByHeroId = new Dictionary<int, IReadOnlyDictionary<int, int>>() },
+			relicData: SyntheticRelicData.Default with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() },
 			guardianData: SyntheticGuardianData.None,
 			arenaData: SyntheticArenaData.None);
 

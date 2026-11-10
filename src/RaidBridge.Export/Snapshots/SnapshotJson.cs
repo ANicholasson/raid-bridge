@@ -3,6 +3,7 @@ using System.Text.Json;
 using RaidBridge.Domain.Arena;
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
 
 namespace RaidBridge.Export.Snapshots;
@@ -47,6 +48,22 @@ internal static class SnapshotJson
 			foreach (var artifact in snapshot.UnwornArtifacts)
 			{
 				WriteArtifact(json, artifact);
+			}
+
+			json.WriteEndArray();
+
+			json.WriteStartArray("unwornRelics");
+			foreach (var relic in snapshot.UnwornRelics)
+			{
+				WriteRelic(json, relic);
+			}
+
+			json.WriteEndArray();
+
+			json.WriteStartArray("unsocketedRelicStones");
+			foreach (var stone in snapshot.UnsocketedRelicStones)
+			{
+				WriteRelicStone(json, stone);
 			}
 
 			json.WriteEndArray();
@@ -208,7 +225,88 @@ internal static class SnapshotJson
 		}
 
 		json.WriteEndObject();
+
+		json.WriteStartArray("relics");
+		foreach (var relic in champion.Relics)
+		{
+			WriteRelic(json, relic);
+		}
+
+		json.WriteEndArray();
 		json.WriteEndObject();
+	}
+
+	/// <summary>A Relic, worn or not, in the same shape.</summary>
+	private static void WriteRelic(Utf8JsonWriter json, Relic relic)
+	{
+		json.WriteStartObject();
+		json.WriteNumber("id", relic.Id);
+		json.WriteNumber("typeId", relic.TypeId);
+		json.WriteString("name", relic.Name);
+		json.WriteString("rarity", relic.Rarity);
+		json.WriteString("rank", relic.Rank);
+		json.WriteNumber("level", relic.Level);
+
+		json.WriteStartArray("bonuses");
+		foreach (var bonus in relic.Bonuses)
+		{
+			json.WriteStartObject();
+			json.WriteString("stat", bonus.Stat);
+			json.WriteNumber("value", bonus.Value);
+			json.WriteBoolean("flat", bonus.Flat);
+			json.WriteEndObject();
+		}
+
+		json.WriteEndArray();
+		WriteRelicSkills(json, relic.Skills);
+
+		json.WriteStartArray("sockets");
+		foreach (var socket in relic.Sockets)
+		{
+			json.WriteStartObject();
+			json.WriteString("shape", socket.Shape);
+			json.WritePropertyName("stone");
+			if (socket.Stone is { } stone)
+			{
+				WriteRelicStone(json, stone);
+			}
+			else
+			{
+				json.WriteNullValue();
+			}
+
+			json.WriteEndObject();
+		}
+
+		json.WriteEndArray();
+		json.WriteEndObject();
+	}
+
+	/// <summary>A Relic stone, in a socket or not, in the same shape.</summary>
+	private static void WriteRelicStone(Utf8JsonWriter json, RelicStone stone)
+	{
+		json.WriteStartObject();
+		json.WriteNumber("id", stone.Id);
+		json.WriteNumber("typeId", stone.TypeId);
+		json.WriteString("name", stone.Name);
+		json.WriteString("rarity", stone.Rarity);
+		json.WriteString("shape", stone.Shape);
+		WriteRelicSkills(json, stone.Skills);
+		json.WriteEndObject();
+	}
+
+	private static void WriteRelicSkills(Utf8JsonWriter json, IReadOnlyList<RelicSkill> skills)
+	{
+		json.WriteStartArray("skills");
+		foreach (var skill in skills)
+		{
+			json.WriteStartObject();
+			json.WriteNumber("typeId", skill.TypeId);
+			json.WriteString("description", skill.Description);
+			json.WriteEndObject();
+		}
+
+		json.WriteEndArray();
 	}
 
 	/// <summary>An Artifact, worn or not, in the same shape.</summary>

@@ -69,13 +69,22 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 	public FieldValue<GameEnumMember> EnumMember(string fieldName, string enumType, string? declaredType = null)
 	{
 		var (where, address, _) = Locate(fieldName, declaredType ?? enumType, ValueTypeCode);
-		var declared = Runtime.Metadata.Enum(enumType);
+		return EnumAt(Runtime, address, enumType, where);
+	}
+
+	/// <summary>
+	/// The enum value held at <paramref name="address"/>, as the member of the game's <paramref name="enumType"/> it
+	/// stands for, whether it is held in a field or in an array. A value the enum doesn't name, or names twice, is refused.
+	/// </summary>
+	internal static FieldValue<GameEnumMember> EnumAt(Il2CppRuntime runtime, ulong address, string enumType, string where)
+	{
+		var declared = runtime.Metadata.Enum(enumType);
 		if (declared.UnderlyingType != "System.Int32")
 		{
 			throw new GameDataException($"The game's enum {enumType} is a {declared.UnderlyingType}, where raid-bridge expects a System.Int32.");
 		}
 
-		var value = Runtime.Int32(address, () => where);
+		var value = runtime.Int32(address, () => where);
 		var members = declared.Members.Where(member => member.Value == value).ToList();
 		return members.Count switch
 		{

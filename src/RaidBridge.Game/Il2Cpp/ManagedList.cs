@@ -1,3 +1,5 @@
+using RaidBridge.Game.Metadata;
+
 namespace RaidBridge.Game.Il2Cpp;
 
 /// <summary>A List&lt;T&gt; in the Game client's memory: the first <c>_size</c> elements of its <c>_items</c> array.</summary>
@@ -19,6 +21,10 @@ internal sealed class ManagedList
 	/// <summary>Each element, a reference to an object of <paramref name="expectedClass"/>.</summary>
 	public IReadOnlyList<ManagedObject> Objects(string expectedClass) =>
 		[.. Enumerable.Range(0, Count).Select(index => _items.Object(index, expectedClass))];
+
+	/// <summary>Each element, a value of the game's <paramref name="enumType"/>, as the member it stands for.</summary>
+	public IReadOnlyList<FieldValue<GameEnumMember>> EnumMembers(string enumType) =>
+		[.. Enumerable.Range(0, Count).Select(index => _items.EnumMember(index, enumType))];
 
 	/// <summary>Each element, an int.</summary>
 	public IReadOnlyList<FieldValue<int>> Int32s() => [.. Enumerable.Range(0, Count).Select(_items.Int32)];

@@ -4,6 +4,7 @@ using RaidBridge.Domain.Accounts;
 using RaidBridge.Domain.Arena;
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
 using RaidBridge.Export.Snapshots;
 
@@ -34,6 +35,27 @@ public partial class SnapshotFormatTests
 		new(105, "Cloak", "Hp", "Synthetic Life", "Five", "Epic", 4, null, "HighElves", new("Attack", 120, true, 0, 0), null, [new("Speed", 5, true, 2, 1)]),
 	];
 
+	/// <summary>A synthetic stone, in a socket or not.</summary>
+	private static readonly RelicStone Spark = new(301, 11, "Synthetic Spark", "Rare", "Circle", [new(4000010, "Turn Meter effects are stronger.")]);
+
+	/// <summary>
+	/// A grail at level 15, every stat open, CriticalDamage as a fraction; its own skill and the one its wearer's Faction
+	/// adds; a stone in one socket and the other empty. 0.36 is the nearest Fixed to it, 1546188227 / 2^32.
+	/// </summary>
+	private static readonly Relic KnightRelic = new(
+		201,
+		1,
+		"Synthetic Grail",
+		"Epic",
+		"Rank5",
+		15,
+		[new("Attack", 308, true), new("Health", 5400, true), new("CriticalDamage", 1546188227 / 4294967296.0, false)],
+		[new(3000000, "Wearer deals more damage."), new(3200000, "Dark Elves strike first.")],
+		[new("Circle", Spark), new("Diamond", null)]);
+
+	/// <summary>A harp at level 0: only its first stat is open, and its one socket is empty.</summary>
+	private static readonly Relic UnwornRelic = new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], [new("Pentagon", null)]);
+
 	[Fact]
 	public void The_documented_example_is_what_the_writer_writes()
 	{
@@ -42,11 +64,13 @@ public partial class SnapshotFormatTests
 			new DateTimeOffset(2026, 10, 31, 21, 40, 0, TimeSpan.Zero),
 			AccountIdHash.Of(new AccountId(123456789), salt),
 			[
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears),
-				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, []),
-				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, []),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic]),
+				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], []),
+				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], []),
 			],
 			WornByNobody,
+			[UnwornRelic],
+			[Spark with { Id = 303 }],
 			[new("Energy", 130), new("Silver", 1_250_000), new("Gem", 42)],
 			[new("Mystery", 14), new("Ancient", 2)],
 			[new("HeroXpBooster100P_1Day", 3), new("SkillUpgradeItemEpic", 1)],
@@ -63,7 +87,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_the_capture_time_in_utc()
 	{
-		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
+		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -74,7 +98,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_empty_resources_shards_items_great_hall_and_faction_guardians_as_empty_objects()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -85,7 +109,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_an_arena_with_nothing_set_up()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -118,7 +142,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_a_resource_amount_exactly_as_the_game_holds_it()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], NoClassicArena, NoTagArena);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], NoClassicArena, NoTagArena);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 

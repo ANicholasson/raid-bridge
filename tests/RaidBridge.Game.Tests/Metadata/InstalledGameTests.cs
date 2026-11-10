@@ -13,7 +13,8 @@ public class InstalledGameTests
 	/// <summary>
 	/// Spec #20's path to the Account, as the installed game declares it at metadata v39, and the routes the research for
 	/// Relics and Total stats found (https://github.com/ANicholasson/raid-bridge/issues/7 and
-	/// https://github.com/ANicholasson/raid-bridge/issues/9), which no reader takes yet.
+	/// https://github.com/ANicholasson/raid-bridge/issues/9). The Relics reader takes the first
+	/// (https://github.com/ANicholasson/raid-bridge/issues/8); no reader takes the second yet.
 	/// </summary>
 	public static TheoryData<string, string, string, bool> AccountPath => new()
 	{
@@ -180,6 +181,7 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Relics.StaticData.StaticRelicData", "HeroActivatedRelicsLimit", "System.Int32", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Id", "System.Int32", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Description", "SharedModel.Common.Localization.SharedLTextKey", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicType", "Rarity", "SharedModel.Meta.ItemRarity", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicType", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicType", "SkillIdsByFaction", "System.Collections.Generic.List`1<SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus>", false },
@@ -188,6 +190,15 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Id", "System.Int32", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
 		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
+		// What the Relics reader writes beside the route (https://github.com/ANicholasson/raid-bridge/issues/8): a stone's
+		// rarity, shape and description, and the skills a type adds for its wearer's Faction, each entry with its own
+		// description. A skill's own name is only placeholder text, so the descriptions stand in for it.
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Description", "SharedModel.Common.Localization.SharedLTextKey", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Rarity", "SharedModel.Meta.ItemRarity", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicStoneType", "Shape", "SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus", "FractionId", "SharedModel.Meta.Heroes.HeroFraction", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus", "SkillIds", "System.Collections.Generic.List`1<System.Int32>", false },
+		{ "SharedModel.Meta.Relics.StaticData.RelicFactionSkillBonus", "Description", "SharedModel.Common.Localization.SharedLTextKey", false },
 		// Stat sources (https://github.com/ANicholasson/raid-bridge/issues/9, docs/research/2026-11-champion-stat-sources.md).
 		// Base stats are on each form of the Champion's own, possibly ascended, type, scaled by BattleStats' static Multipliers.
 		{ "SharedModel.Meta.Heroes.HeroForm", "BaseStats", "SharedModel.Meta.Heroes.BattleStats", false },
@@ -244,8 +255,8 @@ public class InstalledGameTests
 	/// <summary>
 	/// A member of each enum a Snapshot is written with, and its value, as the installed game declares them at metadata
 	/// v39: a Champion's and an Artifact's, the keys of the Resources, Shards, Items, the Great Hall and the Faction
-	/// Guardians, and the Arena's leagues. The Relic enums are the ones the Relics work
-	/// (https://github.com/ANicholasson/raid-bridge/issues/8) will write.
+	/// Guardians, the Arena's leagues, and a Relic's rank and its sockets' shapes
+	/// (https://github.com/ANicholasson/raid-bridge/issues/8).
 	/// </summary>
 	public static TheoryData<string, string, long> SnapshotEnums => new()
 	{

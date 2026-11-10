@@ -2,11 +2,11 @@
 
 A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
-A Snapshot holds the Account, its Champions, the Artifacts each Champion wears, the Artifacts no Champion wears, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
+A Snapshot holds the Account, its Champions, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault. The first wears three made-up Artifacts, and two more are worn by nobody. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty.
 
 ```json
 {
@@ -141,7 +141,66 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             }
           ]
         }
-      }
+      },
+      "relics": [
+        {
+          "id": 201,
+          "typeId": 1,
+          "name": "Synthetic Grail",
+          "rarity": "Epic",
+          "rank": "Rank5",
+          "level": 15,
+          "bonuses": [
+            {
+              "stat": "Attack",
+              "value": 308,
+              "flat": true
+            },
+            {
+              "stat": "Health",
+              "value": 5400,
+              "flat": true
+            },
+            {
+              "stat": "CriticalDamage",
+              "value": 0.3600000001024455,
+              "flat": false
+            }
+          ],
+          "skills": [
+            {
+              "typeId": 3000000,
+              "description": "Wearer deals more damage."
+            },
+            {
+              "typeId": 3200000,
+              "description": "Dark Elves strike first."
+            }
+          ],
+          "sockets": [
+            {
+              "shape": "Circle",
+              "stone": {
+                "id": 301,
+                "typeId": 11,
+                "name": "Synthetic Spark",
+                "rarity": "Rare",
+                "shape": "Circle",
+                "skills": [
+                  {
+                    "typeId": 4000010,
+                    "description": "Turn Meter effects are stronger."
+                  }
+                ]
+              }
+            },
+            {
+              "shape": "Diamond",
+              "stone": null
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 7,
@@ -166,7 +225,8 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "locked": false,
       "marker": "None",
       "location": "Vault",
-      "artifacts": {}
+      "artifacts": {},
+      "relics": []
     },
     {
       "id": 12,
@@ -191,7 +251,8 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "locked": false,
       "marker": "None",
       "location": "DeepVault",
-      "artifacts": {}
+      "artifacts": {},
+      "relics": []
     }
   ],
   "unwornArtifacts": [
@@ -240,6 +301,50 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           "flat": true,
           "glyph": 2,
           "rolls": 1
+        }
+      ]
+    }
+  ],
+  "unwornRelics": [
+    {
+      "id": 203,
+      "typeId": 2,
+      "name": "Synthetic Harp",
+      "rarity": "Legendary",
+      "rank": "Rank3",
+      "level": 0,
+      "bonuses": [
+        {
+          "stat": "Health",
+          "value": 900,
+          "flat": true
+        }
+      ],
+      "skills": [
+        {
+          "typeId": 3000001,
+          "description": "Wearer gains Turn Meter."
+        }
+      ],
+      "sockets": [
+        {
+          "shape": "Pentagon",
+          "stone": null
+        }
+      ]
+    }
+  ],
+  "unsocketedRelicStones": [
+    {
+      "id": 303,
+      "typeId": 11,
+      "name": "Synthetic Spark",
+      "rarity": "Rare",
+      "shape": "Circle",
+      "skills": [
+        {
+          "typeId": 4000010,
+          "description": "Turn Meter effects are stronger."
         }
       ]
     }
@@ -343,6 +448,20 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `primary`: its main stat, as a bonus (below).
     - `ascensionBonus`: the bonus ascension gave it, or `null` when it has none.
     - `substats`: its Substats, as bonuses, in the order the game keeps them, or `[]`.
+  - `relics`: the Relics the Champion wears, in the order the game keeps them, or `[]` when it wears none. The game lets a Champion wear one Relic today, but keeps them as a list. Each Relic has:
+    - `id`: the Relic's id on the Account.
+    - `typeId` and `name`: its type, and its name as the Game client shows it (below).
+    - `rarity` and `rank`: such as `"Legendary"` and `"Rank3"`. A Relic's rank, one to six, is its own, not a Champion's: it caps the Relic's level.
+    - `level`: a number, from 0.
+    - `bonuses`: the stats it raises, in its type's order, each with `stat`, `value` and `flat` as an Artifact's bonus has them, without `glyph` or `rolls`. A Relic's type raises three stats, which open one at a time as it levels (at levels 0, 9 and 15 in the game's data today): a stat that hasn't opened yet is left out.
+    - `skills`: its passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below): its type's own, then, for a worn Relic, any its wearer's Faction adds.
+    - `sockets`: its sockets, in the order the game keeps them, each with its `shape`, such as `"Circle"`, and the Relic `stone` in it, or `null` when it is empty.
+
+  Each Relic stone has:
+  - `id`: the stone's id on the Account.
+  - `typeId` and `name`: its type, and its name as the Game client shows it.
+  - `rarity` and `shape`: such as `"Rare"` and `"Circle"`. A stone fits only a socket of its shape.
+  - `skills`: what it adds, in the shape of a Relic's `skills`. A stone adds skills, not stats.
 
   Each bonus has:
   - `stat`: the stat it raises, such as `"Speed"` or `"CriticalChance"`.
@@ -350,6 +469,8 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `glyph`: the value a Glyph adds to it, in the same unit, or `0`.
   - `rolls`: how many times the bonus was raised as the Artifact levelled, or `0`.
 - `unwornArtifacts`: every Artifact on the Account that no Champion wears, sorted by `id`, or `[]` when every Artifact is worn. Each has exactly the fields of a worn Artifact, its `slot` being the slot it fits. An Artifact a Champion wears is under that Champion's `artifacts` and nowhere else, so every Artifact on the Account appears exactly once.
+- `unwornRelics`: every Relic on the Account that no Champion wears, sorted by `id`, or `[]`. Each has exactly the fields of a worn Relic. A Relic a Champion wears is under that Champion's `relics` and nowhere else, so every Relic on the Account appears exactly once.
+- `unsocketedRelicStones`: every Relic stone on the Account that is in no socket, sorted by `id`, or `[]`. A stone in a socket is under that socket's `stone` and nowhere else, so every stone on the Account appears exactly once.
 - `resources`: every Resource the game keeps a count of on the Account, such as silver, gems, energy, keys and tokens, each under its name, such as `"Silver"`, with the amount the Account holds. The game holds each amount as a floating-point number, so it is written exactly as held and never rounded.
 - `shards`: the Account's Shards, each type under its name, such as `"Ancient"`, with how many the Account holds.
 - `items`: the Account's Items, such as potions, tomes and boosters, each under its name, such as `"SkillUpgradeItemEpic"`, with how many the Account holds.
@@ -364,15 +485,17 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 
   `classicArena`'s `defenceTeam` is the `id`s of the Champions in its defence team, in the game's order of positions, and `tagArena`'s `defenceTeams` is its three defence teams, in the game's order, each a list of `id`s the same way. Each `id` is a Champion in `champions`, defending only once in that Arena. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`, kept in its place among the teams. Both are always written: with no defence team set, `defenceTeam` is `[]` and `defenceTeams` is `[]`.
 
-`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock` and `stat`, and the names in `resources`, `shards`, `items`, `greatHall` and `factionGuardians`, and each `league`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
+`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock`, `stat` and `shape`, and the names in `resources`, `shards`, `items`, `greatHall` and `factionGuardians`, and each `league`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
 
 An Artifact's `value` and `glyph` are exactly what the game holds. The game keeps them in fixed point, as a whole number of steps of 2^-32, so a value the game shows as 6% is held as the nearest step, 0.0600000000558793â€¦, and written as the shortest number that reads back as exactly that step: `0.060000000055879354`. Round it to show it, never to store it.
 
-Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read: nothing is computed, guessed or filled in, and there are no stats. A run that can't read a value fails and writes no file.
+Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read: nothing is guessed or filled in, and a Champion's stats aren't written. A Relic's `bonuses` are the one thing worked out: the game holds no stat values on a Relic, only its type and level, so each bonus is the value the game's own static table gives that stat at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own. A run that can't read a value fails and writes no file.
 
 ## Names
 
-A Champion's, a skill's and an Artifact set's name is the text the Game client shows for it, in the language the player set: raid-bridge looks its key up in the client's loaded localization tables, and takes the default text the game gives the key when neither table holds it. If there is neither, the run fails rather than write a made-up name.
+A Champion's, a skill's, an Artifact set's, a Relic's and a Relic stone's name, and a Relic skill's `description`, is the text the Game client shows for it, in the language the player set: raid-bridge looks its key up in the client's loaded localization tables, and takes the default text the game gives the key when neither table holds it. If there is neither, the run fails rather than write a made-up name.
+
+A Relic's or a stone's skill has no name of its own in the game's data, only placeholder text such as "Skill 3000000 name", so it is written with the description the Relic's screen shows instead: the description of its Relic type, of the Faction's entry that adds it, or of its stone's type. The description is the text as the game holds it, so it may carry the Game client's rich-text tags, such as `<color=#1ee600>2%</color>` around a number the screen shows in colour, written with JSON's escapes as `\u003Ccolor=#1ee600\u003E2%\u003C/color\u003E`.
 
 ## The Account id hash
 

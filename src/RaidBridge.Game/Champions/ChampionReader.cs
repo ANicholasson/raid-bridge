@@ -87,7 +87,8 @@ internal static class ChampionReader
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
-			Artifacts: []);
+			Artifacts: [],
+			Relics: []);
 	}
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>
