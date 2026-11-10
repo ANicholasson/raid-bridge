@@ -137,7 +137,7 @@ So the defence Champions give an exact oracle, source by source, for the Great H
 
 ## Still open (needs the maintainer's screen)
 
-1. **Base stats:** how `Multipliers` applies within a rank, checked against one Champion's white numbers.
+1. **Base stats:** how `Multipliers` applies within a rank, checked against one Champion's white numbers. One sample from the screen (2026-11-10): an Epic at rank 6 and level 60 shows HP 18,990, ATK 749, DEF 1,288, SPD 102, C.RATE 15%, C.DMG 50%, RES 30 and ACC 0 in white.
 2. **Empowerment:** whether its levels add up.
 3. **The missing blessing setup** on one awakened defence Champion.
 4. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.
