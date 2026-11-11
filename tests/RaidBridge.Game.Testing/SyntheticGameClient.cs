@@ -133,6 +133,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 	/// <summary>A game update dropped a member from an enum.</summary>
 	public void RemoveEnumMember(string enumName, string memberName) => _metadata.RemoveEnumMember(enumName, memberName);
 
+	/// <summary>A game update changed the type an enum is over.</summary>
+	public void RetypeEnum(string enumName, string underlyingType) => _metadata.RetypeEnum(enumName, underlyingType);
+
 	/// <summary>A game update added a member to an enum.</summary>
 	public void AddEnumMember(string enumName, string memberName, long value) => _metadata.AddEnumMember(enumName, memberName, value);
 

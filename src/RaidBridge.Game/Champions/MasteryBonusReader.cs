@@ -24,11 +24,13 @@ internal sealed class MasteryBonusReader
 	private const string StatBonusClass = "SharedModel.Meta.General.StatBonus";
 	private const string StatKind = "SharedModel.Battle.Effects.StatKindId";
 
-	private readonly IReadOnlySet<int> _masteries;
+	private const string MasteryType = "SharedModel.Meta.Masteries.MasteryType";
+
+	private readonly IReadOnlyDictionary<int, ManagedDictionary.Entry> _masteries;
 	private readonly IReadOnlyDictionary<int, ManagedDictionary.Entry> _bonuses;
 	private readonly long _setBonusSource;
 
-	private MasteryBonusReader(IReadOnlySet<int> masteries, IReadOnlyDictionary<int, ManagedDictionary.Entry> bonuses, long setBonusSource)
+	private MasteryBonusReader(IReadOnlyDictionary<int, ManagedDictionary.Entry> masteries, IReadOnlyDictionary<int, ManagedDictionary.Entry> bonuses, long setBonusSource)
 	{
 		_masteries = masteries;
 		_bonuses = bonuses;
@@ -39,7 +41,7 @@ internal sealed class MasteryBonusReader
 	{
 		var data = staticData.Object("MasteryData", StaticMasteryData);
 		return new(
-			data.Dictionary("MasteryById", $"System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Masteries.MasteryType>").ByInt32Key().Keys.ToHashSet(),
+			data.Dictionary("MasteryById", $"System.Collections.Generic.Dictionary`2<System.Int32, {MasteryType}>").ByInt32Key(),
 			data.Dictionary("MasteryBonusById", $"System.Collections.Generic.Dictionary`2<System.Int32, {StatBonusClass}>").ByInt32Key(),
 			data.Runtime.Metadata.Constant(StaticMasteryData, "BonusSourceArtifactSet"));
 	}
@@ -51,10 +53,13 @@ internal sealed class MasteryBonusReader
 		var setBonusShares = new List<double>();
 		foreach (var id in masteryIds)
 		{
-			if (!_masteries.Contains(id))
+			if (!_masteries.TryGetValue(id, out var mastery))
 			{
 				throw new GameDataException($"Champion {championId} has mastery {id}, which isn't a mastery in the game's {StaticMasteryData}.MasteryById.");
 			}
+
+			// A corrupt entry or a torn read could key one mastery under another's id (CodeRabbit, PR #21).
+			_ = mastery.Object(MasteryType).Int32("Id").Where(value => value == id, $"the id MasteryById keeps it under, {id}");
 
 			if (!_bonuses.TryGetValue(id, out var entry))
 			{

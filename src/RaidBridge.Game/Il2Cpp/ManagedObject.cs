@@ -80,6 +80,8 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 	public FieldValue<GameEnumMember?> EnumMemberOrUnnamed(string fieldName, string enumType, long unnamed)
 	{
 		var (where, address, _) = Locate(fieldName, enumType, ValueTypeCode);
+		// Before the value is read, so a wider enum can't pass for the unnamed value on its low four bytes (CodeRabbit, PR #21).
+		RequireInt32(Runtime, enumType);
 		var value = Runtime.Int32(address, () => where);
 		return value == unnamed
 			? new(null, where, address)
@@ -92,11 +94,7 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 	/// </summary>
 	internal static FieldValue<GameEnumMember> EnumAt(Il2CppRuntime runtime, ulong address, string enumType, string where)
 	{
-		var declared = runtime.Metadata.Enum(enumType);
-		if (declared.UnderlyingType != "System.Int32")
-		{
-			throw new GameDataException($"The game's enum {enumType} is a {declared.UnderlyingType}, where raid-bridge expects a System.Int32.");
-		}
+		var declared = RequireInt32(runtime, enumType);
 
 		var value = runtime.Int32(address, () => where);
 		var members = declared.Members.Where(member => member.Value == value).ToList();
@@ -106,6 +104,15 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 			0 => throw new GameDataException($"{where} at 0x{address:X} is {value}, which isn't a member of the game's {enumType}."),
 			_ => throw new GameDataException($"{where} at 0x{address:X} is {value}, which the game's {enumType} names {string.Join(" and ", members.Select(member => member.Name))}."),
 		};
+	}
+
+	/// <summary>The game's enum, which must be over an int, as every enum the reader reads is.</summary>
+	private static GameEnum RequireInt32(Il2CppRuntime runtime, string enumType)
+	{
+		var declared = runtime.Metadata.Enum(enumType);
+		return declared.UnderlyingType == "System.Int32"
+			? declared
+			: throw new GameDataException($"The game's enum {enumType} is a {declared.UnderlyingType}, where raid-bridge expects a System.Int32.");
 	}
 
 	/// <summary>A Nullable&lt;enum&gt; field, as the enum's name for its value, or null when it has none.</summary>

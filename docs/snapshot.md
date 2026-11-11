@@ -526,7 +526,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `sets`: what the sets of those Artifacts add.
     - `masteries`: what the Champion's masteries add. A mastery that raises set bonuses, such as Lore of Steel, adds its share of `sets` here.
 
-    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing has only `base`. The other Stat sources and the Total stats are still to come.
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing and has no mastery that raises a stat has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.

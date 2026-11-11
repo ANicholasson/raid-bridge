@@ -14,6 +14,10 @@ public sealed partial class SyntheticGameClient
 
 	private ulong _battleStatsStatics;
 	private ulong _rankMultipliers;
+	private readonly Dictionary<int, ulong> _masteryTypes = [];
+
+	/// <summary>The mastery type kept under <paramref name="key"/> in MasteryById holds another id, as a corrupt entry or a torn read might.</summary>
+	public void SetMasteryTypeId(int key, int id) => _heap.Int32(_masteryTypes[key] + 0x10, id);
 	private readonly Dictionary<int, ulong> _skillLists = [];
 	private readonly Dictionary<int, ulong> _heroTypes = [];
 	private readonly Dictionary<int, ulong> _skillTypes = [];
@@ -114,6 +118,7 @@ public sealed partial class SyntheticGameClient
 		{
 			var typeObject = _runtime.Object(masteryType, 0x18);
 			_heap.Int32(typeObject + 0x10, mastery.Id);
+			_masteryTypes[mastery.Id] = typeObject;
 			return ((ulong)mastery.Id, typeObject);
 		});
 		var bonuses = heroData.MasteryTypes.Where(mastery => mastery.Bonus is not null).Select(mastery =>

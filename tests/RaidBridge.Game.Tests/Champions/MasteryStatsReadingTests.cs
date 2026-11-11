@@ -93,6 +93,38 @@ public sealed class MasteryStatsReadingTests : IDisposable
 			Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
 	}
 
+	/// <summary>A corrupt entry or a torn read could key one mastery under another's id (CodeRabbit, PR #21).</summary>
+	[Fact]
+	public void Refuses_a_mastery_kept_under_another_id()
+	{
+		_game.SetMasteryTypeId(key: 500112, id: 500113);
+
+		Assert.Matches(
+			@"^SharedModel\.Meta\.Masteries\.MasteryType\.Id at 0x[0-9A-F]+ is 500113, where raid-bridge expects the id MasteryById keeps it under, 500112\.$",
+			Assert.ThrowsAny<GameClientException>(() => _game.Source().Read()).Message);
+	}
+
+	/// <summary>
+	/// A StatKindId over a wider type is refused before its low four bytes could pass for the -1 that marks a bonus to
+	/// set bonuses. Nothing else on this Account reads the enum, so the masteries reach it first (CodeRabbit, PR #21).
+	/// </summary>
+	[Fact]
+	public void Refuses_a_stat_kind_over_a_wider_type_before_reading_the_set_bonus_marker()
+	{
+		using var game = SyntheticGameClient.Create(
+			heroData: Heroes with { Heroes = [new SyntheticHero(3, 5240) { Masteries = [500112] }] },
+			artifactData: SyntheticArtifactData.Default with { Artifacts = [], SlotsByHeroId = new Dictionary<int, IReadOnlyDictionary<int, int>>() },
+			relicData: Testing.Relics.SyntheticRelicData.None,
+			greatHallData: Testing.GreatHall.SyntheticGreatHallData.None,
+			guardianData: Testing.FactionGuardians.SyntheticGuardianData.None,
+			arenaData: Testing.Arena.SyntheticArenaData.None);
+		game.RetypeEnum("SharedModel.Battle.Effects.StatKindId", "System.Int64");
+
+		Assert.Equal(
+			"The game's enum SharedModel.Battle.Effects.StatKindId is a System.Int64, where raid-bridge expects a System.Int32.",
+			Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+	}
+
 	public void Dispose() => _game.Dispose();
 
 	private static SyntheticGameClient WithMasteries(IReadOnlyList<int> masteries, IReadOnlyList<SyntheticMasteryType> types) =>
