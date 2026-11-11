@@ -195,7 +195,7 @@ Each source's bonus is `BattleStats.UpdateWithBonuses` of that source alone, les
 
 ### The Arena league
 
-`StaticData.ArenaData.LeagueInfos`, each an `ArenaLeagueInfo` with `Id` and `BattleBonuses` (a `BattleStats` of percentages). From BronzeI to Platinum it gives 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 and 25% to `Health`, `Attack` and `Defence`. The spec's list of Stat sources doesn't name it yet.
+`StaticData.ArenaData.LeagueInfos`, each an `ArenaLeagueInfo` with `Id` and `BattleBonuses` (a `BattleStats` of percentages). From BronzeI to Platinum it gives 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 and 25% to `Health`, `Attack` and `Defence`. Spec https://github.com/ANicholasson/raid-bridge/issues/5 didn't name it as a Stat source, so it was added on 2026-11-11 as `arenaLeague`, with a ticket of its own (https://github.com/ANicholasson/raid-bridge/issues/20).
 
 ### Artifacts and sets
 
