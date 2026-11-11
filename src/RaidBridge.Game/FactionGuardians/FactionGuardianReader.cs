@@ -24,12 +24,48 @@ internal static class FactionGuardianReader
 	private const string StatBonuses = "SharedModel.Meta.Academy.Static.StatBonuses";
 	private const string StatKind = "SharedModel.Battle.Effects.StatKindId";
 
-	public static IReadOnlyList<GuardianFaction> Read(ManagedObject userWrapper, IReadOnlyList<Champion> champions)
+	/// <summary>
+	/// The Account's guardian slots, read once, so the Faction Guardians written and what they give the Champions come
+	/// from the same state of the Game client (CodeRabbit, PR #22): each Faction's, in the enum's order, then each
+	/// rarity's, in the enum's order, then each slot's two positions, in the game's order.
+	/// </summary>
+	public static GuardianSlots Capture(ManagedObject userWrapper) =>
+		new([.. userWrapper
+			.Object("Academy", "Client.Model.Gameplay.Academy.AcademyWrapper")
+			.Object("AcademyData", "Client.Model.Gameplay.Academy.Data.UpdatableUserAcademyData")
+			.Object("Guardians", "SharedModel.Meta.Academy.User.UserAcademyGuardiansData")
+			.Dictionary("SlotsByFraction", $"System.Collections.Generic.Dictionary`2<{Fraction}, {RaritySlots}>")
+			.ByEnumKey(Fraction)
+			.OrderBy(faction => faction.Key.Value)
+			.SelectMany(faction => faction.Value.Object(RaritySlots)
+				.Dictionary("SlotsByRarity", $"System.Collections.Generic.Dictionary`2<{Rarity}, System.Collections.Generic.List`1<{Slot}>>")
+				.ByEnumKey(Rarity)
+				.OrderBy(rarity => rarity.Key.Value)
+				.Select(rarity => new GuardianSlots.Of(
+					faction.Key,
+					rarity.Key,
+					[.. rarity.Value.List().Objects(Slot).Select(slot => (slot.NullableInt32("FirstHero"), slot.NullableInt32("SecondHero")))])))]);
+
+	/// <summary>The Account's Faction Guardians, each a Champion on the Account of the slot's Faction and rarity, guarding only once.</summary>
+	public static IReadOnlyList<GuardianFaction> Read(GuardianSlots captured, IReadOnlyList<Champion> champions)
 	{
 		var guardians = new Guardians(champions.ToDictionary(champion => champion.Id));
-		return [.. SlotsByFaction(userWrapper)
-			.OrderBy(faction => faction.Key.Value)
-			.Select(faction => new GuardianFaction(faction.Key.Name, Rarities(faction.Key.Name, faction.Value.Object(RaritySlots), guardians)))
+		return [.. captured.All
+			.GroupBy(slots => slots.Faction)
+			.Select(faction => new GuardianFaction(
+				faction.Key.Name,
+				[.. faction
+					.Select(rarity => new GuardianRarity(
+						rarity.Rarity.Name,
+						[.. rarity.Slots
+							.Select((slot, index) => new GuardianSlot(
+							[
+								.. new[] { slot.First, slot.Second }
+									.Where(position => position.Value is not null)
+									.Select(position => guardians.Place(position, new(faction.Key.Name, rarity.Rarity.Name, index + 1))),
+							]))
+							.Where(slot => slot.ChampionIds.Count > 0)]))
+					.Where(rarity => rarity.Slots.Count > 0)]))
 			.Where(faction => faction.Rarities.Count > 0)];
 	}
 
@@ -40,7 +76,7 @@ internal static class FactionGuardianReader
 	/// filled, and slot <c>n</c> counted gives the static data's bonuses <c>n</c> for the rarity, in
 	/// <c>AcademyData.Guardians.BonusesByHeroRarity</c>. The static data is read only once a slot counts.
 	/// </summary>
-	public static IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> Bonuses(ManagedObject userWrapper, ManagedObject staticData)
+	public static IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> Bonuses(GuardianSlots captured, ManagedObject staticData)
 	{
 		var table = new Lazy<IReadOnlyDictionary<GameEnumMember, ManagedDictionary.Entry>>(() => staticData
 			.Object("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData")
@@ -48,17 +84,12 @@ internal static class FactionGuardianReader
 			.Dictionary("BonusesByHeroRarity", $"System.Collections.Generic.Dictionary`2<{Rarity}, System.Collections.Generic.List`1<{StatBonuses}>>")
 			.ByEnumKey(Rarity));
 		var bonuses = new Dictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>>();
-		foreach (var (faction, raritySlots) in SlotsByFaction(userWrapper))
+		foreach (var slots in captured.All)
 		{
-			foreach (var (rarity, slots) in raritySlots.Object(RaritySlots).Dictionary("SlotsByRarity", $"System.Collections.Generic.Dictionary`2<{Rarity}, System.Collections.Generic.List`1<{Slot}>>").ByEnumKey(Rarity))
+			var counted = slots.Slots.TakeWhile(slot => slot.First.Value is not null && slot.Second.Value is not null).Count();
+			if (counted > 0)
 			{
-				var counted = slots.List().Objects(Slot)
-					.TakeWhile(slot => slot.NullableInt32("FirstHero").Value is not null && slot.NullableInt32("SecondHero").Value is not null)
-					.Count();
-				if (counted > 0)
-				{
-					bonuses[(faction.Name, rarity.Name)] = [.. Enumerable.Range(0, counted).SelectMany(index => SlotBonuses(table.Value, rarity, index))];
-				}
+				bonuses[(slots.Faction.Name, slots.Rarity.Name)] = [.. Enumerable.Range(0, counted).SelectMany(index => SlotBonuses(table.Value, slots.Rarity, index))];
 			}
 		}
 
@@ -82,32 +113,6 @@ internal static class FactionGuardianReader
 				.ToList()
 			: throw new GameDataException($"{where} holds the bonuses of {slots.Count} slots, but slot {index + 1} is full.");
 	}
-
-	private static IReadOnlyDictionary<GameEnumMember, ManagedDictionary.Entry> SlotsByFaction(ManagedObject userWrapper) =>
-		userWrapper
-			.Object("Academy", "Client.Model.Gameplay.Academy.AcademyWrapper")
-			.Object("AcademyData", "Client.Model.Gameplay.Academy.Data.UpdatableUserAcademyData")
-			.Object("Guardians", "SharedModel.Meta.Academy.User.UserAcademyGuardiansData")
-			.Dictionary("SlotsByFraction", $"System.Collections.Generic.Dictionary`2<{Fraction}, {RaritySlots}>")
-			.ByEnumKey(Fraction);
-
-	/// <summary>A rarity none of whose slots holds a Champion is left out, as a slot that holds none is.</summary>
-	private static IReadOnlyList<GuardianRarity> Rarities(string faction, ManagedObject raritySlots, Guardians guardians) =>
-		[.. raritySlots
-			.Dictionary("SlotsByRarity", $"System.Collections.Generic.Dictionary`2<{Rarity}, System.Collections.Generic.List`1<{Slot}>>")
-			.ByEnumKey(Rarity)
-			.OrderBy(rarity => rarity.Key.Value)
-			.Select(rarity => new GuardianRarity(
-				rarity.Key.Name,
-				[.. rarity.Value.List().Objects(Slot)
-					.Select((slot, index) => new GuardianSlot(
-					[
-						.. new[] { slot.NullableInt32("FirstHero"), slot.NullableInt32("SecondHero") }
-							.Where(position => position.Value is not null)
-							.Select(position => guardians.Place(position, new(faction, rarity.Key.Name, index + 1))),
-					]))
-					.Where(slot => slot.ChampionIds.Count > 0)]))
-			.Where(rarity => rarity.Slots.Count > 0)];
 
 	/// <summary>A guardian slot, by the Faction and rarity it is kept under and its place among them, counting from 1.</summary>
 	private sealed record SlotName(string Faction, string Rarity, int Number)
@@ -138,4 +143,11 @@ internal static class FactionGuardianReader
 				: throw new GameDataException($"{position}, in {slot}, but Champion {id} already guards in {_placed[id]}.");
 		}
 	}
+}
+
+/// <summary>The Account's guardian slots, as read once: each Faction's slots of each rarity, each slot's two positions.</summary>
+internal sealed record GuardianSlots(IReadOnlyList<GuardianSlots.Of> All)
+{
+	/// <summary>One Faction's slots of one rarity, in the game's order.</summary>
+	public sealed record Of(GameEnumMember Faction, GameEnumMember Rarity, IReadOnlyList<(FieldValue<int?> First, FieldValue<int?> Second)> Slots);
 }

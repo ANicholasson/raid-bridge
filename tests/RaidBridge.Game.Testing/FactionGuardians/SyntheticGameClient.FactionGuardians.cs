@@ -17,6 +17,10 @@ public sealed partial class SyntheticGameClient
 	public void PointGuardianFaction(int slot, ulong address) => _heap.Pointer(_runtime.EntryValue(_guardians, slot), address);
 
 	/// <summary>A Faction's guardian slots of a rarity, by HeroFraction and HeroRarity, claim more slots than their array holds, as a torn or corrupt read might see them.</summary>
+	/// <summary>Where a guardian slot holds its second position's Nullable&lt;int&gt;, by its Faction, rarity and index.</summary>
+	public ulong GuardianSecondPosition(int faction, int rarity, int index) =>
+		_heap.ReadPointer(_runtime.ListItem(_guardianSlots[(faction, rarity)], index)) + 0x18;
+
 	public void SetGuardianSlotCount(int faction, int rarity, int count) => _runtime.SetListSize(_guardianSlots[(faction, rarity)], count);
 
 	/// <summary>
