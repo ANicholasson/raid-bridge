@@ -225,6 +225,10 @@ Live, on 2026-11-11, `MasteryBonusById` held 13 entries, all of them flat or cri
 - CriticalDamage +10% and +20%;
 - Lore of Steel (500343): 15% of set bonuses.
 
+With the formula, two screenshots matched on 2026-11-11, once the Arena league, the Great Hall and the Artifacts and sets were added:
+- Kael, with Accuracy, CriticalChance and CriticalDamage masteries: every green number.
+- Uugo, with Lore of Steel and complete sets: every green number but HP, including Lore of Steel's +3 Resistance and +6 Accuracy. HP was 4,500 higher, from his Awakening, which no reader counts yet.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
