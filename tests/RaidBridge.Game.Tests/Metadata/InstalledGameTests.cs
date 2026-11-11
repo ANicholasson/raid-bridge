@@ -217,6 +217,8 @@ public class InstalledGameTests
 		// The static bonus tables: masteries, sets, Faction Guardians and Empowerment, and Awakening.
 		{ "SharedModel.Meta.ClientStaticData", "MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", false },
 		{ "SharedModel.Meta.Masteries.StaticMasteryData", "MasteryBonusById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.General.StatBonus>", false },
+		// Every mastery, so an id that isn't one is refused (https://github.com/ANicholasson/raid-bridge/issues/12).
+		{ "SharedModel.Meta.Masteries.StaticMasteryData", "MasteryById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Masteries.MasteryType>", false },
 		{ "SharedModel.Meta.General.StatBonus", "StatKindId", "SharedModel.Battle.Effects.StatKindId", false },
 		{ "SharedModel.Meta.General.StatBonus", "Value", "Plarium.Common.Numerics.Fixed", false },
 		{ "SharedModel.Meta.General.StatBonus", "IsAbsolute", "System.Boolean", false },
@@ -403,6 +405,19 @@ public class InstalledGameTests
 		var rva = InstalledMetadata().TypeInfoRva(className);
 
 		Assert.True(WritableSection(rva), $"The TypeInfo slot of {className} at 0x{rva:X} isn't in writable data.");
+	}
+
+	/// <summary>
+	/// A mastery bonus with this StatKindId raises set bonuses, as Lore of Steel does; it is -1, which no StatKindId
+	/// names (https://github.com/ANicholasson/raid-bridge/issues/12).
+	/// </summary>
+	[Fact]
+	public void Reads_the_marker_of_a_mastery_that_raises_set_bonuses()
+	{
+		var metadata = InstalledMetadata();
+
+		Assert.Equal(-1, metadata.Constant("SharedModel.Meta.Masteries.StaticMasteryData", "BonusSourceArtifactSet"));
+		Assert.DoesNotContain(metadata.Enum("SharedModel.Battle.Effects.StatKindId").Members, member => member.Value == -1);
 	}
 
 	/// <summary>Fixed is Q32.32: its scale, ONE, is 2^32 (#26).</summary>

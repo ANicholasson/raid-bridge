@@ -73,6 +73,20 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 	}
 
 	/// <summary>
+	/// An enum field's value as a number, for a field that may hold, on purpose, a value its enum doesn't name, such as
+	/// a StatBonus's <c>StatKindId</c> of -1 for <c>StaticMasteryData.BonusSourceArtifactSet</c>. The caller turns any
+	/// other value into its member with <see cref="EnumAt"/>.
+	/// </summary>
+	public FieldValue<int> EnumNumber(string fieldName, string enumType)
+	{
+		var (where, address, _) = Locate(fieldName, enumType, ValueTypeCode);
+		var underlying = Runtime.Metadata.Enum(enumType).UnderlyingType;
+		return underlying == "System.Int32"
+			? new(Runtime.Int32(address, () => where), where, address)
+			: throw new GameDataException($"The game's enum {enumType} is a {underlying}, where raid-bridge expects a System.Int32.");
+	}
+
+	/// <summary>
 	/// The enum value held at <paramref name="address"/>, as the member of the game's <paramref name="enumType"/> it
 	/// stands for, whether it is held in a field or in an array. A value the enum doesn't name, or names twice, is refused.
 	/// </summary>

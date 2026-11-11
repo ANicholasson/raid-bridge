@@ -44,8 +44,10 @@ internal static class ChampionReader
 			.Object("HeroData", "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData")
 			.Dictionary("HeroById", $"System.Collections.Generic.Dictionary`2<System.Int32, {Hero}>")
 			.ByInt32Key();
-		// Read only once a Champion needs it, so an Account with none doesn't depend on it.
-		var baseStats = new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime));
+		// Read only once a Champion needs them, so an Account with none doesn't depend on them.
+		var statData = new StatData(
+			new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime)),
+			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)));
 		var champions = heroes.Select(hero => Champion(
 			hero.Key,
 			hero.Value.Object(Hero),
@@ -53,7 +55,7 @@ internal static class ChampionReader
 			heroTypes,
 			skillTypes,
 			names,
-			baseStats)).ToList();
+			statData)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
@@ -77,7 +79,7 @@ internal static class ChampionReader
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
-		Lazy<BaseStatsReader> baseStats)
+		StatData statData)
 	{
 		var id = hero.Int32("Id").Where(value => value == key && value > 0, $"the positive id HeroById keeps it under, {key}");
 		var typeId = hero.Int32("TypeId");
@@ -90,6 +92,10 @@ internal static class ChampionReader
 		var masteries = hero.ObjectOrNull("MasteryData", "SharedModel.Meta.Masteries.HeroMasteryData");
 		var rank = hero.EnumMember("Grade", "SharedModel.Meta.Heroes.HeroGrade");
 		var level = hero.Int32("Level");
+		// A Champion that never took a mastery has no mastery data at all.
+		IReadOnlyList<int> masteryIds = masteries is null
+			? []
+			: [.. masteries.List("Masteries", "System.Collections.Generic.List`1<System.Int32>").Int32s().Select(mastery => mastery.Where(value => value > 0, "a positive mastery id"))];
 
 		return new(
 			Id: id,
@@ -105,17 +111,21 @@ internal static class ChampionReader
 			Blessing: doubleAscend?.NullableEnum("BlessingId", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId").Value,
 			Empowerment: hero.Int32("EmpowerLevel").Where(level => level >= 0, "an empowerment of 0 or more"),
 			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names))],
-			// A Champion that never took a mastery has no mastery data at all.
-			Masteries: masteries is null
-				? []
-				: [.. masteries.List("Masteries", "System.Collections.Generic.List`1<System.Int32>").Int32s().Select(mastery => mastery.Where(value => value > 0, "a positive mastery id"))],
+			Masteries: masteryIds,
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
 			Artifacts: worn.Artifacts,
 			Relics: worn.Relics,
-			Stats: StatsFormula.For(baseStats.Value.Of(id, type, typeId.Value, rank, level), worn.ArtifactBonuses, worn.SetBonuses));
+			Stats: StatsFormula.For(
+				statData.BaseStats.Value.Of(id, type, typeId.Value, rank, level),
+				worn.ArtifactBonuses,
+				worn.SetBonuses,
+				masteryIds.Count == 0 ? MasteryBonuses.None : statData.Masteries.Value.For(id, masteryIds)));
 	}
+
+	/// <summary>The static data that scales Champions and gives their masteries' bonuses, each read once a Champion needs it.</summary>
+	private sealed record StatData(Lazy<BaseStatsReader> BaseStats, Lazy<MasteryBonusReader> Masteries);
 
 	/// <summary>What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts and their sets give it.</summary>
 	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics);

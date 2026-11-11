@@ -1,3 +1,5 @@
+using RaidBridge.Game.Testing.Artifacts;
+
 namespace RaidBridge.Game.Testing.Champions;
 
 /// <summary>
@@ -77,6 +79,17 @@ public sealed record SyntheticHeroData(
 	/// </summary>
 	public double[,]? RankMultipliers { get; init; } = new[,] { { 1, 2 }, { 1.5, 1.8 }, { 2.25, 1.6 }, { 3, 1.5 }, { 4, 1.5 }, { 5.5, 1.5 } };
 
+	/// <summary>
+	/// The static data's mastery types: a mastery made up to add 75 Attack, one like Lore of Steel, made up to add 15% of
+	/// its set bonuses, and one that raises no stat.
+	/// </summary>
+	public IReadOnlyList<SyntheticMasteryType> MasteryTypes { get; init; } =
+	[
+		new(500111, new(Stat: 2, Value: SyntheticArtifactData.Q32(75), Absolute: true)),
+		new(500112, new(Stat: -1, Value: SyntheticArtifactData.Q32(0.15), Absolute: false)),
+		new(500113, null),
+	];
+
 	/// <summary><c>BattleStats.ToPercent</c>, which turns the critical stats the game holds as whole percents into fractions.</summary>
 	public double ToPercent { get; init; } = 100;
 }
@@ -106,6 +119,9 @@ public sealed record SyntheticHero(int Id, int TypeId)
 }
 
 public sealed record SyntheticSkill(int Id, int TypeId, int Level);
+
+/// <summary>A mastery type, and its entry in MasteryBonusById, or null when it raises no stat. A stat kind of -1 marks a bonus to set bonuses.</summary>
+public sealed record SyntheticMasteryType(int Id, SyntheticStatBonus? Bonus);
 
 /// <summary>A hero's HeroDoubleAscendData: its grade, and its blessing or null when it has none.</summary>
 public sealed record SyntheticDoubleAscend(int Grade, int? Blessing);
