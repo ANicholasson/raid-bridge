@@ -17,6 +17,10 @@ public sealed partial class SyntheticGameClient
 	public void PointGuardianFaction(int slot, ulong address) => _heap.Pointer(_runtime.EntryValue(_guardians, slot), address);
 
 	/// <summary>A Faction's guardian slots of a rarity, by HeroFraction and HeroRarity, claim more slots than their array holds, as a torn or corrupt read might see them.</summary>
+	/// <summary>Where a guardian slot holds its second position's Nullable&lt;int&gt;, by its Faction, rarity and index.</summary>
+	public ulong GuardianSecondPosition(int faction, int rarity, int index) =>
+		_heap.ReadPointer(_runtime.ListItem(_guardianSlots[(faction, rarity)], index)) + 0x18;
+
 	public void SetGuardianSlotCount(int faction, int rarity, int count) => _runtime.SetListSize(_guardianSlots[(faction, rarity)], count);
 
 	/// <summary>
@@ -26,6 +30,8 @@ public sealed partial class SyntheticGameClient
 	/// </summary>
 	private void LayOutTheFactionGuardians(ulong userWrapperObject, SyntheticGuardianData guardianData)
 	{
+		LayOutTheGuardianBonuses(guardianData);
+
 		const string NullableInt = "System.Nullable`1<System.Int32>";
 		var systemObject = _runtime.SystemObject;
 
@@ -116,5 +122,55 @@ public sealed partial class SyntheticGameClient
 		var academyWrapperObject = _runtime.Object(academyWrapper, 0x18);
 		_heap.Pointer(academyWrapperObject + 0x10, updatableAcademyDataObject);
 		Slot("Client.Model.Guard.UserWrapper.Academy", userWrapperObject + 0x50, academyWrapperObject);
+	}
+
+	/// <summary>
+	/// The static data's AcademyData, whose Guardians' BonusesByHeroRarity lists, for each rarity, each slot's bonuses as
+	/// a StatBonuses, a BonusValue by StatKindId.
+	/// </summary>
+	private void LayOutTheGuardianBonuses(SyntheticGuardianData guardianData)
+	{
+		var systemObject = _runtime.SystemObject;
+		var statBonuses = Declare(
+			"SharedModel.Meta.Academy.Static",
+			"StatBonuses",
+			systemObject,
+			"System.Object",
+			("Bonuses", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, SharedModel.Meta.Artifacts.BonusValue>", GenericInstanceTypeCode, 0x10));
+		var guardians = Declare(
+			"SharedModel.Meta.Academy.Static",
+			"StaticAcademyGuardiansData",
+			systemObject,
+			"System.Object",
+			("BonusesByHeroRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>>", GenericInstanceTypeCode, 0x10));
+		var academy = Declare(
+			"SharedModel.Meta.Academy.Static",
+			"StaticAcademyData",
+			systemObject,
+			"System.Object",
+			("Guardians", "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", ClassTypeCode, 0x10));
+
+		var bonusValue = _runtime.RuntimeClass("SharedModel.Meta.Artifacts.BonusValue");
+		var byStat = _runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode);
+		var slotList = _runtime.ListType(statBonuses, "StatBonuses", sizeof(ulong));
+		var byRarity = _runtime.Dictionary(_runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode), [.. guardianData.BonusesByRarity.Select(rarity => (
+			(ulong)rarity.Key,
+			_runtime.List(slotList, [.. rarity.Value.Select(slot =>
+			{
+				var statBonusesObject = _runtime.Object(statBonuses, 0x18);
+				_heap.Pointer(statBonusesObject + 0x10, _runtime.Dictionary(byStat, [.. slot.Select(bonus =>
+				{
+					var bonusObject = _runtime.Object(bonusValue, 0x20);
+					_heap.Bytes(bonusObject + 0x10, [Bool(bonus.Value.Absolute)]);
+					_heap.Int64(bonusObject + 0x18, bonus.Value.Value);
+					return ((ulong)bonus.Key, bonusObject);
+				})]));
+				return statBonusesObject;
+			})])))]);
+		var guardiansObject = _runtime.Object(guardians, 0x18);
+		_heap.Pointer(guardiansObject + 0x10, byRarity);
+		var academyObject = _runtime.Object(academy, 0x18);
+		_heap.Pointer(academyObject + 0x10, guardiansObject);
+		_heap.Pointer(_clientStaticData + 0x50, academyObject);
 	}
 }

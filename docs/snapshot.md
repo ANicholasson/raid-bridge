@@ -230,6 +230,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           "masteries": {
             "Health": 278,
             "Attack": 75
+          },
+          "greatHall": {
+            "CriticalDamage": 0.25
           }
         }
       }
@@ -270,6 +273,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Accuracy": 0,
             "CriticalChance": 0.14999999990686774,
             "CriticalDamage": 0.5700000000651926
+          },
+          "factionGuardians": {
+            "Health": 378.00000035203993
           }
         }
       }
@@ -310,6 +316,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Accuracy": 0,
             "CriticalChance": 0.14999999990686774,
             "CriticalDamage": 0.5700000000651926
+          },
+          "factionGuardians": {
+            "Health": 630.0000005867332
           }
         }
       }
@@ -525,8 +534,10 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `artifacts`: what the Artifacts it wears add, each one's main stat, ascension bonus and Substats, each with its Glyph.
     - `sets`: what the sets of those Artifacts add.
     - `masteries`: what the Champion's masteries add. A mastery that raises set bonuses, such as Lore of Steel, adds its share of `sets` here.
+    - `greatHall`: what the Account's Great Hall adds for the Champion's Affinity, from the levels in `greatHall` below.
+    - `factionGuardians`: what the Account's Faction Guardians add for the Champion's Faction and rarity. The game counts that Faction's guardian slots of that rarity in order, only while both places of a slot are filled, so a slot after one that isn't full adds nothing even when full. The Champion doesn't need to be a Guardian itself.
 
-    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing and has no mastery that raises a stat has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, and gets nothing from the Great Hall or Faction Guardians has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.
@@ -565,7 +576,7 @@ Keys are camelCase, apart from the game's own names, and always come in this ord
 - A Relic's `bonuses` and `skillLevel`. The game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own.
 - A Champion's `stats`. The game keeps no stats on a Champion, so raid-bridge works them out (ADR-0005). Every number in them is the Account's own or the game's static data, read from the Game client like the names are. Only the way they add up is raid-bridge's, and it follows the game's own code:
   - `base` is built the way the game builds a Champion's Base stats. `Health`, `Attack` and `Defence` scale by the Champion's rank and level and round to whole points as the game rounds them, and `Health` is multiplied by 15. `Speed`, `Resistance` and `Accuracy` are as the Champion's type holds them. `CriticalChance` and `CriticalDamage` turn from whole percents into fractions. raid-bridge works in the game's own fixed point here, so each value is the one the game itself holds, such as `0.14999999990686774` for the 15% the screen shows.
-  - Every other Stat source adds up its bonuses the way the game does. A flat bonus adds its points. A percentage bonus adds that share of the Champion's Base stat, so 15% `Health` on 12,375 adds 1,856.25. Any bonus to `CriticalChance` or `CriticalDamage` adds its value as it is. A set counts once for each complete set of pieces worn. A set that grows by the piece counts the entry for the number of pieces worn. A stat mastery adds its value as it is. A mastery that raises set bonuses adds its share of each set bonus: as it is for `Resistance`, `Accuracy` and the critical stats, and for the other stats by scaling the Base stat, rounded to whole points as the game rounds it. So Lore of Steel's 15% of a 15% `Health` set raises 12,375 `Health` to 12,653. Bonuses to stats the screen doesn't show, such as a set's ignore-defence, are left out. These sums are otherwise unrounded.
+  - Every other Stat source adds up its bonuses the way the game does. A flat bonus adds its points. A percentage bonus adds that share of the Champion's Base stat, so 15% `Health` on 12,375 adds 1,856.25. Any bonus to `CriticalChance` or `CriticalDamage` adds its value as it is. A set counts once for each complete set of pieces worn. A set that grows by the piece counts the entry for the number of pieces worn. The Great Hall and Faction Guardians add as an Artifact's bonuses do. A stat mastery adds its value as it is. A mastery that raises set bonuses adds its share of each set bonus: as it is for `Resistance`, `Accuracy` and the critical stats, and for the other stats by scaling the Base stat, rounded to whole points as the game rounds it. So Lore of Steel's 15% of a 15% `Health` set raises 12,375 `Health` to 12,653. Bonuses to stats the screen doesn't show, such as a set's ignore-defence, are left out. These sums are otherwise unrounded.
 
   To show the stats as the champion screen does:
   - Round a Base stat's fraction to a whole percent. The points are whole already.

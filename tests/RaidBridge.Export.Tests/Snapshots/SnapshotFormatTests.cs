@@ -46,6 +46,15 @@ public partial class SnapshotFormatTests
 	/// </summary>
 	private static readonly MasteryBonuses KnightMasteries = new([new(Stat.Attack, 75, true)], [644245094 / 4294967296.0]);
 
+	/// <summary>Level 10 of the Void Great Hall's CriticalDamage, made up to give 25%. The knight is Void.</summary>
+	private static readonly StatBonus[] KnightGreatHall = [new(Stat.CriticalDamage, 0.25, false)];
+
+	/// <summary>
+	/// The archers fill both places of the Banner Lords' first Rare guardian slot, made up to give 10% Health, the nearest
+	/// Fixed being 429496730 / 2^32. The knight guards alone, so its slot isn't full and gives nothing.
+	/// </summary>
+	private static readonly StatBonus[] ArcherGuardians = [new(Stat.Health, 429496730 / 4294967296.0, false)];
+
 	/// <summary>Boots with no Substats, and a cloak locked to a Faction with a Glyph on its Substat.</summary>
 	private static readonly Artifact[] WornByNobody =
 	[
@@ -84,9 +93,9 @@ public partial class SnapshotFormatTests
 			new DateTimeOffset(2026, 10, 31, 21, 40, 0, TimeSpan.Zero),
 			AccountIdHash.Of(new AccountId(123456789), salt),
 			[
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], StatsFormula.For(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5), KnightBonuses, [KnightSetBonus], KnightMasteries)),
-				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], StatsFormula.For(Base(3780, 396, 216, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), [], [], MasteryBonuses.None)),
-				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], [], StatsFormula.For(Base(6300, 660, 360, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), [], [], MasteryBonuses.None)),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], StatsFormula.For(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5), new ChampionBonuses(KnightBonuses, [KnightSetBonus], KnightMasteries, KnightGreatHall, []))),
+				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], StatsFormula.For(Base(3780, 396, 216, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), ChampionBonuses.None with { FactionGuardians = ArcherGuardians })),
+				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], [], StatsFormula.For(Base(6300, 660, 360, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), ChampionBonuses.None with { FactionGuardians = ArcherGuardians })),
 			],
 			WornByNobody,
 			[UnwornRelic],

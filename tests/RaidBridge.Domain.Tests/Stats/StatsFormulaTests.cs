@@ -15,9 +15,7 @@ public class StatsFormulaTests
 	{
 		var stats = StatsFormula.For(
 			new Dictionary<Stat, double> { [Stat.Speed] = 64 },
-			[],
-			[new(Stat.Speed, 0.0625, false)],
-			new MasteryBonuses([], [0.125]));
+			ChampionBonuses.None with { Sets = [new(Stat.Speed, 0.0625, false)], Masteries = new MasteryBonuses([], [0.125]) });
 
 		Assert.Equal(new Dictionary<Stat, double> { [Stat.Speed] = 0 }, stats.Masteries);
 	}

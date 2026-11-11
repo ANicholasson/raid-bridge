@@ -16,25 +16,21 @@ namespace RaidBridge.Domain.Stats;
 /// a half going to the even one. The share is of each set bonus's value, flat or not, as the game takes it: no set at
 /// v39 gives a flat bonus to a stat it scales. The game scales in its fixed point and raid-bridge in doubles of the
 /// values the game holds, which round alike unless the product falls within a step of 2^-32 of a half.
+/// The Great Hall and Faction Guardians add as an Artifact's bonuses do (https://github.com/ANicholasson/raid-bridge/issues/13).
 /// The sums are otherwise unrounded. The champion screen rounds each of its Stat sources to a whole number, or a whole
 /// percent, and counts Artifacts and their sets as one source.
 /// </summary>
 public static class StatsFormula
 {
-	/// <summary>
-	/// A Champion's stats from its Base stats, the bonuses of the Artifacts it wears, each with its Glyph, what their
-	/// sets give it, and what its masteries give it.
-	/// </summary>
-	public static ChampionStats For(
-		IReadOnlyDictionary<Stat, double> baseStats,
-		IReadOnlyList<StatBonus> artifactBonuses,
-		IReadOnlyList<StatBonus> setBonuses,
-		MasteryBonuses masteries) =>
+	/// <summary>A Champion's stats from its Base stats and the bonuses its Stat sources give it.</summary>
+	public static ChampionStats For(IReadOnlyDictionary<Stat, double> baseStats, ChampionBonuses bonuses) =>
 		new(
 			Base: baseStats,
-			Artifacts: Add(baseStats, artifactBonuses),
-			Sets: Add(baseStats, setBonuses),
-			Masteries: MasteryStats(baseStats, setBonuses, masteries));
+			Artifacts: Add(baseStats, bonuses.Artifacts),
+			Sets: Add(baseStats, bonuses.Sets),
+			Masteries: MasteryStats(baseStats, bonuses.Sets, bonuses.Masteries),
+			GreatHall: Add(baseStats, bonuses.GreatHall),
+			FactionGuardians: Add(baseStats, bonuses.FactionGuardians));
 
 	/// <summary>
 	/// What the masteries add: each stat mastery's value, then each set bonus share of the set bonuses. The game's

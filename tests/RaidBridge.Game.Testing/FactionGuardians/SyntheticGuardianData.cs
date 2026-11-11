@@ -8,6 +8,21 @@ namespace RaidBridge.Game.Testing.FactionGuardians;
 public sealed record SyntheticGuardianData(IReadOnlyDictionary<int, IReadOnlyDictionary<int, IReadOnlyList<SyntheticGuardianSlot>>> SlotsByFaction)
 {
 	/// <summary>
+	/// The static data's BonusesByHeroRarity: for each rarity, the bonuses of each slot in order, each a raw Fixed by
+	/// StatKindId and whether it is absolute. Made up: for Rare, Epic and Legendary, 10% Health in the first slot, 10%
+	/// Attack in the second, and 7 Accuracy and Resistance in the third.
+	/// </summary>
+	public IReadOnlyDictionary<int, IReadOnlyList<IReadOnlyDictionary<int, (long Value, bool Absolute)>>> BonusesByRarity { get; init; } =
+		Enumerable.Range(3, 3).ToDictionary(
+			rarity => rarity,
+			IReadOnlyList<IReadOnlyDictionary<int, (long Value, bool Absolute)>> (_) =>
+			[
+				new Dictionary<int, (long, bool)> { [1] = (Artifacts.SyntheticArtifactData.Q32(0.1), false) },
+				new Dictionary<int, (long, bool)> { [2] = (Artifacts.SyntheticArtifactData.Q32(0.1), false) },
+				new Dictionary<int, (long, bool)> { [6] = (Artifacts.SyntheticArtifactData.Q32(7), true), [5] = (Artifacts.SyntheticArtifactData.Q32(7), true) },
+			]);
+
+	/// <summary>
 	/// DarkElves laid out before BannerLords, so only the reader can put them in the game's order. BannerLords' Rare slots
 	/// hold the default Champions 7 and 12 in the first and nothing in the second; DarkElves' Legendary slots hold nothing
 	/// in the first and Champion 3 in the second position of the second; HighElves have an Epic list with no slots.

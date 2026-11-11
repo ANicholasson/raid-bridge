@@ -28,7 +28,8 @@ internal static class ChampionReader
 		LocalizedNames names,
 		IReadOnlyDictionary<int, IReadOnlyList<Artifact>> equipped,
 		ArtifactSetBonuses sets,
-		IReadOnlyDictionary<int, IReadOnlyList<Relic>> relics)
+		IReadOnlyDictionary<int, IReadOnlyList<Relic>> relics,
+		AccountStatBonuses accountBonuses)
 	{
 		var heroTypes = staticData
 			.Object("HeroData", "SharedModel.Meta.Heroes.StaticHeroData")
@@ -55,7 +56,8 @@ internal static class ChampionReader
 			heroTypes,
 			skillTypes,
 			names,
-			statReaders)).ToList();
+			statReaders,
+			accountBonuses)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
@@ -79,7 +81,8 @@ internal static class ChampionReader
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
-		StatReaders statReaders)
+		StatReaders statReaders,
+		AccountStatBonuses accountBonuses)
 	{
 		var id = hero.Int32("Id").Where(value => value == key && value > 0, $"the positive id HeroById keeps it under, {key}");
 		var typeId = hero.Int32("TypeId");
@@ -92,6 +95,9 @@ internal static class ChampionReader
 		var masteries = hero.ObjectOrNull("MasteryData", "SharedModel.Meta.Masteries.HeroMasteryData");
 		var rank = hero.EnumMember("Grade", "SharedModel.Meta.Heroes.HeroGrade");
 		var level = hero.Int32("Level");
+		var rarity = type.Enum("Rarity", "SharedModel.Meta.Heroes.HeroRarity").Value;
+		var affinity = Affinity(type, typeId.Value);
+		var faction = type.Enum("Fraction", "SharedModel.Meta.Heroes.HeroFraction").Value;
 		// A Champion that never took a mastery has no mastery data at all.
 		IReadOnlyList<int> masteryIds = masteries is null
 			? []
@@ -101,9 +107,9 @@ internal static class ChampionReader
 			Id: id,
 			TypeId: typeId.Value,
 			Name: names.Of(type, "Name", $"Champion type {typeId.Value}"),
-			Rarity: type.Enum("Rarity", "SharedModel.Meta.Heroes.HeroRarity").Value,
-			Affinity: Affinity(type, typeId.Value),
-			Faction: type.Enum("Fraction", "SharedModel.Meta.Heroes.HeroFraction").Value,
+			Rarity: rarity,
+			Affinity: affinity,
+			Faction: faction,
 			Rank: rank.Value.Name,
 			Level: level.Where(value => value > 0, "a positive level"),
 			// A Champion that was never awakened has no awakening data at all.
@@ -119,10 +125,21 @@ internal static class ChampionReader
 			Relics: worn.Relics,
 			Stats: StatsFormula.For(
 				statReaders.BaseStats.Value.Of(id, type, typeId.Value, rank, level),
-				worn.ArtifactBonuses,
-				worn.SetBonuses,
-				masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds)));
+				new ChampionBonuses(
+					worn.ArtifactBonuses,
+					worn.SetBonuses,
+					masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds),
+					accountBonuses.GreatHall.GetValueOrDefault(affinity, []),
+					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []))));
 	}
+
+	/// <summary>
+	/// What the Account gives every Champion of an Affinity, Faction and rarity: its Great Hall by Affinity, and its
+	/// Faction Guardians by Faction and rarity.
+	/// </summary>
+	internal sealed record AccountStatBonuses(
+		IReadOnlyDictionary<string, IReadOnlyList<StatBonus>> GreatHall,
+		IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> FactionGuardians);
 
 	/// <summary>The static data that scales Champions and gives their masteries' bonuses, each read once a Champion needs it.</summary>
 	private sealed record StatReaders(Lazy<BaseStatsReader> BaseStats, Lazy<MasteryBonusReader> Masteries);

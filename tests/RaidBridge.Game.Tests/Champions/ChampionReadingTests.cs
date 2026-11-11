@@ -19,7 +19,7 @@ public sealed class ChampionReadingTests : IDisposable
 
 	private readonly SyntheticGameClient _game = SyntheticGameClient.Create();
 
-	private static readonly ChampionStats NoStats = new(new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>());
+	private static readonly ChampionStats NoStats = new(new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>(), new Dictionary<Stat, double>());
 
 	/// <summary>
 	/// HeroById holds a slot a removal freed, which is skipped. The names come from StaticDataLocalization (the
@@ -113,9 +113,11 @@ public sealed class ChampionReadingTests : IDisposable
 	[Fact]
 	public void Refuses_an_enum_value_the_game_does_not_name()
 	{
-		_game.RemoveEnumMember("SharedModel.Meta.Heroes.HeroFraction", "BannerLords");
+		// The Faction Guardians are read before the Champions, so they mustn't hold the Faction too.
+		using var game = SyntheticGameClient.Create(guardianData: SyntheticGuardianData.Only(faction: 11, rarity: 5, []), arenaData: SyntheticArenaData.None);
+		game.RemoveEnumMember("SharedModel.Meta.Heroes.HeroFraction", "BannerLords");
 
-		RefusesMatching(_game, @"^SharedModel\.Meta\.Heroes\.HeroType\.Fraction at 0x[0-9A-F]+ is 1, which isn't a member of the game's SharedModel\.Meta\.Heroes\.HeroFraction\.$");
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroType\.Fraction at 0x[0-9A-F]+ is 1, which isn't a member of the game's SharedModel\.Meta\.Heroes\.HeroFraction\.$");
 	}
 
 	[Fact]

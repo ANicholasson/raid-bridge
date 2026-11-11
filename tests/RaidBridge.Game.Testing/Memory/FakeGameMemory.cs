@@ -34,6 +34,9 @@ public sealed class FakeGameMemory(GameModule gameAssembly, DateTimeOffset start
 		throw new GameMemoryException($"Nothing is mapped at 0x{address:X} for {buffer.Length} bytes.");
 	}
 
+	/// <summary>How many reads were of exactly these bytes, as a field's value is read.</summary>
+	public int TimesRead(ulong start, int length) => _reads.Count(read => read.Address == start && read.Length == length);
+
 	public bool WasRead(ulong start, int length) =>
 		_reads.Any(read => read.Address < start + (ulong)length && start < read.Address + (ulong)read.Length);
 }
