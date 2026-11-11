@@ -238,6 +238,12 @@ internal static class SnapshotJson
 		json.WriteStartObject("stats");
 		json.WriteStartObject("bySource");
 		WriteStats(json, "base", champion.Stats.Base);
+		// A Stat source that raises nothing is left out.
+		foreach (var (source, stats) in new[] { (Name: "artifacts", Stats: champion.Stats.Artifacts), (Name: "sets", Stats: champion.Stats.Sets) }.Where(source => source.Stats.Count > 0))
+		{
+			WriteStats(json, source, stats);
+		}
+
 		json.WriteEndObject();
 		json.WriteEndObject();
 		json.WriteEndObject();

@@ -52,7 +52,8 @@ internal static class ArtifactReader
 
 		return new(
 			wornBy,
-			[.. stored.ById.Where(entry => !wearers.ContainsKey(entry.Key)).OrderBy(entry => entry.Key).Select(entry => Unworn(entry.Value, sets, names))]);
+			[.. stored.ById.Where(entry => !wearers.ContainsKey(entry.Key)).OrderBy(entry => entry.Key).Select(entry => Unworn(entry.Value, sets, names))],
+			new ArtifactSetBonuses(sets));
 	}
 
 	/// <summary>
@@ -189,7 +190,12 @@ internal static class ArtifactReader
 			Substats: [.. artifact.ListOrNull("_secondaryBonuses", $"System.Collections.Generic.List`1<{Bonus}>")?.Objects(Bonus).Select(ArtifactBonus) ?? []]);
 	}
 
-	/// <summary>A bonus: its stat, its value and whether that is flat or a percentage, its Glyph, and how many times it was raised.</summary>
+	/// <summary>
+	/// A bonus: its stat, its value and whether that is flat or a percentage, its Glyph, and how many times it was
+	/// raised. The Glyph is both values the game adds onto the bonus, as <c>ArtifactSetup.FromArtifact</c> adds them:
+	/// <c>_powerUpValue</c>, and <c>_rarityBasedPowerUpValue</c> when it holds one
+	/// (https://github.com/ANicholasson/raid-bridge/issues/11).
+	/// </summary>
 	private static ArtifactBonus ArtifactBonus(ManagedObject bonus)
 	{
 		var value = bonus.Object("_value", "SharedModel.Meta.Artifacts.BonusValue");
@@ -197,10 +203,13 @@ internal static class ArtifactReader
 			Stat: bonus.Enum("_kindId", "SharedModel.Battle.Effects.StatKindId").Value,
 			Value: FixedPoint.Of(value, "_value"),
 			Flat: value.Boolean("_isAbsolute").Value,
-			Glyph: FixedPoint.Of(bonus, "_powerUpValue"),
+			Glyph: FixedPoint.Of(bonus, "_powerUpValue") + (FixedPoint.OfNullable(bonus, "_rarityBasedPowerUpValue") ?? 0),
 			Rolls: bonus.Int32("_level").Where(level => level >= 0, "a roll count of 0 or more"));
 	}
 }
 
-/// <summary>The Account's Artifacts: those each Champion wears, by the Champion's id, in the game's order of slots, and those no Champion wears, by id.</summary>
-internal sealed record AccountArtifacts(IReadOnlyDictionary<int, IReadOnlyList<Artifact>> WornBy, IReadOnlyList<Artifact> Unworn);
+/// <summary>
+/// The Account's Artifacts: those each Champion wears, by the Champion's id, in the game's order of slots, and those no
+/// Champion wears, by id, with what the static data's sets give a Champion for the pieces it wears.
+/// </summary>
+internal sealed record AccountArtifacts(IReadOnlyDictionary<int, IReadOnlyList<Artifact>> WornBy, IReadOnlyList<Artifact> Unworn, ArtifactSetBonuses Sets);

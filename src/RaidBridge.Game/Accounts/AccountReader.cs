@@ -36,7 +36,7 @@ internal static class AccountReader
 		var names = new LocalizedNames(staticData);
 		var artifacts = ArtifactReader.Read(userWrapper, staticData, names);
 		var relics = RelicReader.Read(userWrapper, staticData, names);
-		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, relics.WornBy);
+		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy);
 		var resources = ResourceReader.Read(userWrapper);
 		var greatHall = GreatHallReader.Read(userWrapper, staticData);
 		var factionGuardians = FactionGuardianReader.Read(userWrapper, champions);

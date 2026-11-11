@@ -110,13 +110,18 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 
 	/// <summary>
 	/// A value type held in a field, such as a <c>Plarium.Common.Numerics.Fixed</c>, read as its runtime class, which
-	/// the TypeInfo slot of <paramref name="valueType"/> gives.
+	/// the TypeInfo slot of <paramref name="valueType"/> gives. <paramref name="declaredType"/> is the value type unless
+	/// the field is a generic class's, such as Nullable&lt;T&gt;'s <c>T</c>.
 	/// </summary>
-	public ManagedObject Value(string fieldName, string valueType)
+	public ManagedObject Value(string fieldName, string valueType, string? declaredType = null)
 	{
-		var (where, address, _) = Locate(fieldName, valueType, ValueTypeCode);
+		var (where, address, _) = Locate(fieldName, declaredType ?? valueType, ValueTypeCode);
 		return Runtime.Value(address, Runtime.ClassNamed(valueType), valueType, where);
 	}
+
+	/// <summary>A Nullable&lt;T&gt; field of a value type, such as a Fixed, read as that value type, or null when it has none.</summary>
+	public ManagedObject? NullableValue(string fieldName, string valueType) =>
+		Nullable(fieldName, valueType).Nullable?.Value("value", valueType, declaredType: "T");
 
 	/// <summary>This object read as <paramref name="className"/>, a class its runtime class is or derives from, such as the class behind an interface-typed field.</summary>
 	public ManagedObject As(string className) =>

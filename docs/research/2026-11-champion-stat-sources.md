@@ -111,7 +111,7 @@ A read-only probe read the running Game client on the maintainer's Linux install
 
 ### `BattleStats.Multipliers`
 
-**The metadata declares it `double[][]`, but in memory it is a `double[6,2]`**, a two-dimensional array, which IL2CPP lays out differently from an array of arrays. The reader has to support that shape and check it against the declared type. Its rows, one per rank: [1, 2], [1.6, 1.9], [2.432, 1.8], [3.50208, 1.7], [4.7628288, 1.7], [6.477447168, 1.7]. The first values grow by 1.6, 1.52, 1.44, 1.36 and 1.36 from rank to rank. How a level within a rank applies is still a guess, to check against one Champion's white numbers.
+**The metadata declares it `double[][]`, but in memory it is a `double[6,2]`**, a two-dimensional array, which IL2CPP lays out differently from an array of arrays. The reader has to support that shape and check it against the declared type. Its rows, one per rank: [1, 2], [1.6, 1.9], [2.432, 1.8], [3.50208, 1.7], [4.7628288, 1.7], [6.477447168, 1.7]. The first values grow by 1.6, 1.52, 1.44, 1.36 and 1.36 from rank to rank. How a level within a rank applies them is settled in "How the game builds Base stats" below. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/18) -->
 
 ### The tables
 
@@ -163,10 +163,54 @@ With this formula, the reader gave the screen's sample below exactly: an Epic at
 
 For the sources still to come, `SharedModel.Meta.Heroes.Extensions.BattleStatsExtensions` has one method per source, each taking the Base stats: `CalcArtifactsBonus`, `CalcRelicsBonus`, `CalcBuildingsBonus` (the Great Hall), `CalcBlessingBonus`, `CalcArenaBonus` (by `ArenaLeagueId`), `CalcAcademyBonus` (Faction Guardians) and `CalcEmpowerBonus`. `BattleStats.UpdateWithBonuses` takes a percent and a flat part from each. They are the map for the later tickets, read the same way.
 
+## How the champion screen adds its Stat sources (settled 2026-11-10)
+
+For https://github.com/ANicholasson/raid-bridge/issues/11, read the same way from the installed v39 `GameAssembly.dll`.
+
+### What the screen counts, and how it rounds
+
+The champion screen's green numbers come from `Client.ViewModel.Utils.HeroExtensions.CalcBattleBonusStats`. It calls `SharedModel.Meta.Heroes.HeroExtensions.CalcHeroStatBonusesRounded` with:
+- the Account's Great Hall (`VillageWrapperReadOnly.MakeHeroBuildingSetup`);
+- its Faction Guardians (`AcademyWrapperReadOnly.Setup`);
+- its Classic Arena league, but only when it has a defence team (`ArenaWrapperReadOnly.HasDefence`);
+- the Champion's Artifacts and Relics.
+
+`CalcHeroStatBonusesRounded` works out each Stat source on its own from the Base stats, through `BattleStatsExtensions`:
+- the Artifacts and their sets, as one source;
+- Relics;
+- the Arena league;
+- the Great Hall;
+- masteries;
+- the blessing;
+- Faction Guardians;
+- Empowerment.
+
+It then adds the sources up with `OperationType.AddRoundValues`, which rounds each source to a whole number with `Math.Round`, a half going to the even one, before it adds it. `CriticalChance`, `CriticalDamage`, `CriticalHeal` and `IgnoreDefence` are first multiplied by `ToPercent`, so they round to whole percents.
+
+So the screen counts the Arena league, the Great Hall, Faction Guardians and Empowerment. No clan bonus is among them.
+
+Each source's bonus is `BattleStats.UpdateWithBonuses` of that source alone, less the Base stats:
+- `Health`, `Attack`, `Defence`, `Speed`, `Resistance` and `Accuracy` use `CalcAbsoluteStats`: base × (1 + the source's percentages) + its flat bonuses.
+- The critical stats use `CalcPercentageStats`: base + every bonus, whether flat or not.
+
+### The Arena league
+
+`StaticData.ArenaData.LeagueInfos`, each an `ArenaLeagueInfo` with `Id` and `BattleBonuses` (a `BattleStats` of percentages). From BronzeI to Platinum it gives 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 and 25% to `Health`, `Attack` and `Defence`. Spec https://github.com/ANicholasson/raid-bridge/issues/5 didn't name it as a Stat source, so it was added on 2026-11-11 as `arenaLeague`, with a ticket of its own (https://github.com/ANicholasson/raid-bridge/issues/20).
+
+### Artifacts and sets
+
+- `ArtifactSetup.FromArtifact` takes every bonus of an Artifact: its primary, its Substats and its ascension bonus. Each is the bonus's value, plus its `_powerUpValue`, plus its `_rarityBasedPowerUpValue` when it has one. So a Glyph can be held in two parts. A bonus goes to the percentages unless it is absolute or its stat is a relative one (`HeroStatKindIdExtensions.IsRelative`), such as the critical stats.
+- `ArtifactExtensions.GetArtifactSetBonuses` counts the worn pieces of each set kind, then looks the set up in two places, `StaticArtifactData.GetSetInfo` and `GetSeriesSetInfo`:
+  - For a set that grows by the piece, `GetSeriesSetInfo` finds the `ArtifactSubSetInfo` whose `ArtifactCount` equals the number worn. That entry's `StatBonuses` count once, beside the set's own empty ones.
+  - Any other set gives its `StatBonus`, or its `StatBonuses` when it has no single one, once for each `ArtifactCount` pieces worn.
+- `BattleBonuses.InitArtifact` puts a set's absolute bonuses with the flat bonuses and the rest with the percentages.
+
+Live, on 2026-11-10, the defence teams' `ArtifactSetup`s held exactly those sums for the Artifacts worn, ascension bonuses included. With the formula, two screenshots matched every green number exactly once the other sources were added: Jizoh (a complete Attack set, the Great Hall, a Faction Guardian slot, SilverIV) and Vallaryn the Equalizer (no set, the Great Hall, SilverIV). For example, Vallaryn's HP is round(3,992.75) + round(10,695 × 12%) = 3,993 + 1,283 = 5,276. No Artifact on the Account had a Glyph then, so Glyphs are proven by the code and the tests only.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
 2. **Empowerment:** whether its levels add up.
 3. **The missing blessing setup** on one awakened defence Champion.
-4. **What the screen counts:** whether the champion screen counts the Arena league, clan bonuses, the Great Hall, Faction Guardians and Empowerment.
-5. **How the screen rounds** each stat.
+4. **What the screen counts:** settled above, from the game's code. The Arena league, the Great Hall, Faction Guardians and Empowerment count, and no clan bonus does.
+5. **How the screen rounds** each stat: settled above. Each Stat source rounds to a whole number or a whole percent, a half to the even one, before they are added.

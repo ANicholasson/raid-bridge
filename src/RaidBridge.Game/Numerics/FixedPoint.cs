@@ -27,10 +27,17 @@ internal static class FixedPoint
 	private const long MaxExact = 1L << 53;
 
 	/// <summary>The Fixed a field of <paramref name="owner"/> holds, as the number it stands for.</summary>
-	public static double Of(ManagedObject owner, string fieldName)
+	public static double Of(ManagedObject owner, string fieldName) => OfValue(owner.Value(fieldName, Fixed), $"{owner.ClassName}.{fieldName}");
+
+	/// <summary>The Fixed a Nullable&lt;Fixed&gt; field of <paramref name="owner"/> holds, as the number it stands for, or null when it holds none.</summary>
+	public static double? OfNullable(ManagedObject owner, string fieldName) =>
+		owner.NullableValue(fieldName, Fixed) is { } value ? OfValue(value, $"{owner.ClassName}.{fieldName}") : null;
+
+	/// <summary>A Fixed read as its own object, as the number it stands for, named <paramref name="field"/> in errors.</summary>
+	private static double OfValue(ManagedObject value, string field)
 	{
-		var raw = owner.Value(fieldName, Fixed).Int64("m_rawValue");
-		var one = owner.Runtime.Metadata.Constant(Fixed, "ONE");
+		var raw = value.Int64("m_rawValue");
+		var one = value.Runtime.Metadata.Constant(Fixed, "ONE");
 		// A power of two keeps the division exact.
 		if (one <= 0 || (one & (one - 1)) != 0)
 		{
@@ -39,7 +46,7 @@ internal static class FixedPoint
 
 		return raw.Value is > -MaxExact and < MaxExact
 			? (double)raw.Value / one
-			: throw new GameDataException($"{owner.ClassName}.{fieldName} holds a {Fixed} whose {raw}, which raid-bridge can't write exactly.");
+			: throw new GameDataException($"{field} holds a {Fixed} whose {raw}, which raid-bridge can't write exactly.");
 	}
 
 	/// <summary>The raw value a Fixed field of <paramref name="owner"/> holds, for the game's own arithmetic, named after the field.</summary>

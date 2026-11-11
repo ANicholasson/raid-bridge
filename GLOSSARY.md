@@ -68,6 +68,10 @@ _Avoid_: bathhouse
 One of an Artifact's secondary bonuses, beside its main stat.
 _Avoid_: secondary bonus, sub-stat
 
+**Set**:
+Artifacts of one kind that give a bonus when a Champion wears enough of them together, such as a Speed set. Most count once for each complete set worn; some grow by the piece, giving more for each piece worn.
+_Avoid_: set bonus (for the set itself)
+
 **Glyph**:
 An extra value that the player adds onto an Artifact's substat. The game's code calls it a power-up.
 _Avoid_: power-up

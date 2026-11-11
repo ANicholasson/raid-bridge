@@ -45,7 +45,15 @@ public sealed partial class SyntheticGameClient
 			("_kindId", "SharedModel.Battle.Effects.StatKindId", ValueTypeTypeCode, 0x10),
 			("_level", "System.Int32", Int32TypeCode, 0x14),
 			("_value", "SharedModel.Meta.Artifacts.BonusValue", ClassTypeCode, 0x18),
-			("_powerUpValue", Fixed, ValueTypeTypeCode, 0x20));
+			("_powerUpValue", Fixed, ValueTypeTypeCode, 0x20),
+			("_rarityBasedPowerUpValue", $"System.Nullable`1<{Fixed}>", GenericInstanceTypeCode, 0x28));
+		var nullableFixed = _runtime.Class(
+			"System",
+			"Nullable`1",
+			_runtime.ValueType,
+			new SyntheticField("hasValue", BooleanTypeCode, ObjectHeaderSize),
+			new SyntheticField("value", ValueTypeTypeCode, ObjectHeaderSize + 0x8));
+		_heap.Pointer(_runtime.FieldInfo("SharedModel.Meta.Artifacts.Bonuses.ArtifactBonus._rarityBasedPowerUpValue") + FieldInfoType, _runtime.Type(GenericInstanceTypeCode, data: _runtime.GenericClass(nullableFixed)));
 		var nullableInt = _runtime.Class(
 			"System",
 			"Nullable`1",
@@ -123,11 +131,17 @@ public sealed partial class SyntheticGameClient
 			var valueObject = _runtime.Object(bonusValue, 0x20);
 			_heap.Bytes(valueObject + 0x10, [Bool(synthetic.Absolute)]);
 			_heap.Int64(valueObject + 0x18, synthetic.Value);
-			var bonusObject = _runtime.Object(bonus, 0x28);
+			var bonusObject = _runtime.Object(bonus, 0x38);
 			_heap.Int32(bonusObject + 0x10, synthetic.Stat);
 			_heap.Int32(bonusObject + 0x14, synthetic.Level);
 			_heap.Pointer(bonusObject + 0x18, valueObject);
 			_heap.Int64(bonusObject + 0x20, synthetic.Glyph);
+			if (synthetic.RarityGlyph is { } rarityGlyph)
+			{
+				_heap.Bytes(bonusObject + 0x28, [1]);
+				_heap.Int64(bonusObject + 0x30, rarityGlyph);
+			}
+
 			return bonusObject;
 		}
 

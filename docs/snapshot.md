@@ -216,6 +216,16 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Accuracy": 10,
             "CriticalChance": 0.14999999990686774,
             "CriticalDamage": 0.5
+          },
+          "artifacts": {
+            "Health": 3760,
+            "Attack": 287,
+            "Defence": 29.680000027641654,
+            "Speed": 15,
+            "CriticalChance": 0.060000000055879354
+          },
+          "sets": {
+            "Health": 1856.2499988474883
           }
         }
       }
@@ -506,7 +516,12 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `skills`: its own passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below).
     - `factionSkills`: the passive effects it adds only for a wearer of a given Faction, each with that `faction`, such as `"DarkElves"`, its `typeId` and its `description`, in the order its type lists them, or `[]`. Every Relic lists them, worn or not, so a reader can tell which Faction a spare Relic suits, and whether a worn Relic's wearer gets them. Few Relic types have any.
     - `sockets`: its sockets, in the order the game keeps them, each with its `shape`, such as `"Circle"`, and the Relic `stone` in it, or `null` when it is empty.
-  - `stats`: the Champion's stats, worked out from what raid-bridge read (below). `bySource` holds the Champion's Base stats and what each Stat source adds to them, each stat under its name, such as `"Speed"`, in the order of the numbers the game's code gives the stats. So far it holds only `base`, the Champion's Base stats at its rank, level and ascension, the white numbers on its champion screen, with all eight stats, `Health`, `Attack`, `Defence`, `Speed`, `Resistance`, `Accuracy`, `CriticalChance` and `CriticalDamage`. They are in the units of an Artifact's bonuses: points, and fractions for `CriticalChance` and `CriticalDamage`. The other Stat sources and the Total stats are still to come.
+  - `stats`: the Champion's stats, worked out from what raid-bridge read (below). `bySource` holds the Champion's Base stats and what each Stat source adds to them, each stat under its name, such as `"Speed"`, in the order of the numbers the game's code gives the stats. All are in the units of an Artifact's bonuses: points, and fractions for `CriticalChance` and `CriticalDamage`. So far it holds:
+    - `base`: the Champion's Base stats at its rank, level and ascension, the white numbers on its champion screen. It always has all eight stats: `Health`, `Attack`, `Defence`, `Speed`, `Resistance`, `Accuracy`, `CriticalChance` and `CriticalDamage`.
+    - `artifacts`: what the Artifacts it wears add, each one's main stat, ascension bonus and Substats, each with its Glyph.
+    - `sets`: what the sets of those Artifacts add.
+
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing has only `base`. The other Stat sources and the Total stats are still to come.
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.
@@ -517,7 +532,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   Each bonus has:
   - `stat`: the stat it raises, such as `"Speed"` or `"CriticalChance"`.
   - `value`: how much. When `flat` is `true` the value is a number of points, such as `265` Attack; when it is `false` the value is a fraction, so 6% is about `0.06`.
-  - `glyph`: the value a Glyph adds to it, in the same unit, or `0`.
+  - `glyph`: the value a Glyph adds to it, in the same unit, or `0`. The game can hold a Glyph's value in two parts, and this is both.
   - `rolls`: how many times the bonus was raised as the Artifact levelled, or `0`.
 - `unwornArtifacts`: every Artifact on the Account that no Champion wears, sorted by `id`, or `[]` when every Artifact is worn. Each has exactly the fields of a worn Artifact, its `slot` being the slot it fits. An Artifact a Champion wears is under that Champion's `artifacts` and nowhere else, so every Artifact on the Account appears exactly once.
 - `unwornRelics`: every Relic on the Account that no Champion wears, sorted by `id`, or `[]`. Each has exactly the fields of a worn Relic. A Relic a Champion wears is under that Champion's `relics` and nowhere else, so every Relic on the Account appears exactly once.
@@ -543,7 +558,13 @@ An Artifact's `value` and `glyph` are exactly what the game holds. The game keep
 Keys are camelCase, apart from the game's own names, and always come in this order, indented by two spaces with `\n` line ends, so two Snapshots diff cleanly. Values are only what raid-bridge read or worked out from what it read: nothing is guessed or filled in. A run that can't read a value fails and writes no file. Two things are worked out:
 
 - A Relic's `bonuses` and `skillLevel`. The game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own.
-- A Champion's `stats`. The game keeps no stats on a Champion, so raid-bridge works them out (ADR-0005). Every number in them is the Account's own or the game's static data, read from the Game client like the names are. Only the way they add up is raid-bridge's: for `base`, the way the game's own code builds a Champion's Base stats. That code scales `Health`, `Attack` and `Defence` by the Champion's rank and level, rounds them to whole points as the game does, and multiplies `Health` by 15. It takes `Speed`, `Resistance` and `Accuracy` as the Champion's type holds them, and turns `CriticalChance` and `CriticalDamage` from whole percents into fractions. raid-bridge works in the game's own fixed point, so each value is the one the game itself holds, such as `0.14999999990686774` for the 15% the screen shows. To show a Base stat as the champion screen does, round a fraction to a whole percent: the points are whole already.
+- A Champion's `stats`. The game keeps no stats on a Champion, so raid-bridge works them out (ADR-0005). Every number in them is the Account's own or the game's static data, read from the Game client like the names are. Only the way they add up is raid-bridge's, and it follows the game's own code:
+  - `base` is built the way the game builds a Champion's Base stats. `Health`, `Attack` and `Defence` scale by the Champion's rank and level and round to whole points as the game rounds them, and `Health` is multiplied by 15. `Speed`, `Resistance` and `Accuracy` are as the Champion's type holds them. `CriticalChance` and `CriticalDamage` turn from whole percents into fractions. raid-bridge works in the game's own fixed point here, so each value is the one the game itself holds, such as `0.14999999990686774` for the 15% the screen shows.
+  - Every other Stat source adds up its bonuses the way the game does. A flat bonus adds its points. A percentage bonus adds that share of the Champion's Base stat, so 15% `Health` on 12,375 adds 1,856.25. Any bonus to `CriticalChance` or `CriticalDamage` adds its value as it is. A set counts once for each complete set of pieces worn. A set that grows by the piece counts the entry for the number of pieces worn. Bonuses to stats the screen doesn't show, such as a set's ignore-defence, are left out. These sums are unrounded.
+
+  To show the stats as the champion screen does:
+  - Round a Base stat's fraction to a whole percent. The points are whole already.
+  - For a green number, round each Stat source to whole points or whole percents, a half going to the even one, then add them up. The screen does the same, but counts `artifacts` and `sets` as one source, so add those two together before rounding.
 
 ## Names
 
