@@ -79,7 +79,7 @@ Every route below starts at `ClientStaticData` (the fields are declared on its b
 
 ### Faction Guardians
 
-`StaticAcademyData.Guardians.BonusesByHeroRarity` is a `Dictionary<HeroRarity, List<StatBonuses>>`. Each `StatBonuses` holds `Bonuses`, a `Dictionary<StatKindId, BonusValue>`. The list is presumably indexed by the number of filled slots or by slot. The live check settles it.
+`StaticAcademyData.Guardians.BonusesByHeroRarity` is a `Dictionary<HeroRarity, List<StatBonuses>>`. Each `StatBonuses` holds `Bonuses`, a `Dictionary<StatKindId, BonusValue>`. Entry _n_ is the bonus of the Faction's slot _n_ + 1 of that rarity, counted only while the slots are full: see "The Great Hall and Faction Guardians" below.
 
 ### Blessings
 

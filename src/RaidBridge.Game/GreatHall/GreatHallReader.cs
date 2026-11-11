@@ -2,7 +2,6 @@ using RaidBridge.Domain.GreatHall;
 using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Metadata;
-using RaidBridge.Game.Numerics;
 using RaidBridge.Game.Stats;
 
 namespace RaidBridge.Game.GreatHall;
@@ -41,7 +40,7 @@ internal static class GreatHallReader
 			.ToList();
 		return new(
 			[.. affinities.Select(affinity => new GreatHallAffinity(affinity.Name, [.. affinity.Levels.Select(level => level.Level)]))],
-			affinities.ToDictionary(affinity => affinity.Name, affinity => (IReadOnlyList<StatBonus>)[.. affinity.Levels.SelectMany(level => level.Bonus)], StringComparer.Ordinal));
+			affinities.ToDictionary(affinity => affinity.Name, affinity => (IReadOnlyList<StatBonus>)[.. affinity.Levels.SelectMany(level => level.Bonuses)], StringComparer.Ordinal));
 	}
 
 	/// <summary>
@@ -49,7 +48,7 @@ internal static class GreatHallReader
 	/// from 1: Raid Toolkit's ArenaExtension reads the bonus of a level at index level - 1, so the game holds no 0. Each
 	/// level comes with its bonus, if it raises a stat the champion screen shows.
 	/// </summary>
-	private static IReadOnlyList<(GreatHallLevel Level, IReadOnlyList<StatBonus> Bonus)> Levels(
+	private static IReadOnlyList<(GreatHallLevel Level, IReadOnlyList<StatBonus> Bonuses)> Levels(
 		ManagedDictionary? levels,
 		Lazy<Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>> table) =>
 		levels is null
@@ -66,12 +65,9 @@ internal static class GreatHallReader
 					}
 
 					var value = level.Where(value => value >= 1 && value <= bonuses.Count, $"a level from 1 to {bonuses.Count}");
-					var bonus = bonuses[value - 1];
 					return (
 						new GreatHallLevel(stat.Key.Name, value),
-						StatNames.Of(stat.Key.Name, $"The Great Hall's {stat.Key.Name}") is { } shown
-							? (IReadOnlyList<StatBonus>)[new StatBonus(shown, FixedPoint.Of(bonus, "_value"), bonus.Boolean("_isAbsolute").Value)]
-							: []);
+						StatNames.BonusOf(stat.Key.Name, bonuses[value - 1], $"The Great Hall's {stat.Key.Name}") is { } bonus ? (IReadOnlyList<StatBonus>)[bonus] : []);
 				})];
 
 	/// <summary>

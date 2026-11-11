@@ -29,7 +29,7 @@ internal static class ChampionReader
 		IReadOnlyDictionary<int, IReadOnlyList<Artifact>> equipped,
 		ArtifactSetBonuses sets,
 		IReadOnlyDictionary<int, IReadOnlyList<Relic>> relics,
-		AccountStatBonuses account)
+		AccountStatBonuses accountBonuses)
 	{
 		var heroTypes = staticData
 			.Object("HeroData", "SharedModel.Meta.Heroes.StaticHeroData")
@@ -57,7 +57,7 @@ internal static class ChampionReader
 			skillTypes,
 			names,
 			statReaders,
-			account)).ToList();
+			accountBonuses)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
@@ -82,7 +82,7 @@ internal static class ChampionReader
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
 		StatReaders statReaders,
-		AccountStatBonuses account)
+		AccountStatBonuses accountBonuses)
 	{
 		var id = hero.Int32("Id").Where(value => value == key && value > 0, $"the positive id HeroById keeps it under, {key}");
 		var typeId = hero.Int32("TypeId");
@@ -129,8 +129,8 @@ internal static class ChampionReader
 					worn.ArtifactBonuses,
 					worn.SetBonuses,
 					masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds),
-					account.GreatHall.GetValueOrDefault(affinity, []),
-					account.FactionGuardians.GetValueOrDefault((faction, rarity), []))));
+					accountBonuses.GreatHall.GetValueOrDefault(affinity, []),
+					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []))));
 	}
 
 	/// <summary>

@@ -3,7 +3,6 @@ using RaidBridge.Domain.FactionGuardians;
 using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Metadata;
-using RaidBridge.Game.Numerics;
 using RaidBridge.Game.Stats;
 
 namespace RaidBridge.Game.FactionGuardians;
@@ -78,9 +77,8 @@ internal static class FactionGuardianReader
 				.Dictionary("Bonuses", $"System.Collections.Generic.Dictionary`2<{StatKind}, SharedModel.Meta.Artifacts.BonusValue>")
 				.ByEnumKey(StatKind)
 				.OrderBy(bonus => bonus.Key.Value)
-				.Select(bonus => (Stat: StatNames.Of(bonus.Key.Name, $"{where}[{index}]"), Value: bonus.Value.Object("SharedModel.Meta.Artifacts.BonusValue")))
-				.Where(bonus => bonus.Stat is not null)
-				.Select(bonus => new StatBonus(bonus.Stat!.Value, FixedPoint.Of(bonus.Value, "_value"), bonus.Value.Boolean("_isAbsolute").Value))
+				.Select(bonus => StatNames.BonusOf(bonus.Key.Name, bonus.Value.Object("SharedModel.Meta.Artifacts.BonusValue"), $"{where}[{index}]"))
+				.OfType<StatBonus>()
 				.ToList()
 			: throw new GameDataException($"{where} holds the bonuses of {slots.Count} slots, but slot {index + 1} is full.");
 	}

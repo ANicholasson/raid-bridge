@@ -40,5 +40,19 @@ public sealed class GreatHallStatsReadingTests : IDisposable
 		Assert.Equal(new Dictionary<Stat, double> { [Stat.Accuracy] = 15 }, game.Source().Read().Champions.Single(champion => champion.Id == 3).Stats.GreatHall);
 	}
 
+	/// <summary>A level of a stat the champion screen doesn't show is written as a level, but adds nothing to the stats.</summary>
+	[Fact]
+	public void Writes_a_level_of_a_stat_the_screen_does_not_show_without_adding_it()
+	{
+		using var game = SyntheticGameClient.Create(greatHallData: new(
+			new Dictionary<int, IReadOnlyDictionary<int, int>?> { [4] = new Dictionary<int, int> { [10] = 1 } },
+			new Dictionary<int, int> { [10] = 1 }));
+
+		var account = game.Source().Read();
+
+		Assert.Equal("IgnoreDefence", Assert.Single(Assert.Single(account.GreatHall).Levels).Stat);
+		Assert.Empty(account.Champions.Single(champion => champion.Id == 3).Stats.GreatHall);
+	}
+
 	public void Dispose() => _game.Dispose();
 }

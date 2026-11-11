@@ -38,8 +38,8 @@ internal static class AccountReader
 		var relics = RelicReader.Read(userWrapper, staticData, names);
 		// The Great Hall and Faction Guardians come first, since every Champion's stats count what they give.
 		var greatHall = GreatHallReader.Read(userWrapper, staticData);
-		var account = new ChampionReader.AccountStatBonuses(greatHall.BonusesByAffinity, FactionGuardianReader.Bonuses(userWrapper, staticData));
-		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy, account);
+		var accountBonuses = new ChampionReader.AccountStatBonuses(greatHall.BonusesByAffinity, FactionGuardianReader.Bonuses(userWrapper, staticData));
+		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy, accountBonuses);
 		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(userWrapper, champions);
 		var arena = ArenaReader.Read(userWrapper, champions);

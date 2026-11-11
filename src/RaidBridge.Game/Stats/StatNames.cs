@@ -1,5 +1,6 @@
 using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
+using RaidBridge.Game.Numerics;
 
 namespace RaidBridge.Game.Stats;
 
@@ -28,4 +29,13 @@ internal static class StatNames
 		Shown.TryGetValue(name, out var stat) ? stat
 		: NotShown.Contains(name) ? null
 		: throw new GameDataException($"{what} raises {name}, a stat raid-bridge doesn't know.");
+
+	/// <summary>
+	/// A static <c>BonusValue</c>'s bonus to a stat the champion screen shows, or null for a stat it doesn't show: its
+	/// value, flat when absolute and a percentage when not.
+	/// </summary>
+	public static StatBonus? BonusOf(string stat, ManagedObject bonusValue, string what) =>
+		Of(stat, what) is { } shown
+			? new StatBonus(shown, FixedPoint.Of(bonusValue, "_value"), bonusValue.Boolean("_isAbsolute").Value)
+			: null;
 }
