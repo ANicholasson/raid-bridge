@@ -38,6 +38,9 @@ internal sealed class SyntheticMetadata(GameVersions versions) : IGameMetadata
 		_enums[fullName] = declared with { Members = [.. declared.Members.Where(member => member.Name != name)] };
 	}
 
+	/// <summary>A game update changed the type an enum is over.</summary>
+	public void RetypeEnum(string fullName, string underlyingType) => _enums[fullName] = _enums[fullName] with { UnderlyingType = underlyingType };
+
 	/// <summary>A game update added a member to an enum.</summary>
 	public void AddEnumMember(string fullName, string name, long value)
 	{

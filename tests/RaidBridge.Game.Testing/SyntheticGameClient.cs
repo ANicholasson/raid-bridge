@@ -133,6 +133,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 	/// <summary>A game update dropped a member from an enum.</summary>
 	public void RemoveEnumMember(string enumName, string memberName) => _metadata.RemoveEnumMember(enumName, memberName);
 
+	/// <summary>A game update changed the type an enum is over.</summary>
+	public void RetypeEnum(string enumName, string underlyingType) => _metadata.RetypeEnum(enumName, underlyingType);
+
 	/// <summary>A game update added a member to an enum.</summary>
 	public void AddEnumMember(string enumName, string memberName, long value) => _metadata.AddEnumMember(enumName, memberName, value);
 
@@ -465,7 +468,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			"System.Object",
 			("HeroData", "SharedModel.Meta.Heroes.StaticHeroData", ClassTypeCode, 0x10),
 			("SkillData", "SharedModel.Meta.Skills.StaticSkillData", ClassTypeCode, 0x18),
-			("RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", ClassTypeCode, 0x40));
+			("RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", ClassTypeCode, 0x40),
+			("MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", ClassTypeCode, 0x48));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -586,13 +590,14 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x48);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x50);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x20, Localization(heroData.StaticDataLocalization));
 		_heap.Pointer(clientStaticDataObject + 0x28, Localization(heroData.ClientLocalization));
 		_heap.Pointer(clientStaticDataObject + 0x30, staticArtifactDataObject);
+		_heap.Pointer(clientStaticDataObject + 0x48, LayOutTheMasteries(heroData, statBonus));
 
 		var managerObject = _runtime.Object(manager, 0x18);
 		_heap.Pointer(managerObject + 0x10, clientStaticDataObject);

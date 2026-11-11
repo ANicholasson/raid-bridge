@@ -14,6 +14,10 @@ public sealed partial class SyntheticGameClient
 
 	private ulong _battleStatsStatics;
 	private ulong _rankMultipliers;
+	private readonly Dictionary<int, ulong> _masteryTypes = [];
+
+	/// <summary>The mastery type kept under <paramref name="key"/> in MasteryById holds another id, as a corrupt entry or a torn read might.</summary>
+	public void SetMasteryTypeId(int key, int id) => _heap.Int32(_masteryTypes[key] + 0x10, id);
 	private readonly Dictionary<int, ulong> _skillLists = [];
 	private readonly Dictionary<int, ulong> _heroTypes = [];
 	private readonly Dictionary<int, ulong> _skillTypes = [];
@@ -91,6 +95,44 @@ public sealed partial class SyntheticGameClient
 		}
 
 		return battleStats;
+	}
+
+	/// <summary>
+	/// The static data's MasteryData: every mastery type in MasteryById, and the stat bonus of those that have one in
+	/// MasteryBonusById, with BonusSourceArtifactSet, the constant that marks a bonus to set bonuses, at -1 as at v39.
+	/// </summary>
+	private ulong LayOutTheMasteries(SyntheticHeroData heroData, ulong statBonus)
+	{
+		const string StaticMasteryData = "SharedModel.Meta.Masteries.StaticMasteryData";
+		var masteryType = Declare("SharedModel.Meta.Masteries", "MasteryType", _runtime.SystemObject, "System.Object", ("Id", "System.Int32", Int32TypeCode, 0x10));
+		var staticMasteryData = Declare(
+			"SharedModel.Meta.Masteries",
+			"StaticMasteryData",
+			_runtime.SystemObject,
+			"System.Object",
+			("MasteryBonusById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.General.StatBonus>", GenericInstanceTypeCode, 0x10),
+			("MasteryById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Masteries.MasteryType>", GenericInstanceTypeCode, 0x18));
+		_metadata.Constant(StaticMasteryData, "BonusSourceArtifactSet", -1);
+
+		var types = heroData.MasteryTypes.Select(mastery =>
+		{
+			var typeObject = _runtime.Object(masteryType, 0x18);
+			_heap.Int32(typeObject + 0x10, mastery.Id);
+			_masteryTypes[mastery.Id] = typeObject;
+			return ((ulong)mastery.Id, typeObject);
+		});
+		var bonuses = heroData.MasteryTypes.Where(mastery => mastery.Bonus is not null).Select(mastery =>
+		{
+			var bonusObject = _runtime.Object(statBonus, 0x20);
+			_heap.Int32(bonusObject + 0x10, mastery.Bonus!.Stat);
+			_heap.Bytes(bonusObject + 0x14, [Bool(mastery.Bonus.Absolute)]);
+			_heap.Int64(bonusObject + 0x18, mastery.Bonus.Value);
+			return ((ulong)mastery.Id, bonusObject);
+		});
+		var staticMasteryDataObject = _runtime.Object(staticMasteryData, 0x20);
+		_heap.Pointer(staticMasteryDataObject + 0x10, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, ClassTypeCode), [.. bonuses]));
+		_heap.Pointer(staticMasteryDataObject + 0x18, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, ClassTypeCode), [.. types]));
+		return staticMasteryDataObject;
 	}
 
 	/// <summary>A BattleStats holding the stats, each as a Fixed.</summary>

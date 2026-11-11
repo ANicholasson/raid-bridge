@@ -207,6 +207,28 @@ Each source's bonus is `BattleStats.UpdateWithBonuses` of that source alone, les
 
 Live, on 2026-11-10, the defence teams' `ArtifactSetup`s held exactly those sums for the Artifacts worn, ascension bonuses included. With the formula, two screenshots matched every green number exactly once the other sources were added: Jizoh (a complete Attack set, the Great Hall, a Faction Guardian slot, SilverIV) and Vallaryn the Equalizer (no set, the Great Hall, SilverIV). For example, Vallaryn's HP is round(3,992.75) + round(10,695 × 12%) = 3,993 + 1,283 = 5,276. No Artifact on the Account had a Glyph then, so Glyphs are proven by the code and the tests only.
 
+## Masteries (settled 2026-11-11)
+
+For https://github.com/ANicholasson/raid-bridge/issues/12, read the same way. `HeroExtensions.CalcMasteriesBonus(hero, baseStats, artifactSetSetups)` works through `Hero.MasteryData.Masteries`. For each id it looks up `StaticMasteryData.MasteryBonusById`, and a mastery without an entry raises no stat. For an entry:
+- If its `StatKindId` isn't `BonusSourceArtifactSet` (-1), the bonus's `Value` is added to that stat of a copy of the Base stats, as it is, whatever `IsAbsolute` says.
+- If it is, `ChangeStatsWithArtifactSetMasteryBonus` multiplies each of the Champion's set bonuses by the mastery's `Value`. It sums the products by stat, flat or not. `Resistance`, `Accuracy` and the critical stats get the sum added as it is. Every other stat gets `OperationType.Scale`: the stat times (1 + sum), rounded to a whole number, a half going to the even one.
+
+Each mastery's part is its copy less the Base stats, and the parts add up.
+
+Live, on 2026-11-11, `MasteryBonusById` held 13 entries, all of them flat or critical fractions:
+- Attack +75;
+- Defence +75 and +200;
+- Health +810 and +3,000;
+- Resistance +10 and +50;
+- Accuracy +10 and +50;
+- CriticalChance +5%;
+- CriticalDamage +10% and +20%;
+- Lore of Steel (500343): 15% of set bonuses.
+
+With the formula, two screenshots matched on 2026-11-11, once the Arena league, the Great Hall and the Artifacts and sets were added:
+- Kael, with Accuracy, CriticalChance and CriticalDamage masteries: every green number.
+- Uugo, with Lore of Steel and complete sets: every green number but HP, including Lore of Steel's +3 Resistance and +6 Accuracy. HP was 4,500 higher, from his Awakening, which no reader counts yet.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
