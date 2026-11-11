@@ -45,7 +45,7 @@ internal static class ChampionReader
 			.Dictionary("HeroById", $"System.Collections.Generic.Dictionary`2<System.Int32, {Hero}>")
 			.ByInt32Key();
 		// Read only once a Champion needs them, so an Account with none doesn't depend on them.
-		var statData = new StatData(
+		var statReaders = new StatReaders(
 			new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime)),
 			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)));
 		var champions = heroes.Select(hero => Champion(
@@ -55,7 +55,7 @@ internal static class ChampionReader
 			heroTypes,
 			skillTypes,
 			names,
-			statData)).ToList();
+			statReaders)).ToList();
 
 		// Artifacts or Relics worn by a Champion the Account doesn't have would be dropped without a word.
 		RefuseStrays(equipped, heroes.Keys, "SharedModel.Meta.Artifacts.UserArtifactData.ArtifactDataByHeroId gives Artifacts");
@@ -79,7 +79,7 @@ internal static class ChampionReader
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
 		LocalizedNames names,
-		StatData statData)
+		StatReaders statReaders)
 	{
 		var id = hero.Int32("Id").Where(value => value == key && value > 0, $"the positive id HeroById keeps it under, {key}");
 		var typeId = hero.Int32("TypeId");
@@ -118,14 +118,14 @@ internal static class ChampionReader
 			Artifacts: worn.Artifacts,
 			Relics: worn.Relics,
 			Stats: StatsFormula.For(
-				statData.BaseStats.Value.Of(id, type, typeId.Value, rank, level),
+				statReaders.BaseStats.Value.Of(id, type, typeId.Value, rank, level),
 				worn.ArtifactBonuses,
 				worn.SetBonuses,
-				masteryIds.Count == 0 ? MasteryBonuses.None : statData.Masteries.Value.For(id, masteryIds)));
+				masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds)));
 	}
 
 	/// <summary>The static data that scales Champions and gives their masteries' bonuses, each read once a Champion needs it.</summary>
-	private sealed record StatData(Lazy<BaseStatsReader> BaseStats, Lazy<MasteryBonusReader> Masteries);
+	private sealed record StatReaders(Lazy<BaseStatsReader> BaseStats, Lazy<MasteryBonusReader> Masteries);
 
 	/// <summary>What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts and their sets give it.</summary>
 	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics);

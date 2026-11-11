@@ -62,14 +62,15 @@ internal sealed class MasteryBonusReader
 			}
 
 			var bonus = entry.Object(StatBonusClass);
-			var kind = bonus.EnumNumber("StatKindId", StatKind);
+			var kind = bonus.EnumMemberOrUnnamed("StatKindId", StatKind, _setBonusSource);
 			var value = FixedPoint.Of(bonus, "Value");
-			if (kind.Value == _setBonusSource)
+			if (kind.Value is null)
 			{
 				setBonusShares.Add(value);
 			}
-			else if (StatNames.Of(ManagedObject.EnumAt(bonus.Runtime, kind.Address, StatKind, kind.Field).Value.Name, $"Mastery {id}") is { } stat)
+			else if (StatNames.Of(kind.Value.Name, $"Mastery {id}") is { } stat)
 			{
+				// The game adds a stat mastery's value as it is, so it is flat whatever IsAbsolute says.
 				stats.Add(new StatBonus(stat, value, Flat: true));
 			}
 		}

@@ -62,6 +62,18 @@ public sealed class MasteryStatsReadingTests : IDisposable
 		Assert.Equal(new Dictionary<Stat, double> { [Stat.Speed] = 2, [Stat.Accuracy] = (Q32(0.15) / Unit) * (Q32(40) / Unit) }, Knight(game).Stats.Masteries);
 	}
 
+	/// <summary>
+	/// The game adds a stat mastery's value to its stat as it is, whatever its IsAbsolute says, so a Defence mastery of
+	/// 0.05 that isn't absolute adds 0.05 points, not 5% of the Base stat.
+	/// </summary>
+	[Fact]
+	public void Adds_a_masterys_value_as_it_is_whatever_it_says_it_is()
+	{
+		using var game = WithMasteries([500121], [new(500121, new(Stat: 3, Value: Q32(0.05), Absolute: false))]);
+
+		Assert.Equal(new Dictionary<Stat, double> { [Stat.Defence] = Q32(0.05) / Unit }, Knight(game).Stats.Masteries);
+	}
+
 	/// <summary>Without a set, a mastery that raises set bonuses adds nothing.</summary>
 	[Fact]
 	public void Raises_nothing_without_a_set()

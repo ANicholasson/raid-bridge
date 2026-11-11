@@ -17,5 +17,5 @@ Total stats mean what the champion screen shows. Bonuses that apply only in batt
 
 - Green tests are not enough. Each Stat source is proven against the champion screen of the running Game client, and Total stats match the screen at its rounding on Champions the maintainer picks to cover every source. A mismatch fails the work: there is no "close enough".
 - The formula is now raid-bridge's to keep. A game update that changes how a source adds up shows up as a mismatch with the screen, not as a read error, so a stat change in the game's patch notes means checking the screen again.
-- Values are written unrounded, in the units Artifacts use: points, and fractions for the critical stats.
+- Values are written unrounded, in the units Artifacts use: points, and fractions for the critical stats. The one exception is where the game's own formula rounds a step: Base stats, and the share of set bonuses a mastery such as Lore of Steel adds (https://github.com/ANicholasson/raid-bridge/issues/10, https://github.com/ANicholasson/raid-bridge/issues/12).
 - `docs/snapshot.md` said "nothing is computed" and "there are no stats" until the work that writes `stats` landed, which changed both lines (https://github.com/ANicholasson/raid-bridge/issues/10).
