@@ -36,12 +36,14 @@ internal static class AccountReader
 		var names = new LocalizedNames(staticData);
 		var artifacts = ArtifactReader.Read(userWrapper, staticData, names);
 		var relics = RelicReader.Read(userWrapper, staticData, names);
-		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy);
-		var resources = ResourceReader.Read(userWrapper);
+		// The Great Hall and Faction Guardians come first, since every Champion's stats count what they give.
 		var greatHall = GreatHallReader.Read(userWrapper, staticData);
+		var account = new ChampionReader.AccountStatBonuses(greatHall.BonusesByAffinity, FactionGuardianReader.Bonuses(userWrapper, staticData));
+		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy, account);
+		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(userWrapper, champions);
 		var arena = ArenaReader.Read(userWrapper, champions);
-		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall, factionGuardians, arena.Classic, arena.Tag);
+		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, factionGuardians, arena.Classic, arena.Tag);
 	}
 
 	private static AccountId Id(ManagedObject appModel)

@@ -1,6 +1,9 @@
 using RaidBridge.Domain.GreatHall;
+using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Metadata;
+using RaidBridge.Game.Numerics;
+using RaidBridge.Game.Stats;
 
 namespace RaidBridge.Game.GreatHall;
 
@@ -16,26 +19,39 @@ internal static class GreatHallReader
 	private const string Element = "SharedModel.Meta.Heroes.Element";
 	private const string StatKind = "SharedModel.Battle.Effects.StatKindId";
 	private const string StaticVillageData = "SharedModel.Meta.Village.StaticVillageData";
+	private const string BonusValue = "SharedModel.Meta.Artifacts.BonusValue";
 
-	/// <summary>The static data is read only once a level needs checking, so a Great Hall with no levels doesn't depend on it.</summary>
-	public static IReadOnlyList<GreatHallAffinity> Read(ManagedObject userWrapper, ManagedObject staticData)
+	/// <summary>
+	/// The Account's Great Hall, and what it gives a Champion of each Affinity that has levels: each stat's bonus at its
+	/// level, as the game's own <c>BuildingSetup.FromVillageData</c> takes it from the static table
+	/// (https://github.com/ANicholasson/raid-bridge/issues/13). The static data is read only once a level needs checking,
+	/// so a Great Hall with no levels doesn't depend on it.
+	/// </summary>
+	public static AccountGreatHall Read(ManagedObject userWrapper, ManagedObject staticData)
 	{
-		var maxLevels = new Lazy<Dictionary<GameEnumMember, int>>(() => MaxLevels(staticData));
-		return [.. userWrapper
+		var table = new Lazy<Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>>(() => Table(staticData));
+		var affinities = userWrapper
 			.Object("Village", "Client.Model.Gameplay.Village.VillageWrapper")
 			.Object("VillageData", "Client.Model.Gameplay.Village.Data.UpdatableVillageData")
 			.Dictionary("CapitolBonusLevelByStatByElement", $"System.Collections.Generic.Dictionary`2<{Element}, System.Collections.Generic.Dictionary`2<{StatKind}, System.Int32>>")
 			.ByEnumKey(Element)
 			.OrderBy(affinity => affinity.Key.Value)
-			.Select(affinity => new GreatHallAffinity(affinity.Key.Name, Levels(affinity.Value.DictionaryOrNull(), maxLevels)))
-			.Where(affinity => affinity.Levels.Count > 0)];
+			.Select(affinity => (Name: affinity.Key.Name, Levels: Levels(affinity.Value.DictionaryOrNull(), table)))
+			.Where(affinity => affinity.Levels.Count > 0)
+			.ToList();
+		return new(
+			[.. affinities.Select(affinity => new GreatHallAffinity(affinity.Name, [.. affinity.Levels.Select(level => level.Level)]))],
+			affinities.ToDictionary(affinity => affinity.Name, affinity => (IReadOnlyList<StatBonus>)[.. affinity.Levels.SelectMany(level => level.Bonus)], StringComparer.Ordinal));
 	}
 
 	/// <summary>
 	/// An Affinity the game holds null for has no levels, the same as one it holds an empty dictionary for. A level is
-	/// from 1: Raid Toolkit's ArenaExtension reads the bonus of a level at index level - 1, so the game holds no 0.
+	/// from 1: Raid Toolkit's ArenaExtension reads the bonus of a level at index level - 1, so the game holds no 0. Each
+	/// level comes with its bonus, if it raises a stat the champion screen shows.
 	/// </summary>
-	private static IReadOnlyList<GreatHallLevel> Levels(ManagedDictionary? levels, Lazy<Dictionary<GameEnumMember, int>> maxLevels) =>
+	private static IReadOnlyList<(GreatHallLevel Level, IReadOnlyList<StatBonus> Bonus)> Levels(
+		ManagedDictionary? levels,
+		Lazy<Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>> table) =>
 		levels is null
 			? []
 			: [.. levels
@@ -44,21 +60,33 @@ internal static class GreatHallReader
 				.Select(stat =>
 				{
 					var level = stat.Value.Int32();
-					return maxLevels.Value.TryGetValue(stat.Key, out var maxLevel)
-						? new GreatHallLevel(stat.Key.Name, level.Where(value => value >= 1 && value <= maxLevel, $"a level from 1 to {maxLevel}"))
-						: throw new GameDataException($"{level}, but {StaticVillageData}.CapitolBonusByStatKind holds no levels of {stat.Key.Name}.");
+					if (!table.Value.TryGetValue(stat.Key, out var bonuses))
+					{
+						throw new GameDataException($"{level}, but {StaticVillageData}.CapitolBonusByStatKind holds no levels of {stat.Key.Name}.");
+					}
+
+					var value = level.Where(value => value >= 1 && value <= bonuses.Count, $"a level from 1 to {bonuses.Count}");
+					var bonus = bonuses[value - 1];
+					return (
+						new GreatHallLevel(stat.Key.Name, value),
+						StatNames.Of(stat.Key.Name, $"The Great Hall's {stat.Key.Name}") is { } shown
+							? (IReadOnlyList<StatBonus>)[new StatBonus(shown, FixedPoint.Of(bonus, "_value"), bonus.Boolean("_isAbsolute").Value)]
+							: []);
 				})];
 
 	/// <summary>
-	/// The highest level of each stat the Great Hall raises: the number of bonuses the static data lists for it, each a
-	/// BonusValue, since level 1 takes the first. A stat it lists no bonus for has no levels, as one it doesn't list.
+	/// The bonus of each level of each stat the Great Hall raises, each a BonusValue, level 1 taking the first. A stat it
+	/// lists no bonus for has no levels, as one it doesn't list.
 	/// </summary>
-	private static Dictionary<GameEnumMember, int> MaxLevels(ManagedObject staticData) =>
+	private static Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>> Table(ManagedObject staticData) =>
 		staticData
 			.Object("VillageData", StaticVillageData)
-			.Dictionary("CapitolBonusByStatKind", $"System.Collections.Generic.Dictionary`2<{StatKind}, System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.BonusValue>>")
+			.Dictionary("CapitolBonusByStatKind", $"System.Collections.Generic.Dictionary`2<{StatKind}, System.Collections.Generic.List`1<{BonusValue}>>")
 			.ByEnumKey(StatKind)
-			.Select(stat => (stat.Key, Count: stat.Value.List().Objects("SharedModel.Meta.Artifacts.BonusValue").Count))
-			.Where(stat => stat.Count > 0)
-			.ToDictionary(stat => stat.Key, stat => stat.Count);
+			.Select(stat => (stat.Key, Bonuses: stat.Value.List().Objects(BonusValue)))
+			.Where(stat => stat.Bonuses.Count > 0)
+			.ToDictionary(stat => stat.Key, stat => stat.Bonuses);
 }
+
+/// <summary>The Account's Great Hall, and the bonuses it gives a Champion of each Affinity, by the Affinity's name.</summary>
+internal sealed record AccountGreatHall(IReadOnlyList<GreatHallAffinity> Affinities, IReadOnlyDictionary<string, IReadOnlyList<StatBonus>> BonusesByAffinity);

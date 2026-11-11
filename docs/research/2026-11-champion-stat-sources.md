@@ -229,6 +229,19 @@ With the formula, two screenshots matched on 2026-11-11, once the Arena league, 
 - Kael, with Accuracy, CriticalChance and CriticalDamage masteries: every green number.
 - Uugo, with Lore of Steel and complete sets: every green number but HP, including Lore of Steel's +3 Resistance and +6 Accuracy. HP was 4,500 higher, from his Awakening, which no reader counts yet.
 
+## The Great Hall and Faction Guardians (settled 2026-11-11)
+
+For https://github.com/ANicholasson/raid-bridge/issues/13, read the same way.
+
+- **Great Hall.** `VillageWrapperReadOnly.MakeHeroBuildingSetup(heroType)` calls `BuildingSetup.FromVillageData`. That takes the levels of the hero type's `DefaultElement`, its first form's Affinity, from `CapitolBonusLevelByStatByElement`. `BuildSetupByUserBonuses` then takes level _n_ of each stat as entry _n_ − 1 of `StaticVillageData.CapitolBonusByStatKind`, a `BonusValue` that goes to the flat bonuses if absolute and to the percentages if not. An observatory location adds a second table, but the champion screen passes none.
+- **Faction Guardians.** `AcademyWrapperReadOnly.Setup(heroType)` calls `AcademySetup.Create(guardians, heroType)`:
+  - It takes the slots of the hero type's own Faction and rarity (`UserAcademyGuardiansData.Slots`).
+  - It counts them in order while `AcademyGuardiansSlot.IsFull()`, both positions filled.
+  - For each slot counted, _n_ from 0, it adds `StaticAcademyGuardiansData.Bonuses(rarity, n)`, which is `BonusesByHeroRarity[rarity][n]`. That is a `StatBonuses` of `BonusValue`s by stat, split into flat and percentages the same way.
+  - A Champion doesn't need to guard to get the bonus. With no static entry for a counted slot, the game itself would fail.
+
+Both add as an Artifact's bonuses do. Live on 2026-11-11, the Snapshot gave Jizoh 813 Health from his Faction's one full Epic slot, and the Magic and Spirit Champions 20 Accuracy from level 4. Both are already in the green numbers that matched on the Jizoh, Vallaryn, Kael and Uugo screenshots above.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.

@@ -69,7 +69,14 @@ public sealed partial class SyntheticGameClient
 		var bonusValues = _runtime.ListType(bonusValue, "BonusValue", sizeof(ulong));
 		var bonuses = _runtime.Dictionary(_runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode), [.. greatHallData.MaxLevels.Select(stat => (
 			(ulong)stat.Key,
-			_greatHallBonuses[stat.Key] = _runtime.List(bonusValues, [.. Enumerable.Range(0, stat.Value).Select(_ => _runtime.Object(bonusValue, 0x20))])))]);
+			_greatHallBonuses[stat.Key] = _runtime.List(bonusValues, [.. Enumerable.Range(1, stat.Value).Select(level =>
+			{
+				var (value, absolute) = SyntheticGreatHallData.Bonus(stat.Key, level);
+				var bonusObject = _runtime.Object(bonusValue, 0x20);
+				_heap.Bytes(bonusObject + 0x10, [Bool(absolute)]);
+				_heap.Int64(bonusObject + 0x18, value);
+				return bonusObject;
+			})])))]);
 		var staticVillageDataObject = _runtime.Object(staticVillageData, 0x18);
 		_heap.Pointer(staticVillageDataObject + 0x10, bonuses);
 		Slot("SharedModel.Meta.ClientStaticData.VillageData", _clientStaticData + 0x38, staticVillageDataObject);

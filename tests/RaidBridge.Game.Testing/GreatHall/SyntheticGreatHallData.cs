@@ -27,6 +27,13 @@ public sealed record SyntheticGreatHallData(
 		},
 		TenLevels);
 
+	/// <summary>
+	/// The made-up bonus the static data gives a level of a stat, as a raw Fixed and whether it is absolute: Resistance
+	/// and Accuracy 5 points a level, the others 2% a level.
+	/// </summary>
+	public static (long Value, bool Absolute) Bonus(int stat, int level) =>
+		stat is 5 or 6 ? (Artifacts.SyntheticArtifactData.Q32(5 * level), true) : (Artifacts.SyntheticArtifactData.Q32(0.02 * level), false);
+
 	/// <summary>A Great Hall the player hasn't bought a level in.</summary>
 	public static SyntheticGreatHallData None { get; } = new(new Dictionary<int, IReadOnlyDictionary<int, int>?>(), TenLevels);
 
