@@ -35,7 +35,7 @@ public static class StatsFormula
 			FactionGuardians: Add(baseStats, bonuses.FactionGuardians),
 			Awakening: Add(baseStats, bonuses.Awakening),
 			Empowerment: Add(baseStats, bonuses.Empowerment),
-			Relic: Add(baseStats, bonuses.Relic),
+			Relics: Add(baseStats, bonuses.Relics),
 			ArenaLeague: Add(baseStats, bonuses.ArenaLeague));
 
 	/// <summary>

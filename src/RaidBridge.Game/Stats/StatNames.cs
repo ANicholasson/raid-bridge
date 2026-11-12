@@ -31,6 +31,13 @@ internal static class StatNames
 		: throw new GameDataException($"{what} raises {name}, a stat raid-bridge doesn't know.");
 
 	/// <summary>
+	/// A bonus read under the game's stat name, such as an Artifact's or a Relic's, as a bonus to a stat the champion
+	/// screen shows, or null for a stat it doesn't show.
+	/// </summary>
+	public static StatBonus? BonusOf(string stat, double value, bool flat, string what) =>
+		Of(stat, what) is { } shown ? new StatBonus(shown, value, flat) : null;
+
+	/// <summary>
 	/// A static <c>BonusValue</c>'s bonus to a stat the champion screen shows, or null for a stat it doesn't show: its
 	/// value, flat when absolute and a percentage when not.
 	/// </summary>

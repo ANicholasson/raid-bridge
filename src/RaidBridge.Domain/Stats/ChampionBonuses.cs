@@ -15,7 +15,7 @@ public sealed record ChampionBonuses(
 	IReadOnlyList<StatBonus> FactionGuardians,
 	IReadOnlyList<StatBonus> Awakening,
 	IReadOnlyList<StatBonus> Empowerment,
-	IReadOnlyList<StatBonus> Relic,
+	IReadOnlyList<StatBonus> Relics,
 	IReadOnlyList<StatBonus> ArenaLeague)
 {
 	public static ChampionBonuses None { get; } = new([], [], MasteryBonuses.None, [], [], [], [], [], []);

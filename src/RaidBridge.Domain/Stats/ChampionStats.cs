@@ -13,7 +13,7 @@ namespace RaidBridge.Domain.Stats;
 /// <item><see cref="FactionGuardians"/>: what the Account's Faction Guardians add for its Faction and rarity;</item>
 /// <item><see cref="Awakening"/>: what its Awakening adds, through its blessing;</item>
 /// <item><see cref="Empowerment"/>: what its Empowerment adds;</item>
-/// <item><see cref="Relic"/>: what the Relics it wears add;</item>
+/// <item><see cref="Relics"/>: what the Relics it wears add;</item>
 /// <item><see cref="ArenaLeague"/>: what the Account's Classic Arena league adds, while it has a defence team.</item>
 /// </list>
 /// A Stat source holds only the stats it raises, and none when it raises nothing. <see cref="Total"/> is their sum
@@ -28,7 +28,7 @@ public sealed record ChampionStats(
 	IReadOnlyDictionary<Stat, double> FactionGuardians,
 	IReadOnlyDictionary<Stat, double> Awakening,
 	IReadOnlyDictionary<Stat, double> Empowerment,
-	IReadOnlyDictionary<Stat, double> Relic,
+	IReadOnlyDictionary<Stat, double> Relics,
 	IReadOnlyDictionary<Stat, double> ArenaLeague)
 {
 	/// <summary>
@@ -38,6 +38,6 @@ public sealed record ChampionStats(
 	public IReadOnlyDictionary<Stat, double> Total =>
 		Enum.GetValues<Stat>().ToDictionary(
 			stat => stat,
-			stat => new[] { Base, Artifacts, Sets, Masteries, GreatHall, FactionGuardians, Awakening, Empowerment, Relic, ArenaLeague }
+			stat => new[] { Base, Artifacts, Sets, Masteries, GreatHall, FactionGuardians, Awakening, Empowerment, Relics, ArenaLeague }
 				.Sum(source => source.GetValueOrDefault(stat)));
 }

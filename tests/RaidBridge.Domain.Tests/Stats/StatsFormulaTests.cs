@@ -27,7 +27,7 @@ public class StatsFormulaTests
 	{
 		var stats = StatsFormula.For(
 			new Dictionary<Stat, double> { [Stat.Health] = 1000, [Stat.Speed] = 100 },
-			ChampionBonuses.None with { Artifacts = [new(Stat.Health, 0.1, false)], Relic = [new(Stat.Health, 50, true)], ArenaLeague = [new(Stat.Health, 0.25, false)] });
+			ChampionBonuses.None with { Artifacts = [new(Stat.Health, 0.1, false)], Relics = [new(Stat.Health, 50, true)], ArenaLeague = [new(Stat.Health, 0.25, false)] });
 
 		Assert.Equal(
 			new Dictionary<Stat, double>

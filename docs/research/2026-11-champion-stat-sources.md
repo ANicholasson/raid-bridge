@@ -271,6 +271,8 @@ Read the same way from the installed v39 `GameAssembly.dll`. `BattleStatsExtensi
 
 So a Relic adds as an Artifact does, and its bonuses are exactly the `bonuses` the Snapshot already writes for it (https://github.com/ANicholasson/raid-bridge/pull/17). Relic stones add skills, not stats.
 
+Which stats are relative is not in the static data: `SharedModel.Battle.Effects.StatCatalog.Map`, a dictionary from `StatKindId` to `StatDescriptor`, is built by the game's code. Read live on 2026-11-12, it marks `Resistance`, `Accuracy`, `CriticalChance`, `CriticalDamage` and the eight dealt- and taken-damage stats relative, and `Health`, `Attack`, `Defence`, `Speed`, `CriticalHeal` and `IgnoreDefence` not. So a Relic's share of `Resistance` or `Accuracy` would add as it is, not as a share of the Base stat. No Relic has one: the static `StatValueByLevel` holds every stat absolute except `CriticalDamage`, which adds as it is either way. The reader refuses a share of `Resistance` or `Accuracy` rather than work it out wrong. The same split is the one Lore of Steel's share already follows (above).
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
