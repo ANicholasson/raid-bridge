@@ -52,8 +52,15 @@ public partial class SnapshotFormatTests
 	/// <summary>The knight's Empowerment to level 1, made up to give 10 Resistance and 10 Accuracy.</summary>
 	private static readonly StatBonus[] KnightEmpowerment = [new(Stat.Resistance, 10, true), new(Stat.Accuracy, 10, true)];
 
-	/// <summary>SilverIII's bonus, which every Champion gets while the Account has a Classic Arena defence team.</summary>
-	private static readonly StatBonus[] SilverIII = [new(Stat.Health, 0.1, false), new(Stat.Attack, 0.1, false), new(Stat.Defence, 0.1, false)];
+	/// <summary>
+	/// SilverIII's bonus, which every Champion gets while the Account has a Classic Arena defence team: 10% of Health,
+	/// Attack and Defence, the nearest Fixed being 429496730 / 2^32, as the reader gives it, never a plain 0.1
+	/// (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/24).
+	/// </summary>
+	private static readonly StatBonus[] SilverIII =
+	[
+		new(Stat.Health, 429496730 / 4294967296.0, false), new(Stat.Attack, 429496730 / 4294967296.0, false), new(Stat.Defence, 429496730 / 4294967296.0, false),
+	];
 
 	/// <summary>Level 10 of the Void Great Hall's CriticalDamage, made up to give 25%. The knight is Void.</summary>
 	private static readonly StatBonus[] KnightGreatHall = [new(Stat.CriticalDamage, 0.25, false)];

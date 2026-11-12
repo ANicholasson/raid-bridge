@@ -243,9 +243,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Accuracy": 10
           },
           "arenaLeague": {
-            "Health": 1237.5,
-            "Attack": 66,
-            "Defence": 74.2
+            "Health": 1237.5000011525117,
+            "Attack": 66.00000006146729,
+            "Defence": 74.20000006910414
           }
         }
       }
@@ -291,9 +291,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Health": 378.00000035203993
           },
           "arenaLeague": {
-            "Health": 378,
-            "Attack": 39.6,
-            "Defence": 21.6
+            "Health": 378.00000035203993,
+            "Attack": 39.600000036880374,
+            "Defence": 21.600000020116568
           }
         }
       }
@@ -339,9 +339,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Health": 630.0000005867332
           },
           "arenaLeague": {
-            "Health": 630,
-            "Attack": 66,
-            "Defence": 36
+            "Health": 630.0000005867332,
+            "Attack": 66.00000006146729,
+            "Defence": 36.00000003352761
           }
         }
       }
