@@ -30,7 +30,7 @@ internal static class ArenaReader
 	/// state of the Game client: the league, points, this week's counts, each defence position's
 	/// <c>InventoryHeroId</c>, and whether <c>DefenseHeroIds</c> names any Champion.
 	/// </summary>
-	public static ClassicCapture Capture(ManagedObject userWrapper)
+	public static ClassicArenaState Capture(ManagedObject userWrapper)
 	{
 		const string Arena = "the Classic Arena";
 		var data = userWrapper
@@ -41,14 +41,14 @@ internal static class ArenaReader
 		// BaseArenaExtensions.HasDefense: any id but -1 in DefenseHeroIds.
 		var defenseHeroIds = data.ArrayOrNull("DefenseHeroIds", "System.Int32[]");
 		return new(
-			team?.EnumMember("ArenaLeagueId", League).Value,
+			team?.EnumMember("ArenaLeagueId", League),
 			data.Int64("ArenaPoints").Value,
 			(battles, wins, losses),
 			team is null ? null : Positions(team),
 			defenseHeroIds is not null && Enumerable.Range(0, defenseHeroIds.Length).Any(index => defenseHeroIds.Int32(index).Value != -1));
 	}
 
-	public static (ClassicArena Classic, TagArena Tag) Read(ClassicCapture classic, ManagedObject userWrapper, IReadOnlyList<Champion> champions)
+	public static (ClassicArena Classic, TagArena Tag) Read(ClassicArenaState classic, ManagedObject userWrapper, IReadOnlyList<Champion> champions)
 	{
 		var championIds = champions.Select(champion => champion.Id).ToHashSet();
 		return (Classic(classic, new(championIds)), Tag(userWrapper, new(championIds)));
@@ -61,9 +61,18 @@ internal static class ArenaReader
 	/// <c>StaticData.ArenaData.LeagueInfos</c>, each a fraction of the Base stat. <c>CalcPercentageStats</c> takes no
 	/// Arena term, so a bonus to a critical stat would count for nothing, and is left out.
 	/// </summary>
-	public static IReadOnlyList<StatBonus> LeagueBonuses(ClassicCapture classic, ManagedObject staticData)
+	public static IReadOnlyList<StatBonus> LeagueBonuses(ClassicArenaState classic, ManagedObject staticData)
 	{
-		if (!classic.HasDefense || classic.League is not { } league || league.Name == NoLeague)
+		if (!classic.HasDefence)
+		{
+			return [];
+		}
+
+		// The game holds the league on the defence team's setup, so a defence with no setup has no league to count.
+		var league = classic.League
+			?? throw new GameDataException(
+				"The Classic Arena's SharedModel.Meta.Battle.Arena.UserArenaData.DefenseHeroIds names a Champion, but its ArenaDefenseTeamSetup is null, so raid-bridge has no league to count.");
+		if (league.Value.Name == NoLeague)
 		{
 			return [];
 		}
@@ -73,21 +82,21 @@ internal static class ArenaReader
 			.Object("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData")
 			.List("LeagueInfos", $"System.Collections.Generic.List`1<{LeagueInfo}>")
 			.Objects(LeagueInfo)
-			.Where(info => info.EnumMember("Id", League).Value.Value == league.Value)
+			.Where(info => info.EnumMember("Id", League).Value.Value == league.Value.Value)
 			.ToList();
 		var bonuses = infos.Count == 1
 			? infos[0].Object("BattleBonuses", "SharedModel.Meta.Heroes.BattleStats")
 			: throw new GameDataException(
-				$"The Classic Arena's league is {league.Name}, which SharedModel.Meta.Battle.Arena.StaticStandardArenaData.LeagueInfos holds {infos.Count} times, where raid-bridge expects once.");
+				$"{league.Field} at 0x{league.Address:X} is {league.Value.Name}, in the Classic Arena, which SharedModel.Meta.Battle.Arena.StaticStandardArenaData.LeagueInfos holds {infos.Count} times, where raid-bridge expects once.");
 		return [.. new[] { Stat.Health, Stat.Attack, Stat.Defence, Stat.Speed, Stat.Resistance, Stat.Accuracy }
 			.Select(stat => new StatBonus(stat, FixedPoint.Of(bonuses, stat.ToString()), Flat: false))
 			.Where(bonus => bonus.Value != 0)];
 	}
 
 	/// <summary>An Account that has set no defence team holds no <c>ArenaDefenseTeamSetup</c>, and so no league either.</summary>
-	private static ClassicArena Classic(ClassicCapture classic, Defenders defenders) =>
+	private static ClassicArena Classic(ClassicArenaState classic, Defenders defenders) =>
 		new(
-			classic.League is { } league ? LeagueName(league.Name) : null,
+			classic.League is { } league ? LeagueName(league.Value.Name) : null,
 			classic.Points,
 			classic.Week.Battles,
 			classic.Week.Wins,
@@ -160,9 +169,9 @@ internal static class ArenaReader
 }
 
 /// <summary>The Classic Arena as read once: its league, if any, points, this week's counts, its defence positions, if it has a team, and whether it has a defence.</summary>
-internal sealed record ClassicCapture(
-	GameEnumMember? League,
+internal sealed record ClassicArenaState(
+	FieldValue<GameEnumMember>? League,
 	long Points,
 	(int Battles, int Wins, int Losses) Week,
 	IReadOnlyList<FieldValue<int>>? DefencePositions,
-	bool HasDefense);
+	bool HasDefence);

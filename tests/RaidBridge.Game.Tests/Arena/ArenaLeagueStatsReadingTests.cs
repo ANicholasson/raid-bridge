@@ -69,8 +69,19 @@ public sealed class ArenaLeagueStatsReadingTests : IDisposable
 	{
 		using var game = WithClassic(SyntheticArenaData.Default.Classic with { DefenceTeam = new(30, [3]), DefenseHeroIds = [3] });
 
+		Assert.Matches(
+			@"^SharedModel\.Battle\.Core\.Setup\.TeamSetup\.ArenaLeagueId at 0x[0-9A-F]+ is Platinum, in the Classic Arena, which SharedModel\.Meta\.Battle\.Arena\.StaticStandardArenaData\.LeagueInfos holds 0 times, where raid-bridge expects once\.$",
+			Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+	}
+
+	/// <summary>A defence the game counts, but with no defence team setup to hold its league, is refused, not taken as no league.</summary>
+	[Fact]
+	public void Refuses_a_defence_with_no_team_setup()
+	{
+		using var game = WithClassic(SyntheticArenaData.Default.Classic with { DefenceTeam = null });
+
 		Assert.Equal(
-			"The Classic Arena's league is Platinum, which SharedModel.Meta.Battle.Arena.StaticStandardArenaData.LeagueInfos holds 0 times, where raid-bridge expects once.",
+			"The Classic Arena's SharedModel.Meta.Battle.Arena.UserArenaData.DefenseHeroIds names a Champion, but its ArenaDefenseTeamSetup is null, so raid-bridge has no league to count.",
 			Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
 	}
 
@@ -79,7 +90,10 @@ public sealed class ArenaLeagueStatsReadingTests : IDisposable
 	private static SyntheticGameClient WithClassic(SyntheticClassicArena classic) =>
 		SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Classic = classic });
 
-	/// <summary>Each share of the Champion's Base stat, as the Fixed the synthetic static data holds, truncated.</summary>
+	/// <summary>
+	/// Each share of the Champion's Base stat, as the Fixed the synthetic static data holds: a BattleStats holds its
+	/// values truncated, as the game's (Fixed)double makes them, where Q32 rounds.
+	/// </summary>
 	private static Dictionary<Stat, double> Shares(Champion champion, params (Stat Stat, double Share)[] shares) =>
 		shares.ToDictionary(share => share.Stat, share => champion.Stats.Base[share.Stat] * ((long)(share.Share * Unit) / Unit));
 }
