@@ -263,6 +263,14 @@ For https://github.com/ANicholasson/raid-bridge/issues/14, read the same way.
 
 Live, on 2026-11-12, the Snapshot gave Uugo, an Epic at Stars1 with a blessing, 4,500 Health. That is exactly the gap left on his screenshot of 2026-11-11. Vallaryn the Equalizer, awakened to Stars4 with no blessing, got nothing, as her screenshot of 2026-11-10 showed. Dorothy Gale, a Legendary at Stars5, got Health +8,500, Attack +750, Defence +600, Resistance and Accuracy +75, and CriticalDamage +38%. Those are the values of the game's own `BlessingSetup` on her defence team, recorded above. Her screenshot, and that of Grand Oak Padraig (a Legendary at Stars1 with a blessing), matched all eight green numbers exactly on 2026-11-12, once every source counted so far, and the Arena league, was rounded and added. Neither wears a Relic, so those are their whole green numbers. No Champion on the Account was empowered, so Empowerment is proven by the code and the tests only.
 
+## Relics (https://github.com/ANicholasson/raid-bridge/issues/15)
+
+Read the same way from the installed v39 `GameAssembly.dll`. `BattleStatsExtensions.CalcRelicsBonus` builds a `BattleBonuses` with `InitRelics` from the worn Relics' `RelicSetup`s, then adds it with `CalcBonuses`, as for every other source. `RelicSetup.PartialCreateFromRelic` fills each setup:
+- For each stat the Relic's type lists, in order, `StaticRelicDataExtensions.BonusValue(staticRelicData, stat, index, relic.Level)` gives the bonus, or null for a stat the level hasn't opened yet, which is skipped.
+- A bonus that isn't absolute, to a stat that isn't relative (`HeroStatKindIdExtensions.IsRelative`, a flag on the stat's descriptor), goes into the setup's percentages. Any other goes into its absolute values.
+
+So a Relic adds as an Artifact does, and its bonuses are exactly the `bonuses` the Snapshot already writes for it (https://github.com/ANicholasson/raid-bridge/pull/17). Relic stones add skills, not stats.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.

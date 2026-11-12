@@ -98,6 +98,9 @@ public partial class SnapshotFormatTests
 		[new("DarkElves", 3200000, "Dark Elves strike first.")],
 		[new("Circle", Spark), new("Diamond", null)]);
 
+	/// <summary>The grail's bonuses, as the reader gives them to the knight's stats.</summary>
+	private static readonly StatBonus[] KnightRelicBonuses = [new(Stat.Attack, 308, true), new(Stat.Health, 5400, true), new(Stat.CriticalDamage, 1546188227 / 4294967296.0, false)];
+
 	/// <summary>A harp at level 0: only its first stat is open, and its one socket is empty.</summary>
 	private static readonly Relic UnwornRelic = new(203, 2, "Synthetic Harp", "Legendary", "Rank3", 0, 1, [new("Health", 900, true)], [new(3000001, "Wearer gains Turn Meter.")], [], [new("Pentagon", null)]);
 
@@ -109,7 +112,7 @@ public partial class SnapshotFormatTests
 			new DateTimeOffset(2026, 10, 31, 21, 40, 0, TimeSpan.Zero),
 			AccountIdHash.Of(new AccountId(123456789), salt),
 			[
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], StatsFormula.For(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5), new ChampionBonuses(KnightBonuses, [KnightSetBonus], KnightMasteries, KnightGreatHall, [], KnightAwakening, KnightEmpowerment, SilverIII))),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], StatsFormula.For(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5), new ChampionBonuses(KnightBonuses, [KnightSetBonus], KnightMasteries, KnightGreatHall, [], KnightAwakening, KnightEmpowerment, KnightRelicBonuses, SilverIII))),
 				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], StatsFormula.For(Base(3780, 396, 216, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), ChampionBonuses.None with { FactionGuardians = ArcherGuardians, ArenaLeague = SilverIII })),
 				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], [], StatsFormula.For(Base(6300, 660, 360, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), ChampionBonuses.None with { FactionGuardians = ArcherGuardians, ArenaLeague = SilverIII })),
 			],

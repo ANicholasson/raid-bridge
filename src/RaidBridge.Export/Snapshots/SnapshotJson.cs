@@ -236,10 +236,11 @@ internal static class SnapshotJson
 		json.WriteEndArray();
 
 		json.WriteStartObject("stats");
+		WriteStats(json, "total", champion.Stats.Total);
 		json.WriteStartObject("bySource");
 		WriteStats(json, "base", champion.Stats.Base);
 		// A Stat source that raises nothing is left out.
-		foreach (var (source, stats) in new[] { (Name: "artifacts", Stats: champion.Stats.Artifacts), (Name: "sets", Stats: champion.Stats.Sets), (Name: "masteries", Stats: champion.Stats.Masteries), (Name: "greatHall", Stats: champion.Stats.GreatHall), (Name: "factionGuardians", Stats: champion.Stats.FactionGuardians), (Name: "awakening", Stats: champion.Stats.Awakening), (Name: "empowerment", Stats: champion.Stats.Empowerment), (Name: "arenaLeague", Stats: champion.Stats.ArenaLeague) }.Where(source => source.Stats.Count > 0))
+		foreach (var (source, stats) in new[] { (Name: "artifacts", Stats: champion.Stats.Artifacts), (Name: "sets", Stats: champion.Stats.Sets), (Name: "masteries", Stats: champion.Stats.Masteries), (Name: "greatHall", Stats: champion.Stats.GreatHall), (Name: "factionGuardians", Stats: champion.Stats.FactionGuardians), (Name: "awakening", Stats: champion.Stats.Awakening), (Name: "empowerment", Stats: champion.Stats.Empowerment), (Name: "relic", Stats: champion.Stats.Relic), (Name: "arenaLeague", Stats: champion.Stats.ArenaLeague) }.Where(source => source.Stats.Count > 0))
 		{
 			WriteStats(json, source, stats);
 		}
@@ -249,7 +250,7 @@ internal static class SnapshotJson
 		json.WriteEndObject();
 	}
 
-	/// <summary>The stats one part of <c>bySource</c> gives, each under its name, in the game's order of stats.</summary>
+	/// <summary>The Total stats, or the stats one part of <c>bySource</c> gives, each under its name, in the game's order of stats.</summary>
 	private static void WriteStats(Utf8JsonWriter json, string source, IReadOnlyDictionary<Stat, double> stats)
 	{
 		json.WriteStartObject(source);
