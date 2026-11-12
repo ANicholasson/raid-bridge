@@ -117,7 +117,7 @@ A read-only probe read the running Game client on the maintainer's Linux install
 
 - **Great Hall:** 6 stats with 10 levels each, entry _n_ − 1 for level _n_. HP, ATK and DEF give 2, 3, 4, 6, 8, 10, 12, 14, 17 and 20%. C.DMG gives 2% to 25%. ACC and RES give 5, 10, 15, 20, 30 and up to 80, flat.
 - **Faction Guardians:** 5 bonuses per rarity, one per slot: HP 10%, ATK 10%, DEF 10%, ACC and RES flat, and SPD flat. The flat ones grow with rarity: ACC and RES +7, +15, +30 and +45, and SPD +3, +6, +10 and +15, for Rare, Epic, Legendary and Mythical.
-- **Empowerment:** `Bonuses` and `EpicBonuses` hold 4 levels each. Whether a level's entry is that level's total or adds to the levels below is still open. For example, level 4 of `Bonuses` holds SPD +5, C.RATE 10% and C.DMG 30%, beside HP, ATK and DEF 10% and ACC and RES +10.
+- **Empowerment:** `Bonuses` and `EpicBonuses` hold 4 levels each. The levels add up: see "Awakening, blessing and Empowerment" below. For example, level 4 of `Bonuses` holds SPD +5, C.RATE 10% and C.DMG 30%, beside HP, ATK and DEF 10% and ACC and RES +10.
 - **Awakening:** `BlessingStatsByRarity` has Stars1 to Stars6 for each rarity, and the grades add up. For Legendary they are HP +7500, ATK +750, DEF +600, HP +1000 with C.DMG 38%, ACC and RES +75, and SPD +15.
 - **Masteries:** 13 entries in `MasteryBonusById`. One has `StatKindId` −1, which is no member of the enum, and is worth 15%. The constant `BonusSourceArtifactSet` is also −1, so that entry is the mastery that raises set bonuses (Lore of Steel). The reader has to treat −1 as that marker, not as a bad stat.
 - **Sets:** 71. `_maxArtifactCount` is 0 on all of them. A set with one stat uses `StatBonus`, and a set with two uses `StatBonuses` and leaves `StatBonus` null. Speed is 2 pieces for 12%, and Accuracy is 2 pieces for +40. The 13 sets with `ArtifactCount` 0 have 9 `SubSetInfos`, one for each piece count from 1 to 9: these are the sets that grow by the piece.
@@ -242,10 +242,24 @@ For https://github.com/ANicholasson/raid-bridge/issues/13, read the same way.
 
 Both add as an Artifact's bonuses do. Live on 2026-11-11, the Snapshot gave Jizoh 813 Health from his Faction's one full Epic slot, and the Magic and Spirit Champions 20 Accuracy from level 4. Both are already in the green numbers that matched on the Jizoh, Vallaryn, Kael and Uugo screenshots above.
 
+## Awakening, blessing and Empowerment (settled 2026-11-12)
+
+For https://github.com/ANicholasson/raid-bridge/issues/14, read the same way.
+
+- **Awakening.** `BattleBonuses.InitBlessing(HeroDoubleAscendData, rarity)` gives nothing unless the Champion has a blessing (`BlessingId` with a value). With one, it takes the blessing's `BlessingType.GradeBonuses` for every Awakening grade up to the Champion's. `DoubleAscendExtensions.GetStatBonusesBy` then:
+  - reads each grade's `BlessingBonus.StatKindIds`;
+  - looks up the `BlessingStats` of that grade in `BlessingStatsByRarity[rarity]`;
+  - adds its `StatBonusByKindId` of each stat named, flat when absolute and as a percentage when not.
+
+  So the blessing chooses which stats rise, and the rarity how much. An awakened Champion without a blessing gets nothing.
+- **Empowerment.** `BattleBonuses.InitEmpower(level, heroType)` takes `AcademyData.Empower.EpicBonuses` for an Epic Champion, when the list exists, and `Bonuses` otherwise. It keeps the first `level` entries (`TakeWhile((entry, index) => index < level)`) and adds all of them. So the levels add up, which settles the question from the live check.
+
+Live, on 2026-11-12, the Snapshot gave Uugo, an Epic at Stars1 with a blessing, 4,500 Health. That is exactly the gap left on his screenshot of 2026-11-11. Vallaryn the Equalizer, awakened to Stars4 with no blessing, got nothing, as her screenshot of 2026-11-10 showed. Dorothy Gale, a Legendary at Stars5, got Health +8,500, Attack +750, Defence +600, Resistance and Accuracy +75, and CriticalDamage +38%. Those are the values of the game's own `BlessingSetup` on her defence team, recorded above. No Champion on the Account was empowered, so Empowerment is proven by the code and the tests only.
+
 ## Still open (needs the maintainer's screen)
 
 1. **Base stats:** settled above. For https://github.com/ANicholasson/raid-bridge/issues/10 the reader also matched the white numbers of three more Champions exactly on 2026-11-10: a Legendary at rank 5 and level 50 of an ascended type, an Epic at rank 4 and level 40, and a Rare at rank 3 and level 2.
-2. **Empowerment:** whether its levels add up.
-3. **The missing blessing setup** on one awakened defence Champion.
+2. **Empowerment:** settled above. Its levels add up.
+3. **The missing blessing setup** on one awakened defence Champion: settled above. A Champion with no blessing gets no Awakening bonus.
 4. **What the screen counts:** settled above, from the game's code. The Arena league, the Great Hall, Faction Guardians and Empowerment count, and no clan bonus does.
 5. **How the screen rounds** each stat: settled above. Each Stat source rounds to a whole number or a whole percent, a half to the even one, before they are added.

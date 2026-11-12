@@ -90,6 +90,49 @@ public sealed record SyntheticHeroData(
 		new(500113, null),
 	];
 
+	/// <summary>
+	/// The static data's blessings, each with the stats each Awakening grade raises, by StatKindId. Made up: Necromancy
+	/// raises Health at Stars1, Attack at Stars2, and Health and CriticalDamage at Stars3.
+	/// </summary>
+	public IReadOnlyList<SyntheticBlessing> Blessings { get; init; } =
+	[
+		new(1101, new Dictionary<int, IReadOnlyList<int>> { [1] = [1], [2] = [2], [3] = [1, 8] }),
+		new(1102, new Dictionary<int, IReadOnlyList<int>> { [1] = [4] }),
+	];
+
+	/// <summary>
+	/// The static data's BlessingStatsByRarity: for each rarity, each Awakening grade's bonus to each stat, by StatKindId,
+	/// as a raw Fixed and whether it is absolute. Made up, for Legendary: 7,500 Health at Stars1, 750 Attack at Stars2,
+	/// and 1,000 Health and 38% CriticalDamage at Stars3.
+	/// </summary>
+	public IReadOnlyDictionary<int, IReadOnlyList<(int Grade, IReadOnlyDictionary<int, (long Value, bool Absolute)> Stats)>> BlessingStatsByRarity { get; init; } =
+		new Dictionary<int, IReadOnlyList<(int, IReadOnlyDictionary<int, (long, bool)>)>>
+		{
+			[5] =
+			[
+				(1, new Dictionary<int, (long, bool)> { [1] = (SyntheticArtifactData.Q32(7500), true) }),
+				(2, new Dictionary<int, (long, bool)> { [2] = (SyntheticArtifactData.Q32(750), true) }),
+				(3, new Dictionary<int, (long, bool)> { [1] = (SyntheticArtifactData.Q32(1000), true), [8] = (SyntheticArtifactData.Q32(0.38), false) }),
+			],
+			[3] = [(1, new Dictionary<int, (long, bool)> { [1] = (SyntheticArtifactData.Q32(3000), true) })],
+		};
+
+	/// <summary>
+	/// The static data's Empowerment levels, each one's bonuses by StatKindId, as a raw Fixed and whether it is absolute.
+	/// Made up: level 1 gives 10 Resistance and 10 Accuracy, level 2 5 Speed.
+	/// </summary>
+	public IReadOnlyList<IReadOnlyDictionary<int, (long Value, bool Absolute)>> EmpowerBonuses { get; init; } =
+	[
+		new Dictionary<int, (long, bool)> { [5] = (SyntheticArtifactData.Q32(10), true), [6] = (SyntheticArtifactData.Q32(10), true) },
+		new Dictionary<int, (long, bool)> { [4] = (SyntheticArtifactData.Q32(5), true) },
+	];
+
+	/// <summary>The Empowerment levels of an Epic Champion, or null for no list. Made up: level 1 gives 5% Health.</summary>
+	public IReadOnlyList<IReadOnlyDictionary<int, (long Value, bool Absolute)>>? EpicEmpowerBonuses { get; init; } =
+	[
+		new Dictionary<int, (long, bool)> { [1] = (SyntheticArtifactData.Q32(0.05), false) },
+	];
+
 	/// <summary><c>BattleStats.ToPercent</c>, which turns the critical stats the game holds as whole percents into fractions.</summary>
 	public double ToPercent { get; init; } = 100;
 }
@@ -119,6 +162,9 @@ public sealed record SyntheticHero(int Id, int TypeId)
 }
 
 public sealed record SyntheticSkill(int Id, int TypeId, int Level);
+
+/// <summary>A BlessingType: its id, and the stats each Awakening grade raises, by StatKindId, in its GradeBonuses.</summary>
+public sealed record SyntheticBlessing(int Id, IReadOnlyDictionary<int, IReadOnlyList<int>> StatsByGrade);
 
 /// <summary>A mastery type, and its entry in MasteryBonusById, or null when it raises no stat. A stat kind of -1 marks a bonus to set bonuses.</summary>
 public sealed record SyntheticMasteryType(int Id, SyntheticStatBonus? Bonus);

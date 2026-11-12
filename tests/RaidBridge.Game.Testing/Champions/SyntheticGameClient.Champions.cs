@@ -135,6 +135,111 @@ public sealed partial class SyntheticGameClient
 		return staticMasteryDataObject;
 	}
 
+	/// <summary>
+	/// The static data's DoubleAscendData: each blessing in BlessingById, with the StatKindIds its GradeBonuses name for
+	/// each grade, and BlessingStatsByRarity, each grade's StatBonus for each stat.
+	/// </summary>
+	private ulong LayOutTheAwakening(SyntheticHeroData heroData, ulong statBonus)
+	{
+		var systemObject = _runtime.SystemObject;
+		var blessingBonus = Declare(
+			"SharedModel.Meta.DoubleAscend.User",
+			"BlessingBonus",
+			systemObject,
+			"System.Object",
+			("StatKindIds", "System.Collections.Generic.List`1<SharedModel.Battle.Effects.StatKindId>", GenericInstanceTypeCode, 0x10));
+		var blessingType = Declare(
+			"SharedModel.Meta.DoubleAscend.Static",
+			"BlessingType",
+			systemObject,
+			"System.Object",
+			("Id", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", ValueTypeTypeCode, 0x10),
+			("GradeBonuses", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade, SharedModel.Meta.DoubleAscend.User.BlessingBonus>", GenericInstanceTypeCode, 0x18));
+		var blessingStats = Declare(
+			"SharedModel.Meta.DoubleAscend.Static",
+			"BlessingStats",
+			systemObject,
+			"System.Object",
+			("Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", ValueTypeTypeCode, 0x10),
+			("StatBonusByKindId", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, SharedModel.Meta.General.StatBonus>", GenericInstanceTypeCode, 0x18));
+		var doubleAscendData = Declare(
+			"SharedModel.Meta.DoubleAscend.Static",
+			"StaticDoubleAscendData",
+			systemObject,
+			"System.Object",
+			("BlessingById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.DoubleAscend.Static.BlessingTypeId, SharedModel.Meta.DoubleAscend.Static.BlessingType>", GenericInstanceTypeCode, 0x10),
+			("BlessingStatsByRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.DoubleAscend.Static.BlessingStats>>", GenericInstanceTypeCode, 0x18));
+
+		var statKinds = _runtime.ListType(_runtime.Class("SharedModel.Battle.Effects", "StatKindId", _runtime.ValueType), "StatKindId", sizeof(int));
+		var byEnum = _runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode);
+		var blessings = heroData.Blessings.Select(blessing =>
+		{
+			var typeObject = _runtime.Object(blessingType, 0x20);
+			_heap.Int32(typeObject + 0x10, blessing.Id);
+			_heap.Pointer(typeObject + 0x18, _runtime.Dictionary(byEnum, [.. blessing.StatsByGrade.Select(grade =>
+			{
+				var bonusObject = _runtime.Object(blessingBonus, 0x18);
+				_heap.Pointer(bonusObject + 0x10, _runtime.List(statKinds, [.. grade.Value.Select(stat => (ulong)stat)]));
+				return ((ulong)grade.Key, bonusObject);
+			})]));
+			return ((ulong)blessing.Id, typeObject);
+		});
+		var statsList = _runtime.ListType(blessingStats, "BlessingStats", sizeof(ulong));
+		var byRarity = heroData.BlessingStatsByRarity.Select(rarity => ((ulong)rarity.Key, _runtime.List(statsList, [.. rarity.Value.Select(grade =>
+		{
+			var statsObject = _runtime.Object(blessingStats, 0x20);
+			_heap.Int32(statsObject + 0x10, grade.Grade);
+			_heap.Pointer(statsObject + 0x18, _runtime.Dictionary(byEnum, [.. grade.Stats.Select(stat => ((ulong)stat.Key, StaticStatBonus(statBonus, stat.Key, stat.Value.Value, stat.Value.Absolute)))]));
+			return statsObject;
+		})])));
+		var dataObject = _runtime.Object(doubleAscendData, 0x20);
+		_heap.Pointer(dataObject + 0x10, _runtime.Dictionary(byEnum, [.. blessings]));
+		_heap.Pointer(dataObject + 0x18, _runtime.Dictionary(byEnum, [.. byRarity]));
+		return dataObject;
+	}
+
+	/// <summary>The static data's AcademyData.Empower: the levels' StatBonuses, and the Epic ones', each a BonusValue by StatKindId.</summary>
+	private ulong LayOutTheEmpowerment(SyntheticHeroData heroData)
+	{
+		var systemObject = _runtime.SystemObject;
+		var statBonuses = _runtime.RuntimeClass("SharedModel.Meta.Academy.Static.StatBonuses");
+		var empower = Declare(
+			"SharedModel.Meta.Academy.Static",
+			"StaticAcademyEmpowerData",
+			systemObject,
+			"System.Object",
+			("Bonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>", GenericInstanceTypeCode, 0x10),
+			("EpicBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Academy.Static.StatBonuses>", GenericInstanceTypeCode, 0x18));
+		var bonusValue = _runtime.RuntimeClass("SharedModel.Meta.Artifacts.BonusValue");
+		var levels = _runtime.ListType(statBonuses, "StatBonuses", sizeof(ulong));
+		ulong Levels(IReadOnlyList<IReadOnlyDictionary<int, (long Value, bool Absolute)>> list) => _runtime.List(levels, [.. list.Select(level =>
+		{
+			var levelObject = _runtime.Object(statBonuses, 0x18);
+			_heap.Pointer(levelObject + 0x10, _runtime.Dictionary(_runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode), [.. level.Select(bonus =>
+			{
+				var bonusObject = _runtime.Object(bonusValue, 0x20);
+				_heap.Bytes(bonusObject + 0x10, [Bool(bonus.Value.Absolute)]);
+				_heap.Int64(bonusObject + 0x18, bonus.Value.Value);
+				return ((ulong)bonus.Key, bonusObject);
+			})]));
+			return levelObject;
+		})]);
+		var empowerObject = _runtime.Object(empower, 0x20);
+		_heap.Pointer(empowerObject + 0x10, Levels(heroData.EmpowerBonuses));
+		_heap.Pointer(empowerObject + 0x18, heroData.EpicEmpowerBonuses is { } epic ? Levels(epic) : 0);
+		return empowerObject;
+	}
+
+	/// <summary>A static StatBonus of the stat.</summary>
+	private ulong StaticStatBonus(ulong statBonus, int stat, long value, bool absolute)
+	{
+		var bonusObject = _runtime.Object(statBonus, 0x20);
+		_heap.Int32(bonusObject + 0x10, stat);
+		_heap.Bytes(bonusObject + 0x14, [Bool(absolute)]);
+		_heap.Int64(bonusObject + 0x18, value);
+		return bonusObject;
+	}
+
 	/// <summary>A BattleStats holding the stats, each as a Fixed.</summary>
 	private ulong BattleStatsObject(ulong battleStats, SyntheticBattleStats stats)
 	{

@@ -148,7 +148,8 @@ public sealed partial class SyntheticGameClient
 			"StaticAcademyData",
 			systemObject,
 			"System.Object",
-			("Guardians", "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", ClassTypeCode, 0x10));
+			("Guardians", "SharedModel.Meta.Academy.Static.StaticAcademyGuardiansData", ClassTypeCode, 0x10),
+			("Empower", "SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData", ClassTypeCode, 0x18));
 
 		var bonusValue = _runtime.RuntimeClass("SharedModel.Meta.Artifacts.BonusValue");
 		var byStat = _runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode);
@@ -169,8 +170,9 @@ public sealed partial class SyntheticGameClient
 			})])))]);
 		var guardiansObject = _runtime.Object(guardians, 0x18);
 		_heap.Pointer(guardiansObject + 0x10, byRarity);
-		var academyObject = _runtime.Object(academy, 0x18);
+		var academyObject = _runtime.Object(academy, 0x20);
 		_heap.Pointer(academyObject + 0x10, guardiansObject);
+		_heap.Pointer(academyObject + 0x18, LayOutTheEmpowerment(_heroData!));
 		_heap.Pointer(_clientStaticData + 0x50, academyObject);
 	}
 }

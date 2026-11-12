@@ -241,6 +241,11 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", "BlessingStatsByRarity", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroRarity, System.Collections.Generic.List`1<SharedModel.Meta.DoubleAscend.Static.BlessingStats>>", false },
 		{ "SharedModel.Meta.DoubleAscend.Static.BlessingStats", "Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", false },
 		{ "SharedModel.Meta.DoubleAscend.Static.BlessingStats", "StatBonusByKindId", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, SharedModel.Meta.General.StatBonus>", false },
+		// Each blessing names the stats each Awakening grade raises (https://github.com/ANicholasson/raid-bridge/issues/14).
+		{ "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", "BlessingById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.DoubleAscend.Static.BlessingTypeId, SharedModel.Meta.DoubleAscend.Static.BlessingType>", false },
+		{ "SharedModel.Meta.DoubleAscend.Static.BlessingType", "Id", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", false },
+		{ "SharedModel.Meta.DoubleAscend.Static.BlessingType", "GradeBonuses", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade, SharedModel.Meta.DoubleAscend.User.BlessingBonus>", false },
+		{ "SharedModel.Meta.DoubleAscend.User.BlessingBonus", "StatKindIds", "System.Collections.Generic.List`1<SharedModel.Battle.Effects.StatKindId>", false },
 		// The game's own bonus breakdown for a Champion in a battle setup, which the Arena defence teams are made of.
 		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "BuildingSetup", "SharedModel.Battle.Core.Setup.BuildingSetup", false },
 		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "AcademySetup", "SharedModel.Battle.Core.Setup.AcademySetup", false },
