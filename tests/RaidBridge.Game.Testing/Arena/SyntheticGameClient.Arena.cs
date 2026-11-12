@@ -1,4 +1,6 @@
 using RaidBridge.Game.Testing.Arena;
+using RaidBridge.Game.Testing.Champions;
+using RaidBridge.Game.Testing.Il2Cpp;
 using static RaidBridge.Game.Testing.Il2Cpp.Unity6000Layout;
 
 namespace RaidBridge.Game.Testing;
@@ -45,14 +47,15 @@ public sealed partial class SyntheticGameClient
 			("BattlesStartedThisWeek", "System.Int32", Int32TypeCode, 0x18),
 			("ArenaDefenseTeamSetup", "SharedModel.Battle.Core.Setup.TeamSetup", ClassTypeCode, 0x20),
 			("VictoriesThisWeek", "System.Int32", Int32TypeCode, 0x28),
-			("LossesThisWeek", "System.Int32", Int32TypeCode, 0x2C));
+			("LossesThisWeek", "System.Int32", Int32TypeCode, 0x2C),
+			("DefenseHeroIds", "System.Int32[]", SingleDimensionArrayTypeCode, 0x30));
 		var userArena3X3Data = Declare(
 			"SharedModel.Meta.Battle.Arena3x3",
 			"UserArena3X3Data",
 			userArenaData,
 			"SharedModel.Meta.Battle.Arena.UserArenaData",
-			("LeagueId", League, ValueTypeTypeCode, 0x30),
-			("Arena3X3DefenseTeamSetup", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.TeamSetup>", GenericInstanceTypeCode, 0x38));
+			("LeagueId", League, ValueTypeTypeCode, 0x38),
+			("Arena3X3DefenseTeamSetup", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.TeamSetup>", GenericInstanceTypeCode, 0x40));
 		var updatableArena3x3Data = Declare("Client.Model.Gameplay.Battle.Data", "UpdatableArena3x3Data", userArena3X3Data, "SharedModel.Meta.Battle.Arena3x3.UserArena3X3Data");
 		var arenaWrapperReadOnly = Declare(
 			"Client.Model.Gameplay.Battle",
@@ -93,8 +96,19 @@ public sealed partial class SyntheticGameClient
 		}
 
 		var classic = arenaData.Classic;
-		var classicData = _runtime.Object(userArenaData, 0x30);
+		var classicData = _runtime.Object(userArenaData, 0x38);
 		Week(classicData, classic.Points, classic.Battles, classic.Wins, classic.Losses);
+		if (classic.DefenseHeroIds is { } defenseHeroIds)
+		{
+			var ids = _runtime.Array(_runtime.ArrayClass(_runtime.SystemInt32, "Int32", sizeof(int)), defenseHeroIds.Count, sizeof(int));
+			for (var index = 0; index < defenseHeroIds.Count; index++)
+			{
+				_heap.Int32(SyntheticRuntime.Element(ids, index, sizeof(int)), defenseHeroIds[index]);
+			}
+
+			_heap.Pointer(classicData + 0x30, ids);
+		}
+
 		if (classic.DefenceTeam is { } defenceTeam)
 		{
 			Slot("SharedModel.Meta.Battle.Arena.UserArenaData.ArenaDefenseTeamSetup", classicData + 0x20, Team(defenceTeam));
@@ -105,17 +119,46 @@ public sealed partial class SyntheticGameClient
 		Slot("Client.Model.Guard.UserWrapper.Arena", userWrapperObject + 0x58, arenaWrapperObject);
 
 		var tag = arenaData.Tag;
-		var tagData = _runtime.Object(updatableArena3x3Data, 0x40);
+		var tagData = _runtime.Object(updatableArena3x3Data, 0x48);
 		Week(tagData, tag.Points, tag.Battles, tag.Wins, tag.Losses);
-		_heap.Int32(tagData + 0x30, tag.League);
+		_heap.Int32(tagData + 0x38, tag.League);
 		if (tag.DefenceTeams is { } defenceTeams)
 		{
 			_tagTeams = _runtime.List(_runtime.ListType(teamSetup, "TeamSetup", sizeof(ulong)), [.. defenceTeams.Select(Team)]);
-			_heap.Pointer(tagData + 0x38, _tagTeams);
+			_heap.Pointer(tagData + 0x40, _tagTeams);
 		}
 
 		var arena3x3WrapperObject = _runtime.Object(arena3x3Wrapper, 0x18);
 		_heap.Pointer(arena3x3WrapperObject + 0x10, tagData);
 		Slot("Client.Model.Guard.UserWrapper.Arena3x3", userWrapperObject + 0x60, arena3x3WrapperObject);
+		LayOutTheLeagues(arenaData.LeagueBonuses);
+	}
+
+	/// <summary>The static data's ArenaData, whose LeagueInfos hold each league's Id and BattleBonuses, a BattleStats.</summary>
+	private void LayOutTheLeagues(IReadOnlyDictionary<int, SyntheticBattleStats> leagueBonuses)
+	{
+		var leagueInfo = Declare(
+			"SharedModel.Meta.Battle.Arena",
+			"ArenaLeagueInfo",
+			_runtime.SystemObject,
+			"System.Object",
+			("Id", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", ValueTypeTypeCode, 0x10),
+			("BattleBonuses", "SharedModel.Meta.Heroes.BattleStats", ClassTypeCode, 0x18));
+		var arenaData = Declare(
+			"SharedModel.Meta.Battle.Arena",
+			"StaticStandardArenaData",
+			_runtime.SystemObject,
+			"System.Object",
+			("LeagueInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Battle.Arena.ArenaLeagueInfo>", GenericInstanceTypeCode, 0x10));
+
+		var arenaDataObject = _runtime.Object(arenaData, 0x18);
+		_heap.Pointer(arenaDataObject + 0x10, _runtime.List(_runtime.ListType(leagueInfo, "ArenaLeagueInfo", sizeof(ulong)), [.. leagueBonuses.Select(league =>
+		{
+			var infoObject = _runtime.Object(leagueInfo, 0x20);
+			_heap.Int32(infoObject + 0x10, league.Key);
+			_heap.Pointer(infoObject + 0x18, BattleStatsObject(_battleStats, league.Value));
+			return infoObject;
+		})]));
+		Slot("SharedModel.Meta.StaticData.ArenaData", _clientStaticData + 0x60, arenaDataObject);
 	}
 }
