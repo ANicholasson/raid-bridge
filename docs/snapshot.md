@@ -206,6 +206,16 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
         }
       ],
       "stats": {
+        "total": {
+          "Health": 32406.75,
+          "Attack": 2146.0000000614673,
+          "Defence": 845.8800000967458,
+          "Speed": 116,
+          "Resistance": 50,
+          "Accuracy": 20,
+          "CriticalChance": 0.2099999999627471,
+          "CriticalDamage": 1.1100000001024455
+        },
         "bySource": {
           "base": {
             "Health": 12375,
@@ -242,6 +252,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
             "Resistance": 10,
             "Accuracy": 10
           },
+          "relic": {
+            "Health": 5400,
+            "Attack": 308,
+            "CriticalDamage": 0.3600000001024455
+          },
           "arenaLeague": {
             "Health": 1237.5000011525117,
             "Attack": 66.00000006146729,
@@ -276,6 +291,16 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "artifacts": {},
       "relics": [],
       "stats": {
+        "total": {
+          "Health": 4536.00000070408,
+          "Attack": 435.6000000368804,
+          "Defence": 237.60000002011657,
+          "Speed": 98,
+          "Resistance": 30,
+          "Accuracy": 0,
+          "CriticalChance": 0.14999999990686774,
+          "CriticalDamage": 0.5700000000651926
+        },
         "bySource": {
           "base": {
             "Health": 3780,
@@ -324,6 +349,16 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "artifacts": {},
       "relics": [],
       "stats": {
+        "total": {
+          "Health": 7560.000001173466,
+          "Attack": 726.0000000614673,
+          "Defence": 396.0000000335276,
+          "Speed": 98,
+          "Resistance": 30,
+          "Accuracy": 0,
+          "CriticalChance": 0.14999999990686774,
+          "CriticalDamage": 0.5700000000651926
+        },
         "bySource": {
           "base": {
             "Health": 6300,
@@ -552,7 +587,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `skills`: its own passive effects, each with its skill's `typeId` and the `description` the Game client shows for it (below).
     - `factionSkills`: the passive effects it adds only for a wearer of a given Faction, each with that `faction`, such as `"DarkElves"`, its `typeId` and its `description`, in the order its type lists them, or `[]`. Every Relic lists them, worn or not, so a reader can tell which Faction a spare Relic suits, and whether a worn Relic's wearer gets them. Few Relic types have any.
     - `sockets`: its sockets, in the order the game keeps them, each with its `shape`, such as `"Circle"`, and the Relic `stone` in it, or `null` when it is empty.
-  - `stats`: the Champion's stats, worked out from what raid-bridge read (below). `bySource` holds the Champion's Base stats and what each Stat source adds to them, each stat under its name, such as `"Speed"`, in the order of the numbers the game's code gives the stats. All are in the units of an Artifact's bonuses: points, and fractions for `CriticalChance` and `CriticalDamage`. So far it holds:
+  - `stats`: the Champion's stats, worked out from what raid-bridge read (below). `total` holds its Total stats, the eight stats its champion screen shows, unrounded: each is the Champion's Base stat plus what every Stat source in `bySource` adds to it. `bySource` holds the Champion's Base stats and what each Stat source adds to them. Each stat is under its name, such as `"Speed"`, in the order of the numbers the game's code gives the stats. All are in the units of an Artifact's bonuses: points, and fractions for `CriticalChance` and `CriticalDamage`. `bySource` holds:
     - `base`: the Champion's Base stats at its rank, level and ascension, the white numbers on its champion screen. It always has all eight stats: `Health`, `Attack`, `Defence`, `Speed`, `Resistance`, `Accuracy`, `CriticalChance` and `CriticalDamage`.
     - `artifacts`: what the Artifacts it wears add, each one's main stat, ascension bonus and Substats, each with its Glyph.
     - `sets`: what the sets of those Artifacts add.
@@ -561,9 +596,10 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `factionGuardians`: what the Account's Faction Guardians add for the Champion's Faction and rarity. The game counts that Faction's guardian slots of that rarity in order, only while both places of a slot are filled, so a slot after one that isn't full adds nothing even when full. The Champion doesn't need to be a Guardian itself.
     - `awakening`: what the Champion's Awakening adds. Only an awakened Champion with a blessing gets it: for each star of Awakening up to its own, its blessing names the stats that star raises, worth what the game gives a Champion of its rarity at that star.
     - `empowerment`: what the Champion's Empowerment adds. The levels add up, so level 3 gives the bonuses of levels 1, 2 and 3. An Epic Champion has levels of its own.
+    - `relic`: what the Relics the Champion wears add, the `bonuses` of each in `relics` above. A Relic stone adds skills, not stats.
     - `arenaLeague`: what the Account's Classic Arena league adds, a share of `Health`, `Attack` and `Defence` that rises with the league, from 1% in BronzeI to 25% in Platinum in the game's data today. Every Champion gets it, but only while the Account has a Classic Arena defence, as the game counts it: while the game's list of defence Champions, which it keeps beside the team written in `classicArena.defenceTeam`, names any. With none, the game gives nothing, whatever `classicArena`'s league. The two lists have agreed on every Account read so far.
 
-    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment, on an Account with no Classic Arena defence team, has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment, on an Account with no Classic Arena defence team, has only `base`, and a `total` equal to it. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) -->
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.
@@ -602,11 +638,13 @@ Keys are camelCase, apart from the game's own names, and always come in this ord
 - A Relic's `bonuses` and `skillLevel`. The game holds no stat values or skill level on a Relic, only its type and level, so each is the value the game's own static table gives at that level, read from the Game client like the names are. Nothing in the sum is raid-bridge's own.
 - A Champion's `stats`. The game keeps no stats on a Champion, so raid-bridge works them out (ADR-0005). Every number in them is the Account's own or the game's static data, read from the Game client like the names are. Only the way they add up is raid-bridge's, and it follows the game's own code:
   - `base` is built the way the game builds a Champion's Base stats. `Health`, `Attack` and `Defence` scale by the Champion's rank and level and round to whole points as the game rounds them, and `Health` is multiplied by 15. `Speed`, `Resistance` and `Accuracy` are as the Champion's type holds them. `CriticalChance` and `CriticalDamage` turn from whole percents into fractions. raid-bridge works in the game's own fixed point here, so each value is the one the game itself holds, such as `0.14999999990686774` for the 15% the screen shows.
-  - Every other Stat source adds up its bonuses the way the game does. A flat bonus adds its points. A percentage bonus adds that share of the Champion's Base stat, so 15% `Health` on 12,375 adds 1,856.25. Any bonus to `CriticalChance` or `CriticalDamage` adds its value as it is. A set counts once for each complete set of pieces worn. A set that grows by the piece counts the entry for the number of pieces worn. The Great Hall, Faction Guardians, Awakening and Empowerment add as an Artifact's bonuses do. A stat mastery adds its value as it is. A mastery that raises set bonuses adds its share of each set bonus: as it is for `Resistance`, `Accuracy` and the critical stats, and for the other stats by scaling the Base stat, rounded to whole points as the game rounds it. So Lore of Steel's 15% of a 15% `Health` set raises 12,375 `Health` to 12,653. Bonuses to stats the screen doesn't show, such as a set's ignore-defence, are left out. These sums are otherwise unrounded.
+  - Every other Stat source adds up its bonuses the way the game does. A flat bonus adds its points. A percentage bonus adds that share of the Champion's Base stat, so 15% `Health` on 12,375 adds 1,856.25. Any bonus to `CriticalChance` or `CriticalDamage` adds its value as it is. A set counts once for each complete set of pieces worn. A set that grows by the piece counts the entry for the number of pieces worn. The Great Hall, Faction Guardians, Awakening, Empowerment, Relics and the Arena league add as an Artifact's bonuses do. A stat mastery adds its value as it is. A mastery that raises set bonuses adds its share of each set bonus: as it is for `Resistance`, `Accuracy` and the critical stats, and for the other stats by scaling the Base stat, rounded to whole points as the game rounds it. So Lore of Steel's 15% of a 15% `Health` set raises 12,375 `Health` to 12,653. Bonuses to stats the screen doesn't show, such as a set's ignore-defence, are left out. These sums are otherwise unrounded.
+  - `total` adds them up unrounded. The screen rounds each Stat source before it adds them, so rounding `total` can miss the screen's number by a few points, one for every source rounded the other way. To match the screen, round by source as below.
 
   To show the stats as the champion screen does:
-  - Round a Base stat's fraction to a whole percent. The points are whole already.
-  - For a green number, round each Stat source to whole points or whole percents, a half going to the even one, then add them up. The screen does the same, but counts `artifacts` and `sets` as one source, so add those two together before rounding.
+  - Round a Base stat's fraction to a whole percent. The points are whole already. That is the white number.
+  - For the green number, round each Stat source to whole points or whole percents, a half going to the even one, then add them up. The screen counts `artifacts` and `sets` as one source, so add those two together before rounding.
+  - The screen's total is the white number plus the green one.
 
 ## Names
 

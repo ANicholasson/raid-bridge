@@ -34,9 +34,8 @@ internal sealed class ArtifactSetBonuses(IReadOnlyDictionary<string, ManagedObje
 		new[] { artifact.Primary }
 			.Concat(artifact.AscensionBonus is { } ascension ? [ascension] : [])
 			.Concat(artifact.Substats)
-			.Select(bonus => (Stat: StatNames.Of(bonus.Stat, $"A bonus of Artifact {artifact.Id}"), Bonus: bonus))
-			.Where(bonus => bonus.Stat is not null)
-			.Select(bonus => new StatBonus(bonus.Stat!.Value, bonus.Bonus.Value + bonus.Bonus.Glyph, bonus.Bonus.Flat));
+			.Select(bonus => StatNames.BonusOf(bonus.Stat, bonus.Value + bonus.Glyph, bonus.Flat, $"A bonus of Artifact {artifact.Id}"))
+			.OfType<StatBonus>();
 
 	/// <summary>The bonuses the sets of the Artifacts <paramref name="worn"/> give Champion <paramref name="championId"/>.</summary>
 	public IReadOnlyList<StatBonus> For(int championId, IReadOnlyList<Artifact> worn) =>

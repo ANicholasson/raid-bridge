@@ -5,6 +5,7 @@ using RaidBridge.Domain.Stats;
 using RaidBridge.Game.Artifacts;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
+using RaidBridge.Game.Relics;
 
 namespace RaidBridge.Game.Champions;
 
@@ -139,6 +140,7 @@ internal static class ChampionReader
 					// A Champion with no blessing gets nothing from its Awakening, as the game's InitBlessing gives it nothing.
 					awakening is null || blessing is null ? [] : statReaders.Awakening.Value.For(id, rarity, awakening.Value, blessing),
 					empowerment == 0 ? [] : statReaders.Empowerment.Value.For(id, rarity, empowerment),
+					worn.RelicBonuses,
 					accountBonuses.ArenaLeague)));
 	}
 
@@ -158,11 +160,14 @@ internal static class ChampionReader
 		Lazy<AwakeningBonusReader> Awakening,
 		Lazy<EmpowermentBonusReader> Empowerment);
 
-	/// <summary>What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts and their sets give it.</summary>
-	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics);
+	/// <summary>
+	/// What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts,
+	/// their sets and its Relics give it.
+	/// </summary>
+	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics, IReadOnlyList<StatBonus> RelicBonuses);
 
 	private static Wearing Worn(int championId, IReadOnlyList<Artifact> artifacts, ArtifactSetBonuses sets, IReadOnlyList<Relic> relics) =>
-		new(artifacts, [.. artifacts.SelectMany(ArtifactSetBonuses.Of)], sets.For(championId, artifacts), relics);
+		new(artifacts, [.. artifacts.SelectMany(ArtifactSetBonuses.Of)], sets.For(championId, artifacts), relics, [.. relics.SelectMany(RelicStats.Of)]);
 
 	/// <summary>A hero type keeps its Affinity on each of its forms, so they must agree.</summary>
 	private static string Affinity(ManagedObject type, int typeId)
