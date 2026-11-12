@@ -133,5 +133,5 @@ One thing that adds to a Champion's stats beyond its Base stats, such as its Art
 _Avoid_: bonus (alone, since an Artifact's bonuses are one source)
 
 **Total stats**:
-A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. <!-- The Arena league isn't named either way: research settles it (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. <!-- The Arena league isn't named either way: research settles it (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6). It settled that the screen counts it, while the Account has a Classic Arena defence team (https://github.com/ANicholasson/raid-bridge/issues/20). -->
 _Avoid_: effective stats, battle stats

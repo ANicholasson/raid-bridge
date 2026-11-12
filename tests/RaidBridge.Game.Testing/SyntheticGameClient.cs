@@ -471,7 +471,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", ClassTypeCode, 0x40),
 			("MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", ClassTypeCode, 0x48),
 			("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", ClassTypeCode, 0x50),
-			("DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", ClassTypeCode, 0x58));
+			("DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", ClassTypeCode, 0x58),
+			("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", ClassTypeCode, 0x60));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -592,7 +593,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x60);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x68);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);

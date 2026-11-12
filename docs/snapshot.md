@@ -241,6 +241,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           "empowerment": {
             "Resistance": 10,
             "Accuracy": 10
+          },
+          "arenaLeague": {
+            "Health": 1237.5,
+            "Attack": 66,
+            "Defence": 74.2
           }
         }
       }
@@ -284,6 +289,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           },
           "factionGuardians": {
             "Health": 378.00000035203993
+          },
+          "arenaLeague": {
+            "Health": 378,
+            "Attack": 39.6,
+            "Defence": 21.6
           }
         }
       }
@@ -327,6 +337,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
           },
           "factionGuardians": {
             "Health": 630.0000005867332
+          },
+          "arenaLeague": {
+            "Health": 630,
+            "Attack": 66,
+            "Defence": 36
           }
         }
       }
@@ -546,8 +561,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `factionGuardians`: what the Account's Faction Guardians add for the Champion's Faction and rarity. The game counts that Faction's guardian slots of that rarity in order, only while both places of a slot are filled, so a slot after one that isn't full adds nothing even when full. The Champion doesn't need to be a Guardian itself.
     - `awakening`: what the Champion's Awakening adds. Only an awakened Champion with a blessing gets it: for each star of Awakening up to its own, its blessing names the stats that star raises, worth what the game gives a Champion of its rarity at that star.
     - `empowerment`: what the Champion's Empowerment adds. The levels add up, so level 3 gives the bonuses of levels 1, 2 and 3. An Epic Champion has levels of its own.
+    - `arenaLeague`: what the Account's Classic Arena league adds, a share of `Health`, `Attack` and `Defence` that rises with the league, from 1% in BronzeI to 25% in Platinum in the game's data today. Every Champion gets it, but only while the Account has a Classic Arena defence team: with none, the game gives nothing, whatever `classicArena`'s league.
 
-    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment, on an Account with no Classic Arena defence team, has only `base`. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) --> The other Stat sources and the Total stats are still to come.
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.

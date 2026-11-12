@@ -13,6 +13,7 @@ public sealed partial class SyntheticGameClient
 		["Health", "Attack", "Defence", "Speed", "Resistance", "Accuracy", "CriticalChance", "CriticalDamage", "CriticalHeal", "IgnoreDefence"];
 
 	private ulong _battleStatsStatics;
+	private ulong _battleStats;
 	private ulong _rankMultipliers;
 	private readonly Dictionary<int, ulong> _masteryTypes = [];
 
@@ -83,6 +84,7 @@ public sealed partial class SyntheticGameClient
 				("Multipliers", "System.Double[][]", true),
 			]);
 		TypeInfoSlot(BattleStats, BattleStatsTypeInfoRva, battleStats);
+		_battleStats = battleStats;
 
 		_battleStatsStatics = _heap.Allocate(0x10);
 		_heap.Pointer(battleStats + ClassStaticFields, _battleStatsStatics);

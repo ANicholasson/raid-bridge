@@ -138,16 +138,18 @@ internal static class ChampionReader
 					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []),
 					// A Champion with no blessing gets nothing from its Awakening, as the game's InitBlessing gives it nothing.
 					awakening is null || blessing is null ? [] : statReaders.Awakening.Value.For(id, rarity, awakening.Value, blessing),
-					empowerment == 0 ? [] : statReaders.Empowerment.Value.For(id, rarity, empowerment))));
+					empowerment == 0 ? [] : statReaders.Empowerment.Value.For(id, rarity, empowerment),
+					accountBonuses.ArenaLeague)));
 	}
 
 	/// <summary>
-	/// What the Account gives every Champion of an Affinity, Faction and rarity: its Great Hall by Affinity, and its
-	/// Faction Guardians by Faction and rarity.
+	/// What the Account gives every Champion of an Affinity, Faction and rarity: its Great Hall by Affinity, its
+	/// Faction Guardians by Faction and rarity, and its Classic Arena league to every Champion.
 	/// </summary>
 	internal sealed record AccountStatBonuses(
 		IReadOnlyDictionary<string, IReadOnlyList<StatBonus>> GreatHall,
-		IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> FactionGuardians);
+		IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> FactionGuardians,
+		IReadOnlyList<StatBonus> ArenaLeague);
 
 	/// <summary>The static data that scales Champions and gives their masteries' bonuses, each read once a Champion needs it.</summary>
 	private sealed record StatReaders(

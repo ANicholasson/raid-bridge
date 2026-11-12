@@ -152,6 +152,13 @@ public class InstalledGameTests
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "LeagueId", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", false },
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "ArenaPoints", "System.Int64", false },
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "Arena3X3DefenseTeamSetup", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.TeamSetup>", false },
+		// The Classic Arena league's bonus (https://github.com/ANicholasson/raid-bridge/issues/20): it counts only while
+		// DefenseHeroIds names a Champion, and each league's BattleBonuses are in the static data's LeagueInfos.
+		{ "SharedModel.Meta.Battle.Arena.UserArenaData", "DefenseHeroIds", "System.Int32[]", false },
+		{ "SharedModel.Meta.ClientStaticData", "ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", false },
+		{ "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", "LeagueInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Battle.Arena.ArenaLeagueInfo>", false },
+		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueInfo", "Id", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", false },
+		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueInfo", "BattleBonuses", "SharedModel.Meta.Heroes.BattleStats", false },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
 		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
 		// Relics are a list of ids by Champion id, not a field of Hero.

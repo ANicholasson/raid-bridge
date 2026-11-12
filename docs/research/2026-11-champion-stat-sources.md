@@ -197,6 +197,13 @@ Each source's bonus is `BattleStats.UpdateWithBonuses` of that source alone, les
 
 `StaticData.ArenaData.LeagueInfos`, each an `ArenaLeagueInfo` with `Id` and `BattleBonuses` (a `BattleStats` of percentages). From BronzeI to Platinum it gives 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 and 25% to `Health`, `Attack` and `Defence`. Spec https://github.com/ANicholasson/raid-bridge/issues/5 didn't name it as a Stat source, so it was added on 2026-11-11 as `arenaLeague`, with a ticket of its own (https://github.com/ANicholasson/raid-bridge/issues/20).
 
+For https://github.com/ANicholasson/raid-bridge/issues/20, read the same way:
+- **When it counts.** `ArenaWrapperReadOnly.HasDefence` is `BaseArenaExtensions.HasDefense` of the Classic Arena's `UserArenaData`: true when its `DefenseHeroIds`, an `int[]`, holds any id but -1. The defence team's `HeroSlotSetups`, which the Snapshot's `defenceTeam` comes from, aren't what the game asks.
+- **Which league.** `ArenaWrapperReadOnly.get_League` doesn't read a stored league: it works the league out from the Arena points, with the tournament's timing. raid-bridge takes the league the defence team's `TeamSetup.ArenaLeagueId` holds, which the Snapshot already writes as `classicArena.league`, so the bonus and the league written always agree. The two could differ for a while after the points cross a league's line and before the game stores the new league. That is left open: the live check below found them the same.
+- **The values** are fractions, not whole percents: SilverIV's `BattleBonuses` hold 0.12 for `Health`, `Attack` and `Defence`, and 0 for the rest. A bonus to a critical stat would count for nothing, since `CalcPercentageStats` takes no Arena term, so the reader takes only the six stats `CalcAbsoluteStats` adds it to.
+
+Live, on 2026-11-12, the maintainer's Account was in SilverIV with a defence team, and every one of its Champions got 12% of its Base `Health`, `Attack` and `Defence`, the share the screenshots of 2026-11-11 and 2026-11-12 had already matched.
+
 ### Artifacts and sets
 
 - `ArtifactSetup.FromArtifact` takes every bonus of an Artifact: its primary, its Substats and its ascension bonus. Each is the bonus's value, plus its `_powerUpValue`, plus its `_rarityBasedPowerUpValue` when it has one. So a Glyph can be held in two parts. A bonus goes to the percentages unless it is absolute or its stat is a relative one (`HeroStatKindIdExtensions.IsRelative`), such as the critical stats.
