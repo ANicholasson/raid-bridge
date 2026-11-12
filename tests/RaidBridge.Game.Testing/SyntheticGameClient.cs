@@ -355,7 +355,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.Model.Guard.UserWrapper.Artifacts", userWrapperObject + 0x28, LayOutTheArtifacts(artifactData));
 		LayOutTheResources(userWrapperObject, resourceData);
 		LayOutTheGreatHall(userWrapperObject, greatHallData);
-		LayOutTheFactionGuardians(userWrapperObject, guardianData);
+		LayOutTheFactionGuardians(userWrapperObject, guardianData, heroData);
 		LayOutTheArena(userWrapperObject, arenaData);
 		LayOutTheRelics(userWrapperObject, relicData);
 	}
@@ -470,7 +470,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("SkillData", "SharedModel.Meta.Skills.StaticSkillData", ClassTypeCode, 0x18),
 			("RelicData", "SharedModel.Meta.Relics.StaticData.StaticRelicData", ClassTypeCode, 0x40),
 			("MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", ClassTypeCode, 0x48),
-			("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", ClassTypeCode, 0x50));
+			("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", ClassTypeCode, 0x50),
+			("DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", ClassTypeCode, 0x58));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -591,7 +592,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x58);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x60);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);
@@ -599,6 +600,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_heap.Pointer(clientStaticDataObject + 0x28, Localization(heroData.ClientLocalization));
 		_heap.Pointer(clientStaticDataObject + 0x30, staticArtifactDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x48, LayOutTheMasteries(heroData, statBonus));
+		_heap.Pointer(clientStaticDataObject + 0x58, LayOutTheAwakening(heroData, statBonus));
 
 		var managerObject = _runtime.Object(manager, 0x18);
 		_heap.Pointer(managerObject + 0x10, clientStaticDataObject);

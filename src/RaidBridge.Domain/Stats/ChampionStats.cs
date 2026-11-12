@@ -10,7 +10,9 @@ namespace RaidBridge.Domain.Stats;
 /// <item><see cref="Sets"/>: what their sets add;</item>
 /// <item><see cref="Masteries"/>: what its masteries add, Lore of Steel's share of its set bonuses included;</item>
 /// <item><see cref="GreatHall"/>: what the Account's Great Hall adds for the Champion's Affinity;</item>
-/// <item><see cref="FactionGuardians"/>: what the Account's Faction Guardians add for its Faction and rarity.</item>
+/// <item><see cref="FactionGuardians"/>: what the Account's Faction Guardians add for its Faction and rarity;</item>
+/// <item><see cref="Awakening"/>: what its Awakening adds, through its blessing;</item>
+/// <item><see cref="Empowerment"/>: what its Empowerment adds.</item>
 /// </list>
 /// A Stat source holds only the stats it raises, and none when it raises nothing. The other Stat sources, and the
 /// Total stats, come one ticket at a time (https://github.com/ANicholasson/raid-bridge/issues/5).
@@ -21,4 +23,6 @@ public sealed record ChampionStats(
 	IReadOnlyDictionary<Stat, double> Sets,
 	IReadOnlyDictionary<Stat, double> Masteries,
 	IReadOnlyDictionary<Stat, double> GreatHall,
-	IReadOnlyDictionary<Stat, double> FactionGuardians);
+	IReadOnlyDictionary<Stat, double> FactionGuardians,
+	IReadOnlyDictionary<Stat, double> Awakening,
+	IReadOnlyDictionary<Stat, double> Empowerment);

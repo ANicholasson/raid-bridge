@@ -16,7 +16,8 @@ namespace RaidBridge.Domain.Stats;
 /// a half going to the even one. The share is of each set bonus's value, flat or not, as the game takes it: no set at
 /// v39 gives a flat bonus to a stat it scales. The game scales in its fixed point and raid-bridge in doubles of the
 /// values the game holds, which round alike unless the product falls within a step of 2^-32 of a half.
-/// The Great Hall and Faction Guardians add as an Artifact's bonuses do (https://github.com/ANicholasson/raid-bridge/issues/13).
+/// The Great Hall, Faction Guardians, Awakening and Empowerment add as an Artifact's bonuses do
+/// (https://github.com/ANicholasson/raid-bridge/issues/13, https://github.com/ANicholasson/raid-bridge/issues/14).
 /// The sums are otherwise unrounded. The champion screen rounds each of its Stat sources to a whole number, or a whole
 /// percent, and counts Artifacts and their sets as one source.
 /// </summary>
@@ -30,7 +31,9 @@ public static class StatsFormula
 			Sets: Add(baseStats, bonuses.Sets),
 			Masteries: MasteryStats(baseStats, bonuses.Sets, bonuses.Masteries),
 			GreatHall: Add(baseStats, bonuses.GreatHall),
-			FactionGuardians: Add(baseStats, bonuses.FactionGuardians));
+			FactionGuardians: Add(baseStats, bonuses.FactionGuardians),
+			Awakening: Add(baseStats, bonuses.Awakening),
+			Empowerment: Add(baseStats, bonuses.Empowerment));
 
 	/// <summary>
 	/// What the masteries add: each stat mastery's value, then each set bonus share of the set bonuses. The game's

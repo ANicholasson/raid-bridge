@@ -48,7 +48,9 @@ internal static class ChampionReader
 		// Read only once a Champion needs them, so an Account with none doesn't depend on them.
 		var statReaders = new StatReaders(
 			new Lazy<BaseStatsReader>(() => BaseStatsReader.Read(staticData.Runtime)),
-			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)));
+			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)),
+			new Lazy<AwakeningBonusReader>(() => AwakeningBonusReader.Read(staticData)),
+			new Lazy<EmpowermentBonusReader>(() => EmpowermentBonusReader.Read(staticData)));
 		var champions = heroes.Select(hero => Champion(
 			hero.Key,
 			hero.Value.Object(Hero),
@@ -96,6 +98,9 @@ internal static class ChampionReader
 		var rank = hero.EnumMember("Grade", "SharedModel.Meta.Heroes.HeroGrade");
 		var level = hero.Int32("Level");
 		var rarity = type.Enum("Rarity", "SharedModel.Meta.Heroes.HeroRarity").Value;
+		var awakening = doubleAscend?.EnumMember("Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade").Value;
+		var blessing = doubleAscend?.NullableEnum("BlessingId", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId").Value;
+		var empowerment = hero.Int32("EmpowerLevel").Where(value => value >= 0, "an empowerment of 0 or more");
 		var affinity = Affinity(type, typeId.Value);
 		var faction = type.Enum("Fraction", "SharedModel.Meta.Heroes.HeroFraction").Value;
 		// A Champion that never took a mastery has no mastery data at all.
@@ -113,9 +118,9 @@ internal static class ChampionReader
 			Rank: rank.Value.Name,
 			Level: level.Where(value => value > 0, "a positive level"),
 			// A Champion that was never awakened has no awakening data at all.
-			Awakening: doubleAscend?.Enum("Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade").Value,
-			Blessing: doubleAscend?.NullableEnum("BlessingId", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId").Value,
-			Empowerment: hero.Int32("EmpowerLevel").Where(level => level >= 0, "an empowerment of 0 or more"),
+			Awakening: awakening?.Name,
+			Blessing: blessing,
+			Empowerment: empowerment,
 			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names))],
 			Masteries: masteryIds,
 			Locked: hero.Boolean("Locked").Value,
@@ -130,7 +135,10 @@ internal static class ChampionReader
 					worn.SetBonuses,
 					masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds),
 					accountBonuses.GreatHall.GetValueOrDefault(affinity, []),
-					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []))));
+					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []),
+					// A Champion with no blessing gets nothing from its Awakening, as the game's InitBlessing gives it nothing.
+					awakening is null || blessing is null ? [] : statReaders.Awakening.Value.For(id, rarity, awakening.Value, blessing),
+					empowerment == 0 ? [] : statReaders.Empowerment.Value.For(id, rarity, empowerment))));
 	}
 
 	/// <summary>
@@ -142,7 +150,11 @@ internal static class ChampionReader
 		IReadOnlyDictionary<(string Faction, string Rarity), IReadOnlyList<StatBonus>> FactionGuardians);
 
 	/// <summary>The static data that scales Champions and gives their masteries' bonuses, each read once a Champion needs it.</summary>
-	private sealed record StatReaders(Lazy<BaseStatsReader> BaseStats, Lazy<MasteryBonusReader> Masteries);
+	private sealed record StatReaders(
+		Lazy<BaseStatsReader> BaseStats,
+		Lazy<MasteryBonusReader> Masteries,
+		Lazy<AwakeningBonusReader> Awakening,
+		Lazy<EmpowermentBonusReader> Empowerment);
 
 	/// <summary>What a Champion wears, its Artifacts in the game's order of slots and its Relics, and the bonuses its Artifacts and their sets give it.</summary>
 	private sealed record Wearing(IReadOnlyList<Artifact> Artifacts, IReadOnlyList<StatBonus> ArtifactBonuses, IReadOnlyList<StatBonus> SetBonuses, IReadOnlyList<Relic> Relics);
