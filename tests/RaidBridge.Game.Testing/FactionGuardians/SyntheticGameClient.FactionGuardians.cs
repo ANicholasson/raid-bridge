@@ -1,3 +1,4 @@
+using RaidBridge.Game.Testing.Champions;
 using RaidBridge.Game.Testing.FactionGuardians;
 using RaidBridge.Game.Testing.Il2Cpp;
 using static RaidBridge.Game.Testing.Il2Cpp.Unity6000Layout;
@@ -28,9 +29,9 @@ public sealed partial class SyntheticGameClient
 	/// the Guardians: each Faction's slots by its HeroFraction, then a list of slots by HeroRarity, each slot holding a
 	/// Nullable&lt;int&gt; hero id in each of its two positions, beside the fields the reader doesn't read.
 	/// </summary>
-	private void LayOutTheFactionGuardians(ulong userWrapperObject, SyntheticGuardianData guardianData)
+	private void LayOutTheFactionGuardians(ulong userWrapperObject, SyntheticGuardianData guardianData, SyntheticHeroData heroData)
 	{
-		LayOutTheGuardianBonuses(guardianData);
+		LayOutTheAcademy(guardianData, heroData);
 
 		const string NullableInt = "System.Nullable`1<System.Int32>";
 		var systemObject = _runtime.SystemObject;
@@ -126,9 +127,9 @@ public sealed partial class SyntheticGameClient
 
 	/// <summary>
 	/// The static data's AcademyData, whose Guardians' BonusesByHeroRarity lists, for each rarity, each slot's bonuses as
-	/// a StatBonuses, a BonusValue by StatKindId.
+	/// a StatBonuses, a BonusValue by StatKindId, and whose Empower holds the heroes' Empowerment levels.
 	/// </summary>
-	private void LayOutTheGuardianBonuses(SyntheticGuardianData guardianData)
+	private void LayOutTheAcademy(SyntheticGuardianData guardianData, SyntheticHeroData heroData)
 	{
 		var systemObject = _runtime.SystemObject;
 		var statBonuses = Declare(
@@ -172,7 +173,7 @@ public sealed partial class SyntheticGameClient
 		_heap.Pointer(guardiansObject + 0x10, byRarity);
 		var academyObject = _runtime.Object(academy, 0x20);
 		_heap.Pointer(academyObject + 0x10, guardiansObject);
-		_heap.Pointer(academyObject + 0x18, LayOutTheEmpowerment(_heroData!));
+		_heap.Pointer(academyObject + 0x18, LayOutTheEmpowerment(heroData));
 		_heap.Pointer(_clientStaticData + 0x50, academyObject);
 	}
 }

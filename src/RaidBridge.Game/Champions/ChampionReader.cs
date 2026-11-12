@@ -100,7 +100,7 @@ internal static class ChampionReader
 		var rarity = type.Enum("Rarity", "SharedModel.Meta.Heroes.HeroRarity").Value;
 		var awakening = doubleAscend?.EnumMember("Grade", "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade").Value;
 		var blessing = doubleAscend?.NullableEnum("BlessingId", "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId").Value;
-		var empowerment = hero.Int32("EmpowerLevel").Where(level => level >= 0, "an empowerment of 0 or more");
+		var empowerment = hero.Int32("EmpowerLevel").Where(value => value >= 0, "an empowerment of 0 or more");
 		var affinity = Affinity(type, typeId.Value);
 		var faction = type.Enum("Fraction", "SharedModel.Meta.Heroes.HeroFraction").Value;
 		// A Champion that never took a mastery has no mastery data at all.

@@ -38,4 +38,13 @@ internal static class StatNames
 		Of(stat, what) is { } shown
 			? new StatBonus(shown, FixedPoint.Of(bonusValue, "_value"), bonusValue.Boolean("_isAbsolute").Value)
 			: null;
+
+	/// <summary>
+	/// A static <c>StatBonus</c>'s bonus to <paramref name="stat"/>, if the champion screen shows it, or null: its value,
+	/// flat when absolute and a percentage when not.
+	/// </summary>
+	public static StatBonus? BonusOfStatBonus(string stat, ManagedObject statBonus, string what) =>
+		Of(stat, what) is { } shown
+			? new StatBonus(shown, FixedPoint.Of(statBonus, "Value"), statBonus.Boolean("IsAbsolute").Value)
+			: null;
 }

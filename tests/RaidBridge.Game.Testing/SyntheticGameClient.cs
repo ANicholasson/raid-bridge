@@ -56,7 +56,6 @@ public sealed partial class SyntheticGameClient : IDisposable
 	private readonly List<(ulong Address, int Length)> _socialData = [];
 	private readonly Dictionary<string, ulong> _typeInfoSlots = new(StringComparer.Ordinal);
 	private ulong _clientStaticData;
-	private SyntheticHeroData? _heroData;
 
 	private SyntheticGameClient(
 		long userId,
@@ -356,7 +355,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.Model.Guard.UserWrapper.Artifacts", userWrapperObject + 0x28, LayOutTheArtifacts(artifactData));
 		LayOutTheResources(userWrapperObject, resourceData);
 		LayOutTheGreatHall(userWrapperObject, greatHallData);
-		LayOutTheFactionGuardians(userWrapperObject, guardianData);
+		LayOutTheFactionGuardians(userWrapperObject, guardianData, heroData);
 		LayOutTheArena(userWrapperObject, arenaData);
 		LayOutTheRelics(userWrapperObject, relicData);
 	}
@@ -602,7 +601,6 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_heap.Pointer(clientStaticDataObject + 0x30, staticArtifactDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x48, LayOutTheMasteries(heroData, statBonus));
 		_heap.Pointer(clientStaticDataObject + 0x58, LayOutTheAwakening(heroData, statBonus));
-		_heroData = heroData;
 
 		var managerObject = _runtime.Object(manager, 0x18);
 		_heap.Pointer(managerObject + 0x10, clientStaticDataObject);

@@ -38,7 +38,7 @@ public sealed class AwakeningAndEmpowermentStatsReadingTests : IDisposable
 
 		Assert.Equal(new Dictionary<Stat, double> { [Stat.Health] = 7500, [Stat.Attack] = 750 }, champions[3].Stats.Awakening);
 		Assert.Equal(new Dictionary<Stat, double> { [Stat.Resistance] = 10, [Stat.Accuracy] = 10 }, champions[3].Stats.Empowerment);
-		Assert.Empty(champions[12].Stats.Awakening);
+		Assert.All(new[] { champions[7], champions[12] }, champion => Assert.Empty(champion.Stats.Awakening));
 		Assert.All(new[] { champions[7], champions[12] }, champion => Assert.Empty(champion.Stats.Empowerment));
 	}
 
@@ -101,6 +101,26 @@ public sealed class AwakeningAndEmpowermentStatsReadingTests : IDisposable
 
 		Assert.Equal(
 			"Champion 3 is a Legendary Champion empowered to level 3, but SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData.Bonuses holds 2 levels.",
+			Refusal(game));
+	}
+
+	[Fact]
+	public void Refuses_a_blessed_champion_of_a_rarity_the_static_data_has_no_stats_for()
+	{
+		using var game = WithKnight(new SyntheticHero(3, 7000) { DoubleAscend = new(Grade: 1, Blessing: 1101) });
+
+		Assert.Equal(
+			"Champion 3 is a Epic Champion, which SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData.BlessingStatsByRarity holds no stats for.",
+			Refusal(game));
+	}
+
+	[Fact]
+	public void Refuses_an_epic_empowerment_level_the_static_data_does_not_hold()
+	{
+		using var game = WithKnight(new SyntheticHero(3, 7000) { EmpowerLevel = 2 });
+
+		Assert.Equal(
+			"Champion 3 is a Epic Champion empowered to level 2, but SharedModel.Meta.Academy.Static.StaticAcademyEmpowerData.EpicBonuses holds 1 levels.",
 			Refusal(game));
 	}
 
