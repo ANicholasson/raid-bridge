@@ -125,5 +125,5 @@ The maintainer's screenshot of the Missions screen, taken with the Account read 
 3. **Scope:** missions only, as the issue asks first, or the other kinds too. Periodic quests resolve their text the same way, but some kinds' text isn't in the static tables.
 4. **Section progress:** the screen counts missions done per group towards Arbiter (`RecommendedQuestsWrapperReadOnly.CompletedQuestsCountFor`, `CountFor`, and `SignInRecommendedQuestData.QuestsCountByGroupId`). On screen they read 76/76, 75/75, 75/75 and 11/60 for Parts 1 to 4, and 237/286 overall. Whether the Snapshot carries those counts, or a reader works them out from the missions, wasn't decided. Earlier groups' missions could be written as finished, by prototype id and text only.
 5. **Rewards:** `Quest.Prize` and `RecommendedQuestGroupInfo.Reward` weren't read.
-6. **Which text:** the recommendation is the `Name` as the mission's text, since it is the short line that says what to do, with the `Description` left out or optional. The grill decides.
-7. **Words:** "Mission" for a recommended quest is a candidate for GLOSSARY.md (_Avoid_: recommended quest), to settle in the grill.
+6. **Which text:** the recommendation is the `Name` as the mission's text, since it is the short line that says what to do, with the `Description` left out or optional. Still to decide.
+7. **Words:** "Mission" for a recommended quest is a candidate for GLOSSARY.md (_Avoid_: recommended quest), still to settle.
