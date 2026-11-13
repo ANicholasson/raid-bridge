@@ -2,7 +2,7 @@
 
 Findings for https://github.com/ANicholasson/raid-bridge/issues/33: where the Game client keeps Arbiter's missions and the Account's other quests, where a mission's text comes from, and what a build ticket would need.
 
-Sources: the installed game's own files, `global-metadata.dat` and `GameAssembly.dll` at IL2CPP metadata v39 and Unity 6000.3.18f1, parsed with the vendored LibCpp2IL, and a disassembly of the methods that turn a quest into the progress the screen shows. Then a read-only probe of the running Game client through the Linux adapter, which confirmed each route and showed the values below. Nothing here is pinned by the gated installed-files check yet. No screenshot has been compared against these values yet, so what the screen shows for a mission is an open question below.
+Sources: the installed game's own files, `global-metadata.dat` and `GameAssembly.dll` at IL2CPP metadata v39 and Unity 6000.3.18f1, parsed with the vendored LibCpp2IL, and a disassembly of the methods that turn a quest into the progress the screen shows. Then a read-only probe of the running Game client through the Linux adapter, which confirmed each route and showed the values below. Nothing here is pinned by the gated installed-files check yet. One screenshot of the Missions screen was compared against them ("Confirmed on the screen" below).
 
 ## Words
 
@@ -10,7 +10,7 @@ The game's code says **quest** for every task the player can complete: daily, we
 
 ## Arbiter's missions are the first section of the Missions screen
 
-`SharedModel.Meta.Quests.RecommendedQuestSectionId` names three sections: `ArbiterSection` = 1, `RamantuSection` = 2 and `Missions3Section` = 3. Each section is a run of groups (`RecommendedQuestGroupId`, `Group1` to `Group10`, with `Undefined` = 0). The static data says which:
+`SharedModel.Meta.Quests.RecommendedQuestSectionId` names three sections: `ArbiterSection` = 1, `RamantuSection` = 2 and `Missions3Section` = 3. The screen, titled "Progress Missions", shows them as tabs: Arbiter Missions, Ramantu Missions and Marius Missions. Each section is a run of groups (`RecommendedQuestGroupId`, `Group1` to `Group10`, with `Undefined` = 0). The static data says which:
 
 - `ClientStaticData.QuestData` (declared on the base `SharedModel.Meta.StaticData`) is a `StaticQuestData`. Its `RecommendedQuestData` is a `RecommendedQuestData`:
   - `GroupsBySection`: `Dictionary<RecommendedQuestSectionId, List<RecommendedQuestGroupId>>`. Live: Arbiter is `Group1` to `Group4`, Ramantu `Group5` to `Group7`, the third section `Group8` to `Group10`.
@@ -104,17 +104,26 @@ A read-only probe read the running Game client through the Linux adapter, with e
 - Missions on the Account read: `ActiveGroups` is `[Group4]`, `CompletedGroups` `[Group1, Group2, Group3]`, 237 completed prototype ids, `QuestsVersion` `PostTestsEarlyMissions` and `UserGroup` `Undefined`. So this Account is on Arbiter's last group.
 - **On this Account, only the active group's missions are held.** All 60 Recommended quests are in `Group4`. Earlier groups' missions are gone except as ids in `CompletedPrototypeIds`, and the later sections' missions aren't sent yet. `ActiveGroups` is a list, and no Account in another state was read, so whether two groups can be active at once is open. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/37) -->
 - **Earlier missions' text is still there.** All 237 completed prototype ids have both a name and a description in `StaticDataLocalization`, for example 310200, "Defeat 100 Champions in Classic Arena". Their group, category and counts aren't held. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/37) -->
-- Of the 60: 11 `Completed` with their prize given, 1 `InProgress` ("Upgrade an Affinity Bonus to Level 7") and 48 `New`. Every `New` one's completion is `InProgress`. Whether `New` means locked on the screen is an open question.
+- Of the 60: 11 `Completed` with their prize given, 1 `InProgress` ("Upgrade an Affinity Bonus to Level 7") and 48 `New`. Every `New` one's completion is `InProgress`.
 - Categories in `Group4`: 33 `Dungeons`, 10 `Heroes`, 7 `Arena`, 5 `Artifacts` and 5 `Clan`. Weights rise with the order.
 - Periodic quests: 8 daily, 7 weekly and 6 monthly.
 - Of 275 quests with a state, 267 have one completion, 1 has two, and 7 have none. In 5 completions two `By…` fields are set at once.
 
+## Confirmed on the screen (2026-11-13)
+
+The maintainer's screenshot of the Missions screen, taken with the Account read above:
+
+- **The current mission** is "Upgrade an Affinity Bonus to Level 7", headed "Arena Mission" (its category is `Arena`), with **0/1**. It is the one `InProgress` mission, a `ByCapitolBonus` kind whose stored count is -1 of 1. So for this kind the screen's number is "done or not", worked out from the Great Hall, not the Affinity Bonus's level.
+- **The next missions show a padlock**, each with 0/10: "Clear Stage 14 or higher of the Arcane Keep 10 times on Auto", "Mix 10 Superior Arcane Potions" (a `ByFuse`) and the Spirit Keep. So **`New` means locked**: one mission is open at a time, in `Weight` order, and the stored 0 of 10 is what the screen shows.
+- **The card's heading is the category**, "Arena Mission" or "Dungeon Mission", and the line under it is the quest's `Name`. The `Description` isn't on the card.
+- **The bar along the bottom** reads Part 4/4, 237/286, and per Part 76/76, 75/75, 75/75 and 11/60. 76 + 75 + 75 + 11 = 237, the number of completed prototype ids, and 60 is the number of missions held for `Group4`. The last reward is a Champion.
+
 ## Open questions for the build
 
-1. **What the screen shows** for an unfinished mission whose count is -1, and for damage to a Clan Boss, and whether `New` missions are shown locked. A screenshot of the Missions screen next to a Snapshot settles both.
+1. **What the screen shows** for damage to a Clan Boss that isn't finished, and for -1 kinds other than `ByCapitolBonus`. The one screenshot settled the rest (above).
 2. **Computed progress:** write `null` progress for those (only what the game holds), or port `CalcProgress` for some kinds. Many need only data the Snapshot already carries, such as Champion levels, masteries, Great Hall levels and the Classic Arena league.
 3. **Scope:** missions only, as the issue asks first, or the other kinds too. Periodic quests resolve their text the same way, but some kinds' text isn't in the static tables.
-4. **Section progress:** the screen counts missions done per group towards Arbiter (`RecommendedQuestsWrapperReadOnly.CompletedQuestsCountFor`, `CountFor`, and `SignInRecommendedQuestData.QuestsCountByGroupId`). Whether the Snapshot carries that count, or a reader works it out from the missions, wasn't decided. Earlier groups' missions could be written as finished, by prototype id and text only.
+4. **Section progress:** the screen counts missions done per group towards Arbiter (`RecommendedQuestsWrapperReadOnly.CompletedQuestsCountFor`, `CountFor`, and `SignInRecommendedQuestData.QuestsCountByGroupId`). On screen they read 76/76, 75/75, 75/75 and 11/60 for Parts 1 to 4, and 237/286 overall. Whether the Snapshot carries those counts, or a reader works them out from the missions, wasn't decided. Earlier groups' missions could be written as finished, by prototype id and text only.
 5. **Rewards:** `Quest.Prize` and `RecommendedQuestGroupInfo.Reward` weren't read.
 6. **Which text:** the recommendation is the `Name` as the mission's text, since it is the short line that says what to do, with the `Description` left out or optional. The grill decides.
 7. **Words:** "Mission" for a recommended quest is a candidate for GLOSSARY.md (_Avoid_: recommended quest), to settle in the grill.
