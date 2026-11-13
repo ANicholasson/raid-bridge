@@ -183,7 +183,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// <summary>
 	/// The Live Arena is written with a league, which the game always works out, and points and counts of 0 or more, or
 	/// as null when the game holds no Live Arena data, as an Account below its unlock level may
-	/// (https://github.com/ANicholasson/raid-bridge/issues/32; Cursor Bugbot, PR 44). On the main Account, which had never fought in it
+	/// (https://github.com/ANicholasson/raid-bridge/issues/32; PR #44). On the main Account, which had never fought in it
 	/// (2026-11-13), as the player confirmed, it read BronzeI with 900 points, 0 wins and 0 losses; a league above BronzeI is proven only by the synthetic Game client so far.
 	/// </summary>
 	[Fact]

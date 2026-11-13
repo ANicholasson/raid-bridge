@@ -54,7 +54,7 @@ public sealed class AreaBonusReadingTests : IDisposable
 		Assert.Equal([("PotionKeeps", "Accuracy", 10), ("PotionKeeps", "IgnoreDefence", 1)], Levels(game));
 	}
 
-	/// <summary>A Great Hall built for one Affinity holds no Area Bonus, so tiers that list no area check nothing (Cursor Bugbot, PR 44).</summary>
+	/// <summary>A Great Hall built for one Affinity holds no Area Bonus, so tiers that list no area check nothing (PR #44).</summary>
 	[Fact]
 	public void Reads_no_area_bonuses_beside_a_great_hall_of_one_affinity()
 	{
