@@ -33,6 +33,9 @@ public sealed partial class SyntheticGameClient
 	/// <summary>The skill type kept under <paramref name="typeId"/> holds another id, as a corrupt entry or a torn read might.</summary>
 	public void SetSkillTypeId(int typeId, int id) => _heap.Int32(_skillTypes[typeId] + 0x10, id);
 
+	/// <summary>The skill type kept under <paramref name="typeId"/> has another Visibility, such as a member a game update adds.</summary>
+	public void SetSkillVisibility(int typeId, int visibility) => _heap.Int32(_skillTypes[typeId] + 0x20, visibility);
+
 	/// <summary>The value in one of HeroById's slots points somewhere else, as a corrupt entry or a torn read might.</summary>
 	public void PointHeroByIdValue(int slot, ulong address) => _heap.Pointer(_runtime.EntryValue(_heroById, slot), address);
 

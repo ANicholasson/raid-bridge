@@ -192,6 +192,22 @@ public sealed class LiveSnapshotTests : IDisposable
 		Assert.All(relics.SelectMany(relic => relic.GetProperty("skills").EnumerateArray()), skill => Assert.False(string.IsNullOrEmpty(skill.GetProperty("description").GetString())));
 	}
 
+	/// <summary>
+	/// No skill is written with the game's placeholder text for a name, as the champion screen's hidden skills were
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26). On the main Account (2026-11-13) the run before the fix wrote Dorothy Gale's 107305 and
+	/// Lightward Siendra's 96605 so, and the run after it none.
+	/// </summary>
+	[Fact]
+	public void Writes_no_skill_with_a_placeholder_name()
+	{
+		using var json = Snapshot();
+
+		var skills = json.RootElement.GetProperty("champions").EnumerateArray().SelectMany(champion => champion.GetProperty("skills").EnumerateArray()).ToList();
+
+		Assert.NotEmpty(skills);
+		Assert.All(skills, skill => Assert.DoesNotMatch(@"^Skill \d+ name$", skill.GetProperty("name").GetString()));
+	}
+
 	public void Dispose()
 	{
 		Directory.Delete(_workingDirectory, recursive: true);
