@@ -3,6 +3,7 @@ using System.Text.Json;
 using RaidBridge.Domain.Arena;
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.GreatHall;
 using RaidBridge.Domain.Missions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
@@ -97,13 +98,15 @@ internal static class SnapshotJson
 			json.WriteStartObject("greatHall");
 			foreach (var affinity in snapshot.GreatHall)
 			{
-				json.WriteStartObject(affinity.Affinity);
-				foreach (var level in affinity.Levels)
-				{
-					json.WriteNumber(level.Stat, level.Level);
-				}
+				WriteGreatHallLevels(json, affinity.Affinity, affinity.Levels);
+			}
 
-				json.WriteEndObject();
+			json.WriteEndObject();
+
+			json.WriteStartObject("areaBonuses");
+			foreach (var area in snapshot.AreaBonuses)
+			{
+				WriteGreatHallLevels(json, area.Area, area.Levels);
 			}
 
 			json.WriteEndObject();
@@ -152,6 +155,20 @@ internal static class SnapshotJson
 
 			json.WriteEndArray();
 			json.WriteEndObject();
+
+			if (snapshot.LiveArena is { } live)
+			{
+				json.WriteStartObject("liveArena");
+				json.WriteString("league", live.League);
+				json.WriteNumber("points", live.Points);
+				json.WriteNumber("wins", live.Wins);
+				json.WriteNumber("losses", live.Losses);
+				json.WriteEndObject();
+			}
+			else
+			{
+				json.WriteNull("liveArena");
+			}
 
 			WriteMissions(json, snapshot.Missions);
 
@@ -205,6 +222,18 @@ internal static class SnapshotJson
 		}
 
 		json.WriteEndArray();
+		json.WriteEndObject();
+	}
+
+	/// <summary>One Affinity's or area's levels in the Great Hall, each stat's under its name.</summary>
+	private static void WriteGreatHallLevels(Utf8JsonWriter json, string name, IReadOnlyList<GreatHallLevel> levels)
+	{
+		json.WriteStartObject(name);
+		foreach (var level in levels)
+		{
+			json.WriteNumber(level.Stat, level.Level);
+		}
+
 		json.WriteEndObject();
 	}
 

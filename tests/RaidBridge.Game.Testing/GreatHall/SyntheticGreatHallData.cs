@@ -10,6 +10,34 @@ public sealed record SyntheticGreatHallData(
 	IReadOnlyDictionary<int, IReadOnlyDictionary<int, int>?> Levels,
 	IReadOnlyDictionary<int, int> MaxLevels)
 {
+	/// <summary>
+	/// The Area Bonuses, each area's levels by its ObservatoryLocationId, each a dictionary of levels by StatKindId or
+	/// null. By default AllianceBoss and DragonsLair hold levels, each out of the game's order; IceGolemCave is held as
+	/// null and Hydra as an empty dictionary, both with no levels.
+	/// </summary>
+	public IReadOnlyDictionary<int, IReadOnlyDictionary<int, int>?> Areas { get; init; } = new Dictionary<int, IReadOnlyDictionary<int, int>?>
+	{
+		[7] = new Dictionary<int, int> { [2] = 3, [1] = 1 },
+		[2] = null,
+		[4] = new Dictionary<int, int> { [4] = 10 },
+		[6] = new Dictionary<int, int>(),
+	};
+
+	/// <summary>
+	/// The static data's ObservatoryTiers: each tier's areas, by ObservatoryLocationId, and how many levels it lists a
+	/// bonus for, by StatKindId. Three tiers, as the game's own, each with ten levels of the eight stats the game's
+	/// tiers raise; Siege is in none, as in the game's.
+	/// </summary>
+	public IReadOnlyList<SyntheticAreaTier> Tiers { get; init; } =
+	[
+		new([1], TenAreaLevels),
+		new([2, 4], TenAreaLevels),
+		new([6, 7], TenAreaLevels),
+	];
+
+	/// <summary>Ten levels of each stat an Area Bonus tier raises: Health, Attack, Defence, Speed, Resistance, Accuracy, CriticalDamage and IgnoreDefence.</summary>
+	public static IReadOnlyDictionary<int, int> TenAreaLevels { get; } = new Dictionary<int, int> { [1] = 10, [2] = 10, [3] = 10, [4] = 10, [5] = 10, [6] = 10, [8] = 10, [10] = 10 };
+
 	/// <summary>Ten levels of each stat the Great Hall raises: Health, Attack, Defence, Resistance, Accuracy and CriticalDamage.</summary>
 	public static IReadOnlyDictionary<int, int> TenLevels { get; } = new Dictionary<int, int> { [1] = 10, [2] = 10, [3] = 10, [5] = 10, [6] = 10, [8] = 10 };
 
@@ -34,10 +62,20 @@ public sealed record SyntheticGreatHallData(
 	public static (long Value, bool Absolute) Bonus(int stat, int level) =>
 		stat is 5 or 6 ? (Artifacts.SyntheticArtifactData.Q32(5 * level), true) : (Artifacts.SyntheticArtifactData.Q32(0.02 * level), false);
 
-	/// <summary>A Great Hall the player hasn't bought a level in.</summary>
-	public static SyntheticGreatHallData None { get; } = new(new Dictionary<int, IReadOnlyDictionary<int, int>?>(), TenLevels);
+	/// <summary>A Great Hall the player hasn't bought a level in, nor an Area Bonus.</summary>
+	public static SyntheticGreatHallData None { get; } = new(new Dictionary<int, IReadOnlyDictionary<int, int>?>(), TenLevels)
+	{
+		Areas = new Dictionary<int, IReadOnlyDictionary<int, int>?>(),
+	};
 
-	/// <summary>One Affinity's levels, by StatKindId, and nothing else.</summary>
+	/// <summary>One area's Area Bonus levels, by StatKindId, and nothing else in the Great Hall.</summary>
+	public static SyntheticGreatHallData OnlyArea(int area, IReadOnlyDictionary<int, int> levels) =>
+		None with { Areas = new Dictionary<int, IReadOnlyDictionary<int, int>?> { [area] = levels } };
+
+	/// <summary>One Affinity's levels, by StatKindId, and nothing else: no Area Bonus either (PR #44).</summary>
 	public static SyntheticGreatHallData Only(int element, IReadOnlyDictionary<int, int> levels) =>
-		new(new Dictionary<int, IReadOnlyDictionary<int, int>?> { [element] = levels }, TenLevels);
+		None with { Levels = new Dictionary<int, IReadOnlyDictionary<int, int>?> { [element] = levels } };
 }
+
+/// <summary>An Area Bonus tier, as SharedModel.Meta.Village.ObservatoryTierInfo holds it: its areas, and how many levels it lists a bonus for, by StatKindId.</summary>
+public sealed record SyntheticAreaTier(IReadOnlyList<int> Areas, IReadOnlyDictionary<int, int> MaxLevels);

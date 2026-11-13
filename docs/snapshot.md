@@ -2,11 +2,11 @@
 
 A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
-A Snapshot holds the Account, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, its Classic and Tag Arena, and its Missions.
+A Snapshot holds the Account, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall and its Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions.
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities and Area Bonuses in two areas, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty, and is in SilverII in the Live Arena. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
 
 ```json
 {
@@ -500,6 +500,15 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       "CriticalDamage": 10
     }
   },
+  "areaBonuses": {
+    "IceGolemCave": {
+      "Speed": 2,
+      "Accuracy": 1
+    },
+    "AllianceBoss": {
+      "Attack": 4
+    }
+  },
   "factionGuardians": {
     "BannerLords": {
       "Rare": [
@@ -545,6 +554,12 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       ],
       []
     ]
+  },
+  "liveArena": {
+    "league": "SilverII",
+    "points": 1520,
+    "wins": 14,
+    "losses": 9
   },
   "missions": {
     "completedGroups": [
@@ -658,6 +673,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 
   `resources`, `shards` and `items` hold only what the game keeps an entry for, so a name that isn't there means the game keeps no count of it, and a count of `0` is one the game keeps. Their names come in the order of the numbers the game's code gives them, not alphabetically. Each is always written, as `{}` when the Account holds nothing in it.
 - `greatHall`: the Account's Great Hall, each Affinity under its name, such as `"Magic"`, holding the level of each stat bought for it under the stat's name, such as `"Health"`. A level is at least 1 and at most the highest the game offers for that stat, and a stat with no level bought isn't there. An Affinity with no levels is left out, so `greatHall` is `{}` when the player hasn't bought a level. The Affinities and the stats come in the order of the numbers the game's code gives them. Only levels are written: the bonus a level gives is the same for every Account, so it isn't the Account's to write.
+- `areaBonuses`: the Account's Area Bonuses, the part of the Great Hall that raises the stats of every Champion fighting in one area, such as a Dungeon, Faction Wars or the Demon Lord, written as `greatHall` is. Each area is under its name, such as `"IceGolemCave"`, holding the level of each stat bought for it under the stat's name, such as `"Speed"`. A level is at least 1 and at most the highest the game offers for that stat in that area, and a stat with no level bought isn't there. An area with no levels is left out, so `areaBonuses` is `{}` when the player hasn't bought one. The areas and the stats come in the order of the numbers the game's code gives them. Only levels are written: the bonus a level gives is the same for every Account. In the game's data today each level adds 2% `Health`, `Attack`, `Defence` and `IgnoreDefence`, 3% `CriticalDamage`, 2 `Speed`, and 8 `Resistance` and `Accuracy`, the same in every area, up to level 10. An Area Bonus counts only in battles in its area, so it isn't in any Champion's `stats`, which are what the champion screen shows. The areas' names are the game's own: `"IceGolemCave"` is Ice Golem's Peak, `"FireGolemCave"` Fire Knight's Castle, `"SpiderCave"` Spider's Den, `"DoubleAscendDungeon"` Iron Twins Fortress, `"ArtifactAscendDungeon"` Sand Devil's Necropolis, `"AccessoryAscendDungeon"` Phantom Shogun's Grove, `"AllianceBoss"` the Demon Lord and `"FactionWar"` Faction Wars.
+
+  Area Bonuses are bought with Crests, won in the Live Arena. They are among `resources` as `"LiveArenaMedal_Bronze"`, `"LiveArenaMedal_Silver"` and `"LiveArenaMedal_Gold"`, the game's names for Bronze, Silver and Gold Crests, and are there only once the game keeps a count of them.
 - `factionGuardians`: the Account's Faction Guardians, each Faction under its name, such as `"DarkElves"`, holding its guardian slots of each rarity under the rarity's name, such as `"Legendary"`. Each slot is a list of the `id`s of the Champions in it, in the order of the slot's positions, and each `id` is a Champion in `champions` of that Faction and rarity, guarding in no other slot. A slot with no Champion in it is left out, so a slot's place in the list isn't its number in the game, and so is an empty position, so a half-filled slot is a list of one `id`. A rarity with no Champion in its slots is left out, and so is a Faction with none, so `factionGuardians` is `{}` when the player hasn't placed a Champion. The slots keep the game's order, and the Factions and rarities come in the order of the numbers the game's code gives them. Only the Champions are written: the bonus a slot gives is the same for every Account, so it isn't the Account's to write.
 - `classicArena` and `tagArena`: the Account's Classic Arena and Tag Arena. Each has:
   - `league`: the league the Account is in, such as `"GoldII"`, or `null` when the game holds none, as it does for a Classic Arena with no defence team set.
@@ -665,6 +683,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `battles`, `wins` and `losses`: this week's counts, as of `capturedAt`: the game starts them again every week. Each is 0 or more. `battles` is the battles the player started, and `wins` and `losses` are the game's own counts of wins and losses, which can add up to more than `battles`: they seem to count battles fought on defence too.
 
   `classicArena`'s `defenceTeam` is the `id`s of the Champions in its defence team, in the game's order of positions, and `tagArena`'s `defenceTeams` is its three defence teams, in the game's order, each a list of `id`s the same way. Each `id` is a Champion in `champions`, defending only once in that Arena. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`, kept in its place among the teams. Both are always written: with no defence team set, `defenceTeam` is `[]` and `defenceTeams` is `[]`.
+
+- `liveArena`: the Account's Live Arena, or `null` when the game holds no Live Arena data for the Account, as it may before the Account reaches the level that opens the Live Arena. It has:
+  - `league`: the league the Account is in, such as `"SilverII"`. The game holds no league for the Live Arena: it works the league out from the points each time, as the highest whose points the Account has reached, and `"BronzeI"` below them all, and so does raid-bridge, from the game's own table. An Account that has never fought there is in `"BronzeI"`, with the 900 points it starts with.
+  - `points`: the Account's Live Arena points.
+  - `wins` and `losses`: the game's counts of the Account's Live Arena wins and losses, each 0 or more.
 
 - `missions`: the Account's Missions, the tasks on the game's Missions screen, such as Arbiter's. The game gives them out in groups, a section of the screen holding several, and holds the Missions of the groups the Account has open, and only the names of those it has finished. So `missions` has:
   - `completedGroups`: the groups the Account has finished, such as `"Group1"`, in the game's order, or `[]`.
@@ -675,7 +698,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `name`: the line the Missions screen shows for it, such as `"Upgrade 5 Champions to Level 60"`, in the language the player set, with its numbers already in it.
     - `collected` and `required`: the Mission's progress, the count the game holds towards the count it requires, such as `4` of `10` battles or `25347525` of `10000000` damage. A count can pass what is required. `collected` is `null` when the game holds no count the screen shows. The game marks a Mission that counts from the Account, such as "Upgrade 5 Champions to Level 60", as holding no count, and while it is unfinished the screen works its progress out from the Account each time it opens; raid-bridge doesn't, so the Champions in `champions` say how far it is. It keeps that mark once the Mission is finished, when `state` says it is done. An unfinished battle Mission of a clan's, outside the Clan Boss's own battles, is `null` too: the screen shows its progress from the clan's Clan Boss data, not from the count the Mission holds. Damage to the Demon Lord is counted on the Mission itself.
 
-`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock`, `stat` and `shape`, and the names in `resources`, `shards`, `items`, `greatHall` and `factionGuardians`, each `league`, and a Mission's `group`, `section`, `category` and `state`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
+`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock`, `stat` and `shape`, and the names in `resources`, `shards`, `items`, `greatHall`, `areaBonuses` and `factionGuardians`, each `league`, and a Mission's `group`, `section`, `category` and `state`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, the Resource `"LiveArenaMedal_Gold"` is a Gold Crest, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
 
 An Artifact's `value` and `glyph` are exactly what the game holds. The game keeps them in fixed point, as a whole number of steps of 2^-32, so a value the game shows as 6% is held as the nearest step, 0.0600000000558793â€¦, and written as the shortest number that reads back as exactly that step: `0.060000000055879354`. Round it to show it, never to store it.
 
