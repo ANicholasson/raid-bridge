@@ -102,12 +102,12 @@ A read-only probe read the running Game client on the main Account, through the 
 
 **After two fights.** The maintainer then fought Hard twice with two different teams, the stronger team first and a weaker one second. Read again:
 
-- The Account's entry on Hard held `GivenDamage` 41,498,308 and `SpentKeys` 2: both battles, added up. The bosses' `DamageTaken` went up by the same amount.
+- The Account's entry on Hard held `GivenDamage` 41,498,308 and `SpentKeys` 2: both battles, added up. Hard's `DamageTaken` went up by the same amount.
 - `HeroInfos` held 5 Champions: the **second** team only, with their stars, level and Awakening. `TotalPower` was that team's power. The stronger first team was gone.
 - Every `ShortHeroInfo.DamageDealt`, `DamageTaken` and `RestoredHp` was 0, and every `EquippedSets` was empty.
 - The game's Clan Boss score list (clan screen, on the maintainer's screenshot) showed the same thing: 41.49M with 2 keys, the second team, team power 105.76K, and no per-Champion figures. Reading again after opening that list (which also refreshed another difficulty's figures) changed nothing on the Account's entry.
 - `MaxSingleDamageByBossId` still held only Brutal and Nightmare, with no entry for Hard. `Activities.AllianceBossData` still named the previous day. `CurrentBossAttack.StartTime` was the second battle's start.
-- Only the difficulty fought had its `Element` updated; the others kept the value from the last clan refresh. Fields that the server sends with the clan's data can lag behind the battles.
+- Only Hard, the difficulty fought, changed its `Element` (to Force); the others still said Void. Which is right isn't settled: the unfought difficulties may lag behind until the next clan refresh.
 
 ## What a build ticket would need
 
@@ -118,6 +118,6 @@ A build is feasible but small: **today's Clan Boss totals**. That's per difficul
 3. Glossary terms for the Clan Boss, its difficulties and the Clan Boss day.
 4. A live check against the Clan Boss score list after a fight, including the Affinity: on the live read, Hard showed Force after the fights and the other difficulties Void, and so did the score list's icons. Whether the difficulties really differ, or the unfought ones were stale, has to be settled first.
 
-The player can compare days by keeping a Snapshot from each day, but not runs within a day. Each Champion's damage, turn of death, the boss's turns and each battle on its own are out of reach with the manual Snapshot flow. The player's team-building bot can still get each run's damage and team by taking a Snapshot right after each key and subtracting the previous day total. Per-Champion figures stay with the result screen's screenshot.
+The player can compare days by keeping a Snapshot from each day. Within a day, a run's damage and team can be had by taking a Snapshot right after each key and subtracting the total in the Snapshot before it. Each Champion's damage, turn of death and the boss's turns are out of reach with the manual Snapshot flow. Per-Champion figures stay with the result screen's screenshot.
 
 **Decision (2026-11-13):** no separate ticket for now. The maintainer's priority, after the bot's review, is missions, then Area Bonuses and crests, then Starstones and Basalt, then this small Clan Boss version (day total, keys, last team and Affinity per difficulty) if it's cheap.
