@@ -23,7 +23,9 @@ public sealed class ChampionReadingTests : IDisposable
 
 	/// <summary>
 	/// HeroById holds a slot a removal freed, which is skipped. The names come from StaticDataLocalization (the
-	/// knight, strike and volley), ClientLocalization (the archer) and a key's default text (the guard). The Artifacts
+	/// knight, strike and volley), ClientLocalization (the archer) and a key's default text (the guard). The Deep Vault
+	/// archer's hidden passive, which the champion screen doesn't show, is left out
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26). The Artifacts
 	/// and the Relics they wear are ArtifactReadingTests' and RelicReadingTests' concern, and the stats
 	/// BaseStatsReadingTests'.
 	/// </summary>
@@ -84,6 +86,50 @@ public sealed class ChampionReadingTests : IDisposable
 		using var game = SyntheticGameClient.Create(heroData: Heroes with { StaticDataLocalization = new Dictionary<string, string>(Heroes.StaticDataLocalization.Where(text => !text.Key.Contains("60101", StringComparison.Ordinal))) });
 
 		RefusesMatching(game, @"^Skill type 60101 has no name: its SharedModel\.Common\.Localization\.SharedLTextKey at 0x[0-9A-F]+ has the key ""l10n:skill-type/name\?id=60101#static"", ");
+	}
+
+	/// <summary>
+	/// Every Visibility the champion screen hides a skill for (SkillType.IsHiddenOnHud) leaves the skill out, not
+	/// just the one the synthetic passive has, so its placeholder name is never written
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26).
+	/// </summary>
+	[Theory]
+	[InlineData(1)]
+	[InlineData(2)]
+	[InlineData(3)]
+	[InlineData(4)]
+	public void Leaves_out_a_skill_the_champion_screen_hides(int visibility)
+	{
+		_game.SetSkillVisibility(typeId: 60105, visibility);
+
+		var archer = Assert.Single(_game.Source().Read().Champions, champion => champion.Id == 12);
+
+		Assert.Equal([60101], archer.Skills.Select(skill => skill.TypeId));
+	}
+
+	/// <summary>
+	/// Whether the champion screen shows a skill of a Visibility a game update adds can't be told, so it is refused
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26).
+	/// </summary>
+	[Fact]
+	public void Refuses_a_skill_visibility_the_game_adds()
+	{
+		_game.AddEnumMember("SharedModel.Meta.Skills.Visibility", "HiddenSomewhereNew", 5);
+		_game.SetSkillVisibility(typeId: 60105, visibility: 5);
+
+		RefusesMatching(_game, @"^SharedModel\.Meta\.Skills\.SkillType\.Visibility at 0x[0-9A-F]+ is HiddenSomewhereNew, where raid-bridge expects Visible or one of HiddenOnHud, HiddenOnHudWithVisualization, HiddenOnHudVisibleForAl, HiddenOnHudWithVisualisationVisibleForAI\.$");
+	}
+
+	/// <summary>A hidden skill isn't written, but its level is still checked (code review, https://github.com/ANicholasson/raid-bridge/issues/26).</summary>
+	[Fact]
+	public void Refuses_a_hidden_skill_without_a_level()
+	{
+		using var game = SyntheticGameClient.Create(heroData: Heroes with
+		{
+			Heroes = [.. Heroes.Heroes.Select(hero => hero.Id == 12 ? hero with { Skills = [new(Id: 41, TypeId: 60101, Level: 2), new(Id: 42, TypeId: 60105, Level: 0)] } : hero)],
+		});
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.Skill\.Level at 0x[0-9A-F]+ is 0, where raid-bridge expects a positive level\.$");
 	}
 
 	[Fact]

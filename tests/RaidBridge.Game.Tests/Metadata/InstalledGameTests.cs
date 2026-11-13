@@ -97,6 +97,8 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Heroes.HeroForm", "Element", "SharedModel.Meta.Heroes.Element", false },
 		{ "SharedModel.Meta.Skills.SkillType", "Id", "System.Int32", false },
 		{ "SharedModel.Meta.Skills.SkillType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
+		// Whether the champion screen shows the skill (https://github.com/ANicholasson/raid-bridge/issues/26).
+		{ "SharedModel.Meta.Skills.SkillType", "Visibility", "SharedModel.Meta.Skills.Visibility", false },
 		{ "SharedModel.Meta.ClientStaticData", "StaticDataLocalization", "System.Collections.Generic.Dictionary`2<System.String, System.String>", false },
 		{ "SharedModel.Meta.ClientStaticData", "ClientLocalization", "System.Collections.Generic.Dictionary`2<System.String, System.String>", false },
 		{ "SharedModel.Common.Localization.SharedLTextKey", "Key", "System.String", false },
@@ -287,6 +289,13 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Heroes.HeroFraction", "DarkElves", 11 },
 		{ "SharedModel.Meta.Heroes.Element", "Void", 4 },
 		{ "SharedModel.Meta.Heroes.HeroMarker", "None", 0 },
+		// A skill's Visibility: the champion screen shows Visible skills and hides the other four
+		// (https://github.com/ANicholasson/raid-bridge/issues/26).
+		{ "SharedModel.Meta.Skills.Visibility", "Visible", 0 },
+		{ "SharedModel.Meta.Skills.Visibility", "HiddenOnHud", 1 },
+		{ "SharedModel.Meta.Skills.Visibility", "HiddenOnHudWithVisualization", 2 },
+		{ "SharedModel.Meta.Skills.Visibility", "HiddenOnHudVisibleForAl", 3 },
+		{ "SharedModel.Meta.Skills.Visibility", "HiddenOnHudWithVisualisationVisibleForAI", 4 },
 		{ "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", "Stars1", 1 },
 		{ "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", "Necromancy", 1101 },
 		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Weapon", 5 },

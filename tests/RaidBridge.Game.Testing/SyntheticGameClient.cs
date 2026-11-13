@@ -385,6 +385,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroFraction", ("Unknown", 0), ("BannerLords", 1), ("HighElves", 2), ("DarkElves", 11));
 		_metadata.Enum("SharedModel.Meta.Heroes.Element", ("Magic", 1), ("Force", 2), ("Spirit", 3), ("Void", 4));
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroMarker", ("None", 0), ("Favorite", 1));
+		_metadata.Enum(
+			"SharedModel.Meta.Skills.Visibility",
+			("Visible", 0), ("HiddenOnHud", 1), ("HiddenOnHudWithVisualization", 2), ("HiddenOnHudVisibleForAl", 3), ("HiddenOnHudWithVisualisationVisibleForAI", 4));
 		_metadata.Enum("SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", ("Stars1", 1), ("Stars2", 2), ("Stars3", 3), ("Stars4", 4), ("Stars5", 5), ("Stars6", 6));
 		_metadata.Enum("SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", ("Necromancy", 1101), ("TimeSlowdown", 1102));
 		_metadata.Enum(
@@ -448,7 +451,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			systemObject,
 			"System.Object",
 			("Id", "System.Int32", Int32TypeCode, 0x10),
-			("Name", "SharedModel.Common.Localization.SharedLTextKey", ClassTypeCode, 0x18));
+			("Name", "SharedModel.Common.Localization.SharedLTextKey", ClassTypeCode, 0x18),
+			("Visibility", "SharedModel.Meta.Skills.Visibility", ValueTypeTypeCode, 0x20));
 		var staticHeroData = Declare(
 			"SharedModel.Meta.Heroes",
 			"StaticHeroData",
@@ -513,10 +517,11 @@ public sealed partial class SyntheticGameClient : IDisposable
 
 		var skillTypes = heroData.SkillTypes.Select(type =>
 		{
-			var skillTypeObject = _runtime.Object(skillType, 0x20);
+			var skillTypeObject = _runtime.Object(skillType, 0x28);
 			_heap.Int32(skillTypeObject + 0x10, type.Id);
 			_skillTypes[type.Id] = skillTypeObject;
 			_heap.Pointer(skillTypeObject + 0x18, Text(type.Name));
+			_heap.Int32(skillTypeObject + 0x20, type.Visibility);
 			return ((ulong)type.Id, skillTypeObject);
 		});
 		var staticSkillDataObject = _runtime.Object(staticSkillData, 0x18);

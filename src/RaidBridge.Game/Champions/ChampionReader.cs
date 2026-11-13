@@ -21,6 +21,11 @@ internal static class ChampionReader
 	private const string HeroForm = "SharedModel.Meta.Heroes.HeroForm";
 	private const string Skill = "SharedModel.Meta.Skills.Skill";
 	private const string SkillType = "SharedModel.Meta.Skills.SkillType";
+	private const string Visible = "Visible";
+
+	/// <summary>The Visibility members SkillType.IsHiddenOnHud counts as hidden, in the game's order.</summary>
+	private static readonly string[] HiddenVisibilities =
+		["HiddenOnHud", "HiddenOnHudWithVisualization", "HiddenOnHudVisibleForAl", "HiddenOnHudWithVisualisationVisibleForAI"];
 
 	/// <summary>Every Champion, each with the Artifacts <paramref name="equipped"/> and the Relics <paramref name="relics"/> say it wears, by the Champion's id.</summary>
 	public static IReadOnlyList<Champion> Read(
@@ -122,7 +127,7 @@ internal static class ChampionReader
 			Awakening: awakening?.Name,
 			Blessing: blessing,
 			Empowerment: empowerment,
-			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names))],
+			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names)).OfType<Skill>()],
 			Masteries: masteryIds,
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
@@ -183,15 +188,35 @@ internal static class ChampionReader
 				$"{forms.Where} of Champion type {typeId} points to forms at 0x{forms.Address:X} that give {(affinities.Count == 0 ? "no Affinity" : $"the Affinities {string.Join(" and ", affinities)}")}, where raid-bridge expects one.");
 	}
 
-	private static Skill ChampionSkill(ManagedObject skill, IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes, LocalizedNames names)
+	/// <summary>
+	/// The skill as the champion screen shows it, or null for a skill the screen hides
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26).
+	/// </summary>
+	private static Skill? ChampionSkill(ManagedObject skill, IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes, LocalizedNames names)
 	{
 		var typeId = skill.Int32("TypeId");
 		var type = skillTypes.TryGetValue(typeId.Value, out var skillType)
 			? skillType.Object(SkillType)
 			: throw new GameDataException($"{typeId}, which isn't a type in the game's StaticSkillData._skillTypeById.");
 		_ = type.Int32("Id").Where(value => value == typeId.Value, $"the id _skillTypeById keeps it under, {typeId.Value}");
-		return new(typeId.Value, names.Of(type, "Name", $"Skill type {typeId.Value}"), skill.Int32("Level").Where(level => level > 0, "a positive level"));
+		// Checked for a hidden skill too, so corrupt data there isn't passed over (code review,
+		// https://github.com/ANicholasson/raid-bridge/issues/26).
+		var level = skill.Int32("Level").Where(level => level > 0, "a positive level");
+		return HiddenOnTheChampionScreen(type)
+			? null
+			: new(typeId.Value, names.Of(type, "Name", $"Skill type {typeId.Value}"), level);
 	}
+
+	/// <summary>
+	/// The champion screen lists a Champion's skills less those whose type's Visibility is one of the four hidden
+	/// members (HeroSkillsContext's filter, through SkillType.IsHiddenOnHud). Such a skill has no name the player ever
+	/// sees: the game holds placeholder or developer text for it, such as "Skill 107305 name"
+	/// (https://github.com/ANicholasson/raid-bridge/issues/26). A member a game update adds is refused, since whether
+	/// the screen shows its skills can't be told.
+	/// </summary>
+	private static bool HiddenOnTheChampionScreen(ManagedObject type) =>
+		type.Enum("Visibility", "SharedModel.Meta.Skills.Visibility")
+			.Where(visibility => visibility == Visible || HiddenVisibilities.Contains(visibility), $"{Visible} or one of {string.Join(", ", HiddenVisibilities)}") != Visible;
 
 	private static ChampionLocation Location(ManagedObject hero, int id)
 	{
