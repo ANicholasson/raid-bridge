@@ -12,10 +12,10 @@ namespace RaidBridge.Domain.Accounts;
 /// <summary>
 /// One player's Account, as the Game client holds it: its id, every Champion on it with the Artifacts and Relics each
 /// wears, the Unworn Artifacts and the Unworn Relics, the Relic stones in no socket, its Resources, Shards and
-/// Items, its Great Hall, its Faction Guardians, its Classic and Tag Arena, and its Missions by group. Each Artifact, Relic and Relic stone on
+/// Items, its Great Hall and its Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions by group. Each Artifact, Relic and Relic stone on
 /// the Account is in exactly one of those places, a stone in a socket being in that socket's Relic. Each Faction
 /// Guardian is one of its Champions, in one slot, and so is each Champion in an Arena defence team. The Resources,
-/// Shards, Items, the Great Hall and the Faction Guardians come in the order of the numbers the game's enums give
+/// Shards, Items, the Great Hall, the Area Bonuses and the Faction Guardians come in the order of the numbers the game's enums give
 /// them, each name once.
 /// </summary>
 public sealed record Account(
@@ -28,7 +28,9 @@ public sealed record Account(
 	IReadOnlyList<Shard> Shards,
 	IReadOnlyList<Item> Items,
 	IReadOnlyList<GreatHallAffinity> GreatHall,
+	IReadOnlyList<GreatHallArea> AreaBonuses,
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,
+	LiveArena LiveArena,
 	MissionGroups Missions);

@@ -13,7 +13,9 @@ namespace RaidBridge.Game.Arena;
 /// <c>_userWrapper.Arena3x3.Data</c>, a <c>UserArenaData</c> too, its league in <c>LeagueId</c> and its defence teams in
 /// <c>Arena3X3DefenseTeamSetup</c>. Each team's Champions are its <c>HeroSlotSetups</c>' <c>InventoryHeroId</c>s. Raid
 /// Toolkit's ArenaExtension named the routes, which the installed game still declares at metadata v39. Each Champion
-/// in a team must be a Champion on the Account, defending only once in that Arena.
+/// in a team must be a Champion on the Account, defending only once in that Arena. The Live Arena is
+/// <c>_userWrapper.LiveArena.LiveArenaData</c>, its points, wins and losses, its league worked out from its points
+/// (https://github.com/ANicholasson/raid-bridge/issues/32).
 /// </summary>
 internal static class ArenaReader
 {
@@ -48,10 +50,10 @@ internal static class ArenaReader
 			defenseHeroIds is not null && Enumerable.Range(0, defenseHeroIds.Length).Any(index => defenseHeroIds.Int32(index).Value != -1));
 	}
 
-	public static (ClassicArena Classic, TagArena Tag) Read(ClassicArenaState classic, ManagedObject userWrapper, IReadOnlyList<Champion> champions)
+	public static (ClassicArena Classic, TagArena Tag, LiveArena Live) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
 	{
 		var championIds = champions.Select(champion => champion.Id).ToHashSet();
-		return (Classic(classic, new(championIds)), Tag(userWrapper, new(championIds)));
+		return (Classic(classic, new(championIds)), Tag(userWrapper, new(championIds)), Live(userWrapper, staticData));
 	}
 
 	/// <summary>
@@ -122,6 +124,62 @@ internal static class ArenaReader
 	}
 
 	private static string? LeagueName(string league) => league == NoLeague ? null : league;
+
+	/// <summary>
+	/// The Live Arena's points, wins and losses, each 0 or more, and its league. The game holds no league for the Live
+	/// Arena: <c>LiveArenaExtensions.CalcLeagueId</c> works it out from the points each time
+	/// (<c>GetLeagueIdByPoints</c>, RVA 0x2EFE070 at metadata v39), walking the static data's
+	/// <c>LiveArenaData.LeagueInfoById</c> in its order and taking each league whose <c>MinPoints</c> the points reach,
+	/// until one they don't. raid-bridge takes the last league the points reach, the same league as long as each
+	/// league needs more points than the one before it, which it checks rather than trusts.
+	/// </summary>
+	private static LiveArena Live(ManagedObject userWrapper, ManagedObject staticData)
+	{
+		const string Arena = "the Live Arena";
+		var data = userWrapper
+			.Object("LiveArena", "Client.Model.Gameplay.LiveArena.LiveArenaWrapper")
+			.Object("LiveArenaData", "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData");
+		var points = data.Int64("Points");
+		if (points.Value < 0)
+		{
+			throw new GameDataException($"{points}, in {Arena}, where raid-bridge expects 0 or more.");
+		}
+
+		return new(LiveLeague(points, staticData), points.Value, Count(data, "Victories", Arena).Value, Count(data, "Defeats", Arena).Value);
+	}
+
+	/// <summary>
+	/// The league whose <c>MinPoints</c> is the highest the points reach. The game starts its walk at BronzeI, so points
+	/// below every league's would be BronzeI to it; the Account starts at BronzeI's own <c>MinPoints</c>, so raid-bridge
+	/// refuses such points rather than name a league they don't reach.
+	/// </summary>
+	private static string LiveLeague(FieldValue<long> points, ManagedObject staticData)
+	{
+		const string LiveLeagueId = "SharedModel.Meta.LiveArena.LiveArenaLeagueId";
+		const string LeagueInfo = "SharedModel.Meta.LiveArena.LiveArenaLeagueInfo";
+		const string Leagues = "SharedModel.Meta.LiveArena.StaticLiveArenaData.LeagueInfoById";
+		string? reached = null;
+		FieldValue<int>? previous = null;
+		foreach (var (league, entry) in staticData
+			.Object("LiveArenaData", "SharedModel.Meta.LiveArena.StaticLiveArenaData")
+			.Dictionary("LeagueInfoById", $"System.Collections.Generic.Dictionary`2<{LiveLeagueId}, {LeagueInfo}>")
+			.ByEnumKey(LiveLeagueId))
+		{
+			var minPoints = entry.Object(LeagueInfo).Int32("MinPoints");
+			if (previous is not null && minPoints.Value <= previous.Value)
+			{
+				throw new GameDataException($"{minPoints}, for {league.Name}, but the league before it in {Leagues} needs {previous.Value}, where raid-bridge expects each league to need more points than the one before it.");
+			}
+
+			previous = minPoints;
+			if (points.Value >= minPoints.Value)
+			{
+				reached = league.Name;
+			}
+		}
+
+		return reached ?? throw new GameDataException($"{points}, in the Live Arena, which is fewer points than any league in {Leagues} needs.");
+	}
 
 	/// <summary>
 	/// This week's battles, wins and losses, each 0 or more. Wins and losses aren't checked against battles: on the main

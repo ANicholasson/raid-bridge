@@ -23,8 +23,8 @@ namespace RaidBridge.Game.Testing;
 /// <see cref="FakeGameMemory"/> with the game's objects laid out as Unity 6000.3.18f1's IL2CPP runtime lays them out,
 /// the heroes of a <see cref="SyntheticHeroData"/>, the Artifacts of a <see cref="SyntheticArtifactData"/>, the Relics
 /// of a <see cref="SyntheticRelicData"/>, the Resources, Shards and Items of a <see cref="SyntheticResourceData"/>, the Great Hall of a
-/// <see cref="SyntheticGreatHallData"/>, the Faction Guardians of a <see cref="SyntheticGuardianData"/>, the Classic
-/// and Tag Arena of a <see cref="SyntheticArenaData"/> and the quests of a <see cref="SyntheticMissionData"/> among them, and a matching description of its metadata. Every id
+/// <see cref="SyntheticGreatHallData"/> with its Area Bonuses, the Faction Guardians of a <see cref="SyntheticGuardianData"/>, the Classic,
+/// Tag and Live Arena of a <see cref="SyntheticArenaData"/> and the quests of a <see cref="SyntheticMissionData"/> among them, and a matching description of its metadata. Every id
 /// and name is synthetic (spec #20). The methods that break it stand for what a game update or a bad read can do.
 /// Each feature's layout, and the methods that break it, are in a partial file in that feature's folder.
 /// </summary>
@@ -327,7 +327,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("Arena", "Client.Model.Gameplay.Battle.ArenaWrapper", ClassTypeCode, 0x58),
 			("Arena3x3", "Client.Model.Gameplay.Arena3x3.Arena3x3Wrapper", ClassTypeCode, 0x60),
 			("Relics", "Client.Model.Gameplay.Relics.RelicsWrapper", ClassTypeCode, 0x68),
-			("Quests", "Client.Model.Gameplay.Quests.QuestWrapper", ClassTypeCode, 0x70));
+			("Quests", "Client.Model.Gameplay.Quests.QuestWrapper", ClassTypeCode, 0x70),
+			("LiveArena", "Client.Model.Gameplay.LiveArena.LiveArenaWrapper", ClassTypeCode, 0x78));
 		var user = Declare("Client.Model.Gameplay.User", "User", systemObject, "System.Object", ("Id", "System.Int64", Int64TypeCode, 0x20));
 		var socialWrapper = Declare(
 			"Client.Model.Gameplay.Social",
@@ -343,7 +344,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.App.SingleInstance`1._instance", statics, appModelObject);
 		_heap.Int64(appModelObject + 0x48, userId);
 
-		var userWrapperObject = _runtime.Object(userWrapper, 0x78);
+		var userWrapperObject = _runtime.Object(userWrapper, 0x80);
 		Slot("Client.Model.AppModel._userWrapper", appModelObject + 0x18, userWrapperObject);
 		var userObject = _runtime.Object(user, 0x28);
 		Slot("Client.Model.Guard.UserWrapper.User", userWrapperObject + 0x18, userObject);
@@ -391,6 +392,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroRarity", ("Common", 1), ("Uncommon", 2), ("Rare", 3), ("Epic", 4), ("Legendary", 5), ("Mythical", 6));
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroFraction", ("Unknown", 0), ("BannerLords", 1), ("HighElves", 2), ("DarkElves", 11));
 		_metadata.Enum("SharedModel.Meta.Heroes.Element", ("Magic", 1), ("Force", 2), ("Spirit", 3), ("Void", 4));
+		_metadata.Enum(
+			"SharedModel.Meta.Village.ObservatoryLocationId",
+			("PotionKeeps", 1), ("IceGolemCave", 2), ("DragonsLair", 4), ("Hydra", 6), ("AllianceBoss", 7), ("Siege", 14));
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroMarker", ("None", 0), ("Favorite", 1));
 		_metadata.Enum(
 			"SharedModel.Meta.Skills.Visibility",
@@ -416,6 +420,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum(
 			"SharedModel.Meta.Battle.Arena.ArenaLeagueId",
 			("None", 0), ("BronzeI", 1), ("BronzeIV", 4), ("SilverIII", 13), ("GoldII", 22), ("Platinum", 30));
+		_metadata.Enum(
+			"SharedModel.Meta.LiveArena.LiveArenaLeagueId",
+			("None", 0), ("BronzeI", 1), ("BronzeII", 2), ("SilverI", 11), ("SilverII", 12), ("GoldIV", 24), ("Platinum", 30));
 		_metadata.Enum("SharedModel.Meta.Quests.QuestCategoryId", ("None", 0), ("Periodic", 3), ("Recommended", 7));
 		_metadata.Enum("SharedModel.Meta.Quests.QuestStateId", ("Undefined", 0), ("New", 10), ("InProgress", 20), ("Completed", 30));
 		_metadata.Enum("SharedModel.Meta.Quests.RecommendedQuestCategoryId", ("Dungeons", 1), ("Heroes", 5), ("Clan", 6));
@@ -492,7 +499,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", ClassTypeCode, 0x50),
 			("DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", ClassTypeCode, 0x58),
 			("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", ClassTypeCode, 0x60),
-			("QuestData", "SharedModel.Meta.Quests.Data.StaticQuestData", ClassTypeCode, 0x68));
+			("QuestData", "SharedModel.Meta.Quests.Data.StaticQuestData", ClassTypeCode, 0x68),
+			("LiveArenaData", "SharedModel.Meta.LiveArena.StaticLiveArenaData", ClassTypeCode, 0x70));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -614,7 +622,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x70);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x78);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);

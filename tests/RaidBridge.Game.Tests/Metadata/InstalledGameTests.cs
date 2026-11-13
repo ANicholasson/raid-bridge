@@ -126,6 +126,13 @@ public class InstalledGameTests
 		{ "Client.Model.Gameplay.Village.Data.UpdatableVillageData", "CapitolBonusLevelByStatByElement", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.Element, System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Int32>>", false },
 		{ "SharedModel.Meta.ClientStaticData", "VillageData", "SharedModel.Meta.Village.StaticVillageData", false },
 		{ "SharedModel.Meta.Village.StaticVillageData", "CapitolBonusByStatKind", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.BonusValue>>", false },
+		// The Area Bonuses (https://github.com/ANicholasson/raid-bridge/issues/32), which the game's code calls the
+		// observatory: beside the Great Hall's levels on UserVillageData, each area's tier in the static data lists a bonus
+		// for each level of each stat, which bounds the levels.
+		{ "Client.Model.Gameplay.Village.Data.UpdatableVillageData", "ObservatoryBonusLevelByStatByLocation", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Village.ObservatoryLocationId, System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Int32>>", false },
+		{ "SharedModel.Meta.Village.StaticVillageData", "ObservatoryTiers", "System.Collections.Generic.List`1<SharedModel.Meta.Village.ObservatoryTierInfo>", false },
+		{ "SharedModel.Meta.Village.ObservatoryTierInfo", "LocationIds", "System.Collections.Generic.List`1<SharedModel.Meta.Village.ObservatoryLocationId>", false },
+		{ "SharedModel.Meta.Village.ObservatoryTierInfo", "BonusByStatKind", "System.Collections.Generic.Dictionary`2<SharedModel.Battle.Effects.StatKindId, System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.BonusValue>>", false },
 		// The Faction Guardians (#36), on Raid Toolkit's route, which still holds at v39, but with plain dictionaries where
 		// Raid Toolkit read SlotsByFraction through a wrapper's UnderlyingDictionary. AcademyData is declared on
 		// AcademyWrapperReadOnly, and Guardians on UpdatableUserAcademyData's base class, UserAcademyData.
@@ -161,6 +168,17 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", "LeagueInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Battle.Arena.ArenaLeagueInfo>", false },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueInfo", "Id", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", false },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueInfo", "BattleBonuses", "SharedModel.Meta.Heroes.BattleStats", false },
+		// The Live Arena (https://github.com/ANicholasson/raid-bridge/issues/32): LiveArenaData is declared on
+		// LiveArenaWrapperReadonly, and its points and counts on UpdatableUserLiveArenaData's base class,
+		// UserLiveArenaData. The game holds no league for it; the static data's leagues and their MinPoints give one.
+		{ "Client.Model.Guard.UserWrapper", "LiveArena", "Client.Model.Gameplay.LiveArena.LiveArenaWrapper", false },
+		{ "Client.Model.Gameplay.LiveArena.LiveArenaWrapper", "LiveArenaData", "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", false },
+		{ "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", "Points", "System.Int64", false },
+		{ "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", "Victories", "System.Int32", false },
+		{ "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", "Defeats", "System.Int32", false },
+		{ "SharedModel.Meta.ClientStaticData", "LiveArenaData", "SharedModel.Meta.LiveArena.StaticLiveArenaData", false },
+		{ "SharedModel.Meta.LiveArena.StaticLiveArenaData", "LeagueInfoById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.LiveArena.LiveArenaLeagueId, SharedModel.Meta.LiveArena.LiveArenaLeagueInfo>", false },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueInfo", "MinPoints", "System.Int32", false },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
 		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
 		// Relics are a list of ids by Champion id, not a field of Hero.
@@ -456,6 +474,25 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "GoldI", 21 },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "GoldV", 25 },
 		{ "SharedModel.Meta.Battle.Arena.ArenaLeagueId", "Platinum", 30 },
+		// The Area Bonuses' areas (https://github.com/ANicholasson/raid-bridge/issues/32): the first and last, and each one
+		// the synthetic Game client lays out. Siege is in no tier of the game's static data. IgnoreDefence is a stat the
+		// tiers raise and the Great Hall doesn't.
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "PotionKeeps", 1 },
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "IceGolemCave", 2 },
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "DragonsLair", 4 },
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "Hydra", 6 },
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "AllianceBoss", 7 },
+		{ "SharedModel.Meta.Village.ObservatoryLocationId", "Siege", 14 },
+		{ "SharedModel.Battle.Effects.StatKindId", "IgnoreDefence", 10 },
+		// The Live Arena's leagues (https://github.com/ANicholasson/raid-bridge/issues/32): None, which the game's walk never
+		// gives, and the first and last of each tier.
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "None", 0 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "BronzeI", 1 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "BronzeII", 2 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "SilverI", 11 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "SilverII", 12 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "GoldIV", 24 },
+		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueId", "Platinum", 30 },
 		// Missions (https://github.com/ANicholasson/raid-bridge/issues/33): the quest category that makes a quest a Mission,
 		// each state, Undefined included, and the first and last Mission category, group and section.
 		{ "SharedModel.Meta.Quests.QuestCategoryId", "Recommended", 7 },
@@ -497,6 +534,8 @@ public class InstalledGameTests
 		{ "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data", "SharedModel.Meta.Battle.Arena3x3.UserArena3X3Data" },
 		{ "SharedModel.Meta.Battle.Arena3x3.UserArena3X3Data", "SharedModel.Meta.Battle.Arena.UserArenaData" },
 		{ "Client.Model.Gameplay.Relics.UpdatableUserRelicData", "SharedModel.Meta.Relics.UserData.UserRelicData" },
+		{ "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", "SharedModel.Meta.LiveArena.UserLiveArenaData" },
+		{ "Client.Model.Gameplay.LiveArena.LiveArenaWrapper", "Client.Model.Gameplay.LiveArena.LiveArenaWrapperReadonly" },
 		{ "SharedModel.Meta.ClientStaticData", "SharedModel.Meta.StaticData" },
 	};
 

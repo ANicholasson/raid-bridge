@@ -132,6 +132,62 @@ public sealed partial class SyntheticGameClient
 		_heap.Pointer(arena3x3WrapperObject + 0x10, tagData);
 		Slot("Client.Model.Guard.UserWrapper.Arena3x3", userWrapperObject + 0x60, arena3x3WrapperObject);
 		LayOutTheLeagues(arenaData.LeagueBonuses);
+		LayOutTheLiveArena(userWrapperObject, arenaData.Live, arenaData.LiveLeagues);
+	}
+
+	/// <summary>
+	/// UserWrapper's LiveArena, whose read-only base class declares the LiveArenaData, an UpdatableUserLiveArenaData
+	/// whose base class UserLiveArenaData holds the points, wins and losses; and the static data's LiveArenaData, whose
+	/// LeagueInfoById holds each league's LiveArenaLeagueInfo, with its MinPoints.
+	/// </summary>
+	private void LayOutTheLiveArena(ulong userWrapperObject, SyntheticLiveArena live, IReadOnlyList<(int League, int MinPoints)> leagues)
+	{
+		var systemObject = _runtime.SystemObject;
+		var userLiveArenaData = Declare(
+			"SharedModel.Meta.LiveArena",
+			"UserLiveArenaData",
+			systemObject,
+			"System.Object",
+			("Points", "System.Int64", Int64TypeCode, 0x10),
+			("Victories", "System.Int32", Int32TypeCode, 0x18),
+			("Defeats", "System.Int32", Int32TypeCode, 0x1C));
+		var updatableUserLiveArenaData = Declare("Client.Model.Gameplay.LiveArena", "UpdatableUserLiveArenaData", userLiveArenaData, "SharedModel.Meta.LiveArena.UserLiveArenaData");
+		var liveArenaWrapperReadonly = Declare(
+			"Client.Model.Gameplay.LiveArena",
+			"LiveArenaWrapperReadonly",
+			systemObject,
+			"System.Object",
+			("LiveArenaData", "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData", ClassTypeCode, 0x10));
+		var liveArenaWrapper = Declare("Client.Model.Gameplay.LiveArena", "LiveArenaWrapper", liveArenaWrapperReadonly, "Client.Model.Gameplay.LiveArena.LiveArenaWrapperReadonly");
+		var leagueInfo = Declare(
+			"SharedModel.Meta.LiveArena",
+			"LiveArenaLeagueInfo",
+			systemObject,
+			"System.Object",
+			("MinPoints", "System.Int32", Int32TypeCode, 0x10));
+		var staticLiveArenaData = Declare(
+			"SharedModel.Meta.LiveArena",
+			"StaticLiveArenaData",
+			systemObject,
+			"System.Object",
+			("LeagueInfoById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.LiveArena.LiveArenaLeagueId, SharedModel.Meta.LiveArena.LiveArenaLeagueInfo>", GenericInstanceTypeCode, 0x10));
+
+		var dataObject = _runtime.Object(updatableUserLiveArenaData, 0x20);
+		_heap.Int64(dataObject + 0x10, live.Points);
+		_heap.Int32(dataObject + 0x18, live.Wins);
+		_heap.Int32(dataObject + 0x1C, live.Losses);
+		var wrapperObject = _runtime.Object(liveArenaWrapper, 0x18);
+		_heap.Pointer(wrapperObject + 0x10, dataObject);
+		Slot("Client.Model.Guard.UserWrapper.LiveArena", userWrapperObject + 0x78, wrapperObject);
+
+		var staticObject = _runtime.Object(staticLiveArenaData, 0x18);
+		_heap.Pointer(staticObject + 0x10, _runtime.Dictionary(_runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode), [.. leagues.Select(league =>
+		{
+			var infoObject = _runtime.Object(leagueInfo, 0x18);
+			_heap.Int32(infoObject + 0x10, league.MinPoints);
+			return ((ulong)league.League, infoObject);
+		})]));
+		Slot("SharedModel.Meta.StaticData.LiveArenaData", _clientStaticData + 0x70, staticObject);
 	}
 
 	/// <summary>The static data's ArenaData, whose LeagueInfos hold each league's Id and BattleBonuses, a BattleStats.</summary>

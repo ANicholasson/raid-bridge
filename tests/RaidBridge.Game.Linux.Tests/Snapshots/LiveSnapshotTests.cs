@@ -107,6 +107,24 @@ public sealed class LiveSnapshotTests : IDisposable
 	}
 
 	/// <summary>
+	/// The Area Bonuses are written as each area's levels by stat, each from 1, an area with none left out
+	/// (https://github.com/ANicholasson/raid-bridge/issues/32). It accepts {}: the main Account had bought no level and
+	/// held no Crests to buy one with (2026-11-13), which its Area Bonuses screen showed.
+	/// </summary>
+	[Fact]
+	public void Reads_the_area_bonuses()
+	{
+		using var json = Snapshot();
+
+		var written = json.RootElement.GetProperty("areaBonuses");
+		var areas = written.EnumerateObject().ToList();
+
+		Assert.Equal(JsonValueKind.Object, written.ValueKind);
+		Assert.All(areas, area => Assert.NotEmpty(area.Value.EnumerateObject()));
+		Assert.All(areas.SelectMany(area => area.Value.EnumerateObject()), level => Assert.True(level.Value.GetInt32() >= 1, $"{level} is below 1."));
+	}
+
+	/// <summary>
 	/// The Faction Guardians are written as each Faction's slots by rarity, every slot one or two Champions of
 	/// <c>champions</c>, of that Faction and rarity, none guarding twice. It accepts {}, because the secondary Account,
 	/// one of the two live runs use, has placed none. On the main Account, with Guardians placed in five Factions (2026-11-01),
@@ -160,6 +178,22 @@ public sealed class LiveSnapshotTests : IDisposable
 		Assert.All(teams, team => Assert.All(team, id => Assert.Contains(id, champions)));
 
 		static List<int> Team(JsonElement team) => [.. team.EnumerateArray().Select(id => id.GetInt32())];
+	}
+
+	/// <summary>
+	/// The Live Arena is written with a league, which the game always has, and points and counts of 0 or more
+	/// (https://github.com/ANicholasson/raid-bridge/issues/32). On the main Account, which had never fought in it
+	/// (2026-11-13), it read BronzeI with 900 points, 0 wins and 0 losses, which its Live Arena screen showed.
+	/// </summary>
+	[Fact]
+	public void Reads_the_live_arena()
+	{
+		using var json = Snapshot();
+
+		var live = json.RootElement.GetProperty("liveArena");
+
+		Assert.False(string.IsNullOrEmpty(live.GetProperty("league").GetString()));
+		Assert.All(["points", "wins", "losses"], count => Assert.True(live.GetProperty(count).GetInt64() >= 0, $"{count} is below 0."));
 	}
 
 	/// <summary>
