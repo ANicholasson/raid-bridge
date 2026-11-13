@@ -6,7 +6,7 @@ Everything above the "Live check" section comes from the installed game's own fi
 
 ## In short
 
-The saved teams and a remembered Classic Arena team are in the Game client and hold Champions today. That the remembered team is the one last attacked with, and whether Artifact presets are held before the player opens them, are still open (see the Live check).
+The saved teams and the team last attacked with in the Classic Arena are in the Game client and hold Champions today. Whether Artifact presets are held before the player opens them is still open (see the Live check).
 
 | What the player sees | Where the game keeps it | Live |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ The saved teams and a remembered Classic Arena team are in the Game client and h
 | The Tag Arena defence teams as saved teams | `UserArenaData.DefensePresets` of the Tag Arena | 3 teams, the same Champions as its defence teams |
 | Artifact presets, per Champion | `ExternalArtifactsStorage._presets` | none held; see the open question |
 
-The Classic Arena attack team is not a field of `UserArenaData`. The likeliest source is the team the Game client remembers for the Classic Arena as a place, `BattlePresets[3014]`, the same way it remembers the last team for each dungeon, Faction Wars crypt or Clan Boss.
+The Classic Arena attack team is not a field of `UserArenaData`. It is the team the Game client remembers for the Classic Arena as a place, `BattlePresets[3014]`, which follows each attack (live check), the same way it remembers the last team for each dungeon, Faction Wars crypt or Clan Boss.
 
 ## Saved teams
 
@@ -68,7 +68,7 @@ The limits are static data: `ClientStaticData.HeroData` (`StaticHeroData`) `.Pre
 
 `RegionTypeId` runs from `Region1` = 101 to `Region12` = 112 (the campaign), 201 to 219 (keeps, dungeons, Champion Journey), `Arena` = 301, `AllianceBoss` = 401, 501 to 517 (one per Faction), `Arena3x3` = 601, `DoomTower1` to `3` = 701 to 703, `AllianceHydraSeason1` to `6` = 801 to 806, `LiveArena` = 901, 1001 to 1005 (Cursed City), 1101 to 1103 (Siege), 1301 to 1304 (Chimera), 1401 to 1404 (Foggy Forest), 1501, and `InDevelopment` = -1.
 
-The array holds only the Champions chosen, with no slot for an empty position (live: the campaign's keys hold two to four ids). The Tag Arena's array holds its three teams one after another, twelve ids. Whether an array's order is the order of positions isn't proven; the Classic Arena's live array put a different Champion first than its defence team does, which fits a team set up on its own.
+The array holds only the Champions chosen, with no slot for an empty position (live: the campaign's keys hold two to four ids). The Tag Arena's array holds its three teams one after another, twelve ids. The array doesn't say which Champion leads: in the Classic Arena's, the leader came first for one team and second for another. Its order was the order the battle's result screen lists the team in, for the one team checked.
 
 `PresetIdsByRegionKey`, by the same kind of key, names the saved teams last picked for a place (`HeroesAiPresetExtensions.UpdatePresetIdsByRegionKey`). It was empty live.
 
@@ -106,16 +106,17 @@ Read on 2026-11-13 with a throwaway gated test, deleted before commit, from the 
 
 Every Champion id read was a Champion in `HeroById`.
 
-Still open, with the maintainer:
+Then the maintainer fought one Classic Arena battle with a different team, and a second read found key 3014 changed to exactly that team, in the order the result screen listed it, with the leader second. The maintainer's screenshots showed the earlier team as the one the Arena's team screen offered, with its leader first. So key 3014 is the team last attacked with. The Clan Boss's key 4015 had changed between the reads too.
 
-- **Is key 3014 the team last attacked with?** Its four Champions are the maintainer's Classic Arena team. One Classic Arena battle with a different team, read again, settles that it follows the attack team.
+Still open:
+
 - **Are Artifact presets loaded only when shown?** Revision -1 reads as "never loaded". If the Account has presets, opening one Champion's presets and reading again tells "none saved" from "not loaded yet". If they load only on demand, a Snapshot can't count on them.
 
 ## What a build ticket needs
 
 To decide in the grill:
 
-1. **Which teams to write.** Saved teams (`HeroesAiPresets`) are what the player made on purpose, and the clearest to write. The remembered teams (`BattlePresets`) are richer, the Classic and Tag Arena attack teams among them, but are an inference from use. The issue asks for saved teams and the Classic Arena attack team, so a small first slice is saved teams plus key 3014, once the live question is settled. The Tag Arena's key 6014, the other places, the Tag Arena's `DefensePresets` and Artifact presets go beyond the issue, and are extras for the grill to take or leave.
+1. **Which teams to write.** Saved teams (`HeroesAiPresets`) are what the player made on purpose, and the clearest to write. The remembered teams (`BattlePresets`) are richer, the Classic and Tag Arena attack teams among them, but are an inference from use. The issue asks for saved teams and the Classic Arena attack team, so a small first slice is saved teams plus key 3014, now that the live check settled it. A remembered team doesn't say which Champion leads, so the Snapshot can't either. The Tag Arena's key 6014, the other places, the Tag Arena's `DefensePresets` and Artifact presets go beyond the issue, and are extras for the grill to take or leave.
 2. **The place, as a term.** The glossary has no word for what a team is for (the game's `HeroesAiPresetType`) nor for where it was used (`RegionTypeId`). Writing both by the game's member names, as Affinities and leagues are written, fits the format, but needs glossary terms such as "Saved team" and "Remembered team".
 3. **Team names.** A saved team's name is text the player typed. Snapshots stay with the player, but they feed it to other services; decide whether to write the name, or only whether it was named.
 4. **Skill priorities.** Each position carries the AI's skill priorities per round. They name skills by id and are useful to an advisor, but double the shape. Recommend leaving them out of the first slice.
