@@ -46,7 +46,7 @@ public class TakeSnapshotTests
 		Assert.Equal([101, 104, 105], snapshot.UnwornArtifacts.Select(artifact => artifact.Id));
 	}
 
-	/// <summary>The reader sorts them too, so this pins the sort the use case promises (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/17).</summary>
+	/// <summary>The reader sorts them too, so this pins the sort the use case promises (https://github.com/ANicholasson/raid-bridge/pull/17).</summary>
 	[Fact]
 	public void Sorts_the_unworn_relics_and_unsocketed_stones_by_id()
 	{

@@ -48,7 +48,7 @@ public sealed class SnapshotCommandTests : IDisposable
 		Assert.Equal([104, 105], root.GetProperty("unwornArtifacts").EnumerateArray().Select(artifact => artifact.GetProperty("id").GetInt32()));
 	}
 
-	/// <summary>An Unworn Artifact reaches the file whole from either storage, its Faction lock and Glyph included (CodeRabbit, PR #41).</summary>
+	/// <summary>An Unworn Artifact reaches the file whole from either storage, its Faction lock and Glyph included (PR #41).</summary>
 	[Theory]
 	[InlineData(SyntheticArtifactStorage.AccountList)]
 	[InlineData(SyntheticArtifactStorage.ExternalStorage)]
@@ -65,7 +65,7 @@ public sealed class SnapshotCommandTests : IDisposable
 		Assert.Equal(2, unworn[1].GetProperty("substats")[0].GetProperty("glyph").GetDouble());
 	}
 
-	/// <summary>The list is written even when every Artifact is worn, so "none" reads apart from "not yet read" (CodeRabbit, PR #41).</summary>
+	/// <summary>The list is written even when every Artifact is worn, so "none" reads apart from "not yet read" (PR #41).</summary>
 	[Fact]
 	public void Writes_an_empty_unworn_list_when_every_artifact_is_worn()
 	{

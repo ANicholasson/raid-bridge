@@ -229,7 +229,7 @@ internal static partial class RelicReader
 	}
 
 	// Linear in the text's length whatever the game holds, where backtracking could take quadratic time on many
-	// unclosed tags (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/17).
+	// unclosed tags (https://github.com/ANicholasson/raid-bridge/pull/17).
 	[GeneratedRegex("</?color(?:=[^>]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking)]
 	private static partial Regex ColourTag();
 
@@ -346,7 +346,7 @@ internal static partial class RelicReader
 			var type = types.TryGetValue(typeId.Value, out var entry)
 				? entry.Object(className)
 				: throw new GameDataException($"{typeId}, which isn't a type in the game's {StaticRelicData}.{field}.");
-			// A corrupt entry or a torn read could key one type's data under another's id (CodeRabbit, PR #30).
+			// A corrupt entry or a torn read could key one type's data under another's id (PR #30).
 			_ = type.Int32("Id").Where(value => value == typeId.Value, $"the id {field} keeps it under, {typeId.Value}");
 			return type;
 		}

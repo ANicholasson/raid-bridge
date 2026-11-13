@@ -93,7 +93,7 @@ public sealed class MasteryStatsReadingTests : IDisposable
 			Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
 	}
 
-	/// <summary>A corrupt entry or a torn read could key one mastery under another's id (CodeRabbit, PR #21).</summary>
+	/// <summary>A corrupt entry or a torn read could key one mastery under another's id (PR #21).</summary>
 	[Fact]
 	public void Refuses_a_mastery_kept_under_another_id()
 	{
@@ -106,7 +106,7 @@ public sealed class MasteryStatsReadingTests : IDisposable
 
 	/// <summary>
 	/// A StatKindId over a wider type is refused before its low four bytes could pass for the -1 that marks a bonus to
-	/// set bonuses. Nothing else on this Account reads the enum, so the masteries reach it first (CodeRabbit, PR #21).
+	/// set bonuses. Nothing else on this Account reads the enum, so the masteries reach it first (PR #21).
 	/// </summary>
 	[Fact]
 	public void Refuses_a_stat_kind_over_a_wider_type_before_reading_the_set_bonus_marker()

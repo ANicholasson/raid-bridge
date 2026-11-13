@@ -14,9 +14,9 @@ public static class ForbiddenNetworkApis
 	/// <summary>
 	/// Namespaces that hold nothing but network clients and listeners, and System.Xml, whose readers fetch a URI over
 	/// HTTP. Nothing here reads XML, and refusing the namespace also catches an alias or a <c>using static</c> of a
-	/// loader (Codex, PR #61). System.Data likewise, whose DataSet.ReadXml and DataTable.ReadXml open a URI (CodeRabbit,
-	/// PR #61). Microsoft.Data.SqlClient connects to a database server, and naming it here also catches its package
-	/// reference in a project file (CodeRabbit, PR #61). Matched as a prefix, so System.Xml covers System.Xml.Linq.
+	/// loader (PR #61). System.Data likewise, whose DataSet.ReadXml and DataTable.ReadXml open a URI
+	/// (PR #61). Microsoft.Data.SqlClient connects to a database server, and naming it here also catches its package
+	/// reference in a project file (PR #61). Matched as a prefix, so System.Xml covers System.Xml.Linq.
 	/// </summary>
 	public static readonly IReadOnlyList<string> Namespaces =
 	[
@@ -57,10 +57,10 @@ public static class ForbiddenNetworkApis
 		"Ping",
 		"SslStream",
 		"NegotiateStream",
-		// A named pipe on Windows can name another machine (CodeRabbit, PR #61).
+		// A named pipe on Windows can name another machine (PR #61).
 		"NamedPipeClientStream",
 		"NamedPipeServerStream",
-		// XML readers that resolve a URI, over HTTP among others (CodeRabbit, PR #61).
+		// XML readers that resolve a URI, over HTTP among others (PR #61).
 		"XmlDocument",
 		"XmlTextReader",
 		"XPathDocument",
@@ -69,13 +69,13 @@ public static class ForbiddenNetworkApis
 	];
 
 	/// <summary>
-	/// Calls that load XML from a URI when given a string (CodeRabbit, PR #61). They're refused whatever the argument,
+	/// Calls that load XML from a URI when given a string (PR #61). They're refused whatever the argument,
 	/// and stay refused if a feature ever needs System.Xml: XDocument.Parse takes text without resolving anything.
 	/// </summary>
 	public static readonly IReadOnlyList<string> Calls = ["XDocument.Load", "XElement.Load", "XmlReader.Create"];
 
 	// C# allows whitespace and line breaks around a dot, so "System . Xml" and "XDocument\n\t.Load" name the same
-	// things as "System.Xml" and "XDocument.Load" (Codex and CodeRabbit, PR #61).
+	// things as "System.Xml" and "XDocument.Load" (PR #61).
 	private static readonly Regex NamespacePattern = new(
 		$@"\b(?:{string.Join('|', Namespaces.Select(Dotted))})\b",
 		RegexOptions.CultureInvariant);
