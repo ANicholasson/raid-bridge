@@ -8,8 +8,11 @@ namespace RaidBridge.Game.Windows.Memory;
 
 /// <summary>
 /// The only Win32 functions raid-bridge calls (ADR-0001): it opens the Game client with PROCESS_VM_READ and
-/// PROCESS_QUERY_LIMITED_INFORMATION and nothing more, lists its modules, reads its memory, and asks when it started
-/// and whether it has exited. The guardrails fail on any other import or access right.
+/// PROCESS_QUERY_LIMITED_INFORMATION and nothing more, lists where its modules start, reads its memory, and asks for
+/// its executable's path, when it started and whether it has exited. Microsoft documents each of these calls as
+/// needing no more than those two rights, except K32EnumProcessModulesEx, whose page names none. Nothing asks Windows
+/// for a module's file, which is documented to need PROCESS_QUERY_INFORMATION
+/// (https://github.com/ANicholasson/raid-bridge/pull/49). The guardrails fail on any other import or access right.
 /// </summary>
 [SupportedOSPlatform("windows")]
 internal sealed class Kernel32Processes : IWin32Processes
@@ -40,7 +43,7 @@ internal sealed class Kernel32Processes : IWin32Processes
 	public IWin32Process Open(int id) => Kernel32Process.Open(id);
 }
 
-/// <summary>A process opened for reading: its memory, its modules, when it started and whether it has exited.</summary>
+/// <summary>A process opened for reading: its memory, its modules, its executable, when it started and whether it has exited.</summary>
 [SupportedOSPlatform("windows")]
 internal sealed unsafe partial class Kernel32Process : IWin32Process
 {
@@ -92,7 +95,19 @@ internal sealed unsafe partial class Kernel32Process : IWin32Process
 			? exitCode != StillActive
 			: throw new Win32Exception(Marshal.GetLastPInvokeError());
 
-	public IReadOnlyList<LoadedModule> Modules()
+	public string ImagePath()
+	{
+		var path = new char[LongestPath];
+		var length = (uint)path.Length;
+		fixed (char* first = path)
+		{
+			return QueryFullProcessImageNameW(_process, 0, first, ref length)
+				? new string(path, 0, (int)length)
+				: throw new Win32Exception(Marshal.GetLastPInvokeError());
+		}
+	}
+
+	public IReadOnlyList<ulong> ModuleBases()
 	{
 		var bases = new nint[256];
 		while (true)
@@ -109,7 +124,7 @@ internal sealed unsafe partial class Kernel32Process : IWin32Process
 			var count = (int)(needed / sizeof(nint));
 			if (count <= bases.Length)
 			{
-				return [.. bases.Take(count).Select(module => new LoadedModule((ulong)module, FileNameOf(module)))];
+				return [.. bases.Take(count).Select(module => (ulong)module)];
 			}
 
 			bases = new nint[count];
@@ -127,16 +142,6 @@ internal sealed unsafe partial class Kernel32Process : IWin32Process
 	}
 
 	public void Dispose() => _process.Dispose();
-
-	private string FileNameOf(nint module)
-	{
-		var path = new char[LongestPath];
-		fixed (char* first = path)
-		{
-			var length = GetModuleFileNameExW(_process, module, first, (uint)path.Length);
-			return length > 0 ? new string(path, 0, (int)length) : throw new Win32Exception(Marshal.GetLastPInvokeError());
-		}
-	}
 
 	[LibraryImport("kernel32", EntryPoint = "OpenProcess", SetLastError = true)]
 	private static partial SafeProcessHandle OpenProcess(uint desiredAccess, [MarshalAs(UnmanagedType.Bool)] bool inheritHandle, uint processId);
@@ -157,6 +162,7 @@ internal sealed unsafe partial class Kernel32Process : IWin32Process
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static partial bool EnumProcessModulesEx(SafeProcessHandle process, nint* modules, uint size, out uint needed, uint filter);
 
-	[LibraryImport("kernel32", EntryPoint = "K32GetModuleFileNameExW", SetLastError = true)]
-	private static partial uint GetModuleFileNameExW(SafeProcessHandle process, nint module, char* fileName, uint size);
+	[LibraryImport("kernel32", EntryPoint = "QueryFullProcessImageNameW", SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool QueryFullProcessImageNameW(SafeProcessHandle process, uint flags, char* name, ref uint size);
 }

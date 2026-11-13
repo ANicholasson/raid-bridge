@@ -64,7 +64,7 @@ public class ReadOnlyGuardrailTests
 			.Order(StringComparer.Ordinal)
 			.ToList();
 
-		Assert.Equal(["GetExitCodeProcess", "GetProcessTimes", "K32EnumProcessModulesEx", "K32GetModuleFileNameExW", "OpenProcess", "ReadProcessMemory"], declared);
+		Assert.Equal(["GetExitCodeProcess", "GetProcessTimes", "K32EnumProcessModulesEx", "OpenProcess", "QueryFullProcessImageNameW", "ReadProcessMemory"], declared);
 	}
 
 	/// <summary>

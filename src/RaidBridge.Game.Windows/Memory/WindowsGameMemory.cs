@@ -57,9 +57,11 @@ public sealed class WindowsGameMemory : IGameMemory
 		}
 	}
 
-	public void Read(ulong address, Span<byte> buffer)
+	public void Read(ulong address, Span<byte> buffer) => ReadFrom(_process, address, buffer);
+
+	private static void ReadFrom(IWin32Process process, ulong address, Span<byte> buffer)
 	{
-		var (read, error) = _process.Read(address, buffer);
+		var (read, error) = process.Read(address, buffer);
 		if (read == buffer.Length && error == 0)
 		{
 			return;
@@ -68,7 +70,7 @@ public sealed class WindowsGameMemory : IGameMemory
 		throw error switch
 		{
 			ErrorPartialCopy or ErrorNoAccess when read > 0 => new GameMemoryException($"Only {read} of {buffer.Length} bytes at 0x{address:X} are mapped in the Game client."),
-			ErrorPartialCopy or ErrorNoAccess when HasExited() => new GameMemoryException($"The Game client (pid {_process.Id}) has exited."),
+			ErrorPartialCopy or ErrorNoAccess when HasExited(process) => new GameMemoryException($"The Game client (pid {process.Id}) has exited."),
 			ErrorPartialCopy or ErrorNoAccess => new GameMemoryException($"Nothing is mapped at 0x{address:X} for {buffer.Length} bytes in the Game client."),
 			_ => new GameMemoryException($"Reading {buffer.Length} bytes at 0x{address:X} from the Game client failed with Windows error {error}."),
 		};
@@ -108,11 +110,11 @@ public sealed class WindowsGameMemory : IGameMemory
 		}
 	}
 
-	private static IReadOnlyList<LoadedModule> Modules(IWin32Process process)
+	private static IReadOnlyList<ulong> ModuleBases(IWin32Process process)
 	{
 		try
 		{
-			return process.Modules();
+			return process.ModuleBases();
 		}
 		catch (Win32Exception error) when (error.NativeErrorCode == ErrorPartialCopy)
 		{
@@ -124,28 +126,44 @@ public sealed class WindowsGameMemory : IGameMemory
 		}
 	}
 
+	/// <summary>
+	/// GameAssembly.dll: the one module whose image exports under that name, and the file of that name beside Raid.exe,
+	/// where Unity's player loads it from. GameSnapshotSource checks that file's headers against the image's.
+	/// </summary>
 	private static GameModule GameAssemblyIn(IWin32Process process)
 	{
 		var id = process.Id;
-		var images = Modules(process).Where(module => string.Equals(FileName(module.FilePath), GameAssemblyFile, StringComparison.OrdinalIgnoreCase)).ToList();
+		var images = ModuleBases(process).Where(imageBase => ModuleImage.ExportsAs((address, buffer) => ReadFrom(process, address, buffer), imageBase, GameAssemblyFile)).ToList();
 
 		return images switch
 		{
 			[] => throw new GameMemoryException($"The Game client (pid {id}) hasn't loaded {GameAssemblyFile} yet. Wait until RAID shows its main screen, then try again."),
-			[var image] => new(image.ImageBase, image.FilePath),
+			[var image] => new(image, Beside(ImagePathOf(process), GameAssemblyFile)),
 			_ => throw new GameMemoryException(
-				$"The Game client (pid {id}) has loaded {GameAssemblyFile} more than once ({string.Join(", ", images.Select(image => $"0x{image.ImageBase:X}"))}), so raid-bridge can't tell which is its image."),
+				$"The Game client (pid {id}) has loaded {GameAssemblyFile} more than once ({string.Join(", ", images.Select(image => $"0x{image:X}"))}), so raid-bridge can't tell which is its image."),
 		};
 	}
 
-	/// <summary>The last segment of a Windows path, whichever platform the tests run on.</summary>
-	private static string FileName(string path) => path[(path.LastIndexOfAny(['\\', '/']) + 1)..];
-
-	private bool HasExited()
+	private static string ImagePathOf(IWin32Process process)
 	{
 		try
 		{
-			return _process.HasExited();
+			return process.ImagePath();
+		}
+		catch (Win32Exception error)
+		{
+			throw new GameMemoryException($"Asking for the file of the Game client (pid {process.Id}) failed with Windows error {error.NativeErrorCode}: {error.Message}", error);
+		}
+	}
+
+	/// <summary>The file of that name in the folder of a Windows path, whichever platform the tests run on.</summary>
+	private static string Beside(string path, string fileName) => path[..(path.LastIndexOfAny(['\\', '/']) + 1)] + fileName;
+
+	private static bool HasExited(IWin32Process process)
+	{
+		try
+		{
+			return process.HasExited();
 		}
 		catch (Win32Exception)
 		{

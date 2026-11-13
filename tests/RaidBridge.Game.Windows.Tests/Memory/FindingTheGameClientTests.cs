@@ -14,7 +14,7 @@ public sealed class FindingTheGameClientTests
 	private readonly FakeWin32Processes _processes = new();
 
 	[Fact]
-	public void Finds_the_game_client_by_its_image_name_and_game_assembly_among_its_modules()
+	public void Finds_the_game_client_by_its_image_name_and_game_assembly_by_the_name_its_image_exports()
 	{
 		_processes.AddProcess(100, "PlariumPlay");
 		_processes.AddGameClient();
@@ -30,21 +30,62 @@ public sealed class FindingTheGameClientTests
 		Assert.Equal(StartedAt, OpenGameClient().StartedAt);
 
 	[Fact]
-	public void Reads_nothing_from_the_game_client_to_open_it()
+	public void Takes_game_assembly_s_file_from_the_folder_of_raid_exe()
 	{
-		var process = _processes.AddGameClient();
+		_processes.AddGameClient().Path = @"D:\Games\Raid\Raid.exe";
 
-		_ = WindowsGameMemory.Open(_processes);
-
-		Assert.Equal(0, process.Reads);
+		Assert.Equal(@"D:\Games\Raid\GameAssembly.dll", WindowsGameMemory.Open(_processes).GameAssembly.FilePath);
 	}
 
 	[Fact]
-	public void Matches_game_assembly_whatever_the_case_of_its_file_name()
+	public void Matches_the_exported_name_whatever_its_case()
 	{
-		_processes.AddProcess(GameId, "Raid", new LoadedModule(ImageBase, @"C:\Games\Raid\gameassembly.DLL"));
+		_processes.AddProcess(GameId, "Raid").Load(ImageBase, Image("gameassembly.DLL"));
 
-		Assert.Equal(new GameModule(ImageBase, @"C:\Games\Raid\gameassembly.DLL"), WindowsGameMemory.Open(_processes).GameAssembly);
+		Assert.Equal(ImageBase, WindowsGameMemory.Open(_processes).GameAssembly.ImageBase);
+	}
+
+	[Fact]
+	public void Reads_a_32_bit_image_s_exports_too()
+	{
+		_processes.AddProcess(GameId, "Raid").Load(0x1000_0000, Image("helper.dll", magic: 0x10B)).Load(ImageBase, Image("GameAssembly.dll"));
+
+		Assert.Equal(ImageBase, WindowsGameMemory.Open(_processes).GameAssembly.ImageBase);
+	}
+
+	[Fact]
+	public void Passes_over_a_module_whose_name_only_starts_the_same()
+	{
+		_processes.AddProcess(GameId, "Raid").Load(0x1000_0000, Image("GameAssembly.dll.bak")).Load(ImageBase, Image("GameAssembly.dll"));
+
+		Assert.Equal(ImageBase, WindowsGameMemory.Open(_processes).GameAssembly.ImageBase);
+	}
+
+	[Fact]
+	public void Refuses_a_module_that_is_not_a_pe_image_and_names_it()
+	{
+		var notAnImage = new byte[0x1000];
+		_processes.AddProcess(GameId, "Raid").Load(0x1000_0000, notAnImage).Load(ImageBase, Image("GameAssembly.dll"));
+
+		Assert.Equal("The module the Game client loaded at 0x10000000 isn't a PE image: it doesn't start with MZ.", Refusal());
+	}
+
+	[Fact]
+	public void Refuses_a_module_whose_pe_header_is_missing()
+	{
+		var image = Image("GameAssembly.dll");
+		image[0x80] = (byte)'X';
+		_processes.AddProcess(GameId, "Raid").Load(ImageBase, image);
+
+		Assert.Equal($"The module the Game client loaded at 0x{ImageBase:X} isn't a PE image: it has no PE signature at 0x80.", Refusal());
+	}
+
+	[Fact]
+	public void Names_windows_error_when_the_game_client_s_file_cant_be_asked_for()
+	{
+		_processes.AddGameClient().PathError = ErrorAccessDenied;
+
+		Assert.StartsWith($"Asking for the file of the Game client (pid {GameId}) failed with Windows error 5: ", Refusal(), StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -106,7 +147,7 @@ public sealed class FindingTheGameClientTests
 	[Fact]
 	public void Says_game_assembly_is_not_loaded_yet()
 	{
-		_processes.AddProcess(GameId, "Raid", new LoadedModule(0x7FF6_0000_0000, @"C:\Games\Raid\Raid.exe"));
+		_processes.AddProcess(GameId, "Raid").Load(ExeBase, Image(exportedAs: null)).Load(NtdllBase, Image("ntdll.dll"));
 
 		Assert.Equal($"The Game client (pid {GameId}) hasn't loaded GameAssembly.dll yet. Wait until RAID shows its main screen, then try again.", Refusal());
 	}
@@ -114,7 +155,7 @@ public sealed class FindingTheGameClientTests
 	[Fact]
 	public void Refuses_to_guess_between_two_game_assembly_modules()
 	{
-		_processes.AddProcess(GameId, "Raid", new LoadedModule(0x1000_0000, GameAssemblyPath), new LoadedModule(0x2000_0000, @"C:\Elsewhere\GameAssembly.dll"));
+		_processes.AddProcess(GameId, "Raid").Load(0x1000_0000, Image("GameAssembly.dll")).Load(0x2000_0000, Image("GameAssembly.dll"));
 
 		Assert.Equal(
 			$"The Game client (pid {GameId}) has loaded GameAssembly.dll more than once (0x10000000, 0x20000000), so raid-bridge can't tell which is its image.",

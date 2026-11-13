@@ -12,10 +12,16 @@ public sealed class ReadingTheGameClientTests
 	private const int ErrorPartialCopy = 299;
 	private const int ErrorNoAccess = 998;
 
-	private readonly FakeWin32Processes _processes = new();
 	private readonly FakeWin32Process _gameClient;
+	private readonly WindowsGameMemory _memory;
 
-	public ReadingTheGameClientTests() => _gameClient = _processes.AddGameClient();
+	/// <summary>Opened before each test makes up ReadProcessMemory's answers, so opening reads the images loaded.</summary>
+	public ReadingTheGameClientTests()
+	{
+		var processes = new FakeWin32Processes();
+		_gameClient = processes.AddGameClient();
+		_memory = WindowsGameMemory.Open(processes);
+	}
 
 	[Fact]
 	public void Fills_the_buffer_from_the_game_client_at_the_address()
@@ -28,7 +34,7 @@ public sealed class ReadingTheGameClientTests
 		};
 		var header = new byte[2];
 
-		WindowsGameMemory.Open(_processes).Read(ImageBase, header);
+		_memory.Read(ImageBase, header);
 
 		Assert.Equal("MZ", Encoding.ASCII.GetString(header));
 	}
@@ -68,9 +74,5 @@ public sealed class ReadingTheGameClientTests
 		Assert.Equal("Reading 8 bytes at 0xDEAD0000 from the Game client failed with Windows error 5.", Failure(0xDEAD_0000));
 	}
 
-	private string Failure(ulong address)
-	{
-		var memory = WindowsGameMemory.Open(_processes);
-		return Assert.Throws<GameMemoryException>(() => memory.Read(address, new byte[8])).Message;
-	}
+	private string Failure(ulong address) => Assert.Throws<GameMemoryException>(() => _memory.Read(address, new byte[8])).Message;
 }

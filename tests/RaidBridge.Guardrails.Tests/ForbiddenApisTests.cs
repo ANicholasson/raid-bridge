@@ -180,8 +180,9 @@ public class NativeImportsTests
 			[LibraryImport("kernel32", EntryPoint = "K32EnumProcessModulesEx", SetLastError = true)]
 			[return: MarshalAs(UnmanagedType.Bool)]
 			private static partial bool EnumProcessModulesEx(SafeProcessHandle process, nint* modules, uint size, out uint needed, uint filter);
-			[LibraryImport("kernel32", EntryPoint = "K32GetModuleFileNameExW", SetLastError = true)]
-			private static partial uint GetModuleFileNameExW(SafeProcessHandle process, nint module, char* fileName, uint size);
+			[LibraryImport("kernel32", EntryPoint = "QueryFullProcessImageNameW", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool QueryFullProcessImageNameW(SafeProcessHandle process, uint flags, char* name, ref uint size);
 			[LibraryImport("kernel32", EntryPoint = "GetProcessTimes", SetLastError = true)]
 			[return: MarshalAs(UnmanagedType.Bool)]
 			private static partial bool GetProcessTimes(SafeProcessHandle process, out long created, out long exited, out long kernel, out long user);
@@ -189,6 +190,23 @@ public class NativeImportsTests
 			[return: MarshalAs(UnmanagedType.Bool)]
 			private static partial bool GetExitCodeProcess(SafeProcessHandle process, out uint exitCode);
 			"""));
+
+	/// <summary>
+	/// OpenProcess under another name would let a call ask for any rights unseen, such as Acquire(0x1F0FFF, false, pid)
+	/// (https://github.com/ANicholasson/raid-bridge/pull/49).
+	/// </summary>
+	[Theory]
+	[InlineData("""[LibraryImport("kernel32", EntryPoint = "OpenProcess")] private static partial nint Acquire(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint id);""", "Acquire")]
+	[InlineData("""[DllImport("kernel32", EntryPoint = "OpenProcess")] static extern nint Open(uint access, bool inherit, uint id);""", "Open")]
+	public void Finds_open_process_declared_under_another_name(string source, string name)
+	{
+		Assert.Equal([$"OpenProcess declared as {name}, which the OpenProcess check can't see"], NativeImports.FindIn(source));
+		Assert.Empty(ForbiddenApis.FindIn($"{source} var process = {name}(0x1F0FFF, false, pid);"));
+	}
+
+	[Fact]
+	public void Allows_open_process_declared_under_its_own_name() =>
+		Assert.Empty(NativeImports.FindIn("""[LibraryImport("kernel32", EntryPoint = "OpenProcess", SetLastError = true)] private static partial SafeProcessHandle OpenProcess(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint id);"""));
 
 	[Fact]
 	public void Finds_a_native_methods_entry_off_the_list() =>

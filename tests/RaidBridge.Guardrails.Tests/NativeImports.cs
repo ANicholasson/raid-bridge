@@ -5,8 +5,8 @@ namespace RaidBridge.Guardrails.Tests;
 /// <summary>
 /// The native functions raid-bridge may call (spec #20): on Linux, process_vm_readv to read the Game client, and getuid
 /// and geteuid to know who it runs as; on Windows, OpenProcess to open it for reading only, ReadProcessMemory to read
-/// it, the two module calls to find GameAssembly.dll, GetProcessTimes for when it started, and GetExitCodeProcess for
-/// whether it has exited. Every P/Invoke declaration and CsWin32 NativeMethods.txt entry must name one, and
+/// it, K32EnumProcessModulesEx to find where its modules start, QueryFullProcessImageNameW for its executable's path,
+/// GetProcessTimes for when it started, and GetExitCodeProcess for whether it has exited. Every P/Invoke declaration and CsWin32 NativeMethods.txt entry must name one, and
 /// nothing may look up a native function at run time, which would get round the list. Extend it, never trim it.
 /// </summary>
 public static class NativeImports
@@ -19,7 +19,7 @@ public static class NativeImports
 		"OpenProcess",
 		"ReadProcessMemory",
 		"K32EnumProcessModulesEx",
-		"K32GetModuleFileNameExW",
+		"QueryFullProcessImageNameW",
 		"GetProcessTimes",
 		"GetExitCodeProcess",
 	];
@@ -44,6 +44,17 @@ public static class NativeImports
 	public static IReadOnlyList<string> Declared(string source) =>
 		[.. DeclarationPattern.Matches(source).Select(EntryPoint)];
 
+	/// <summary>
+	/// OpenProcess declared under another method name, whose calls ForbiddenApis' OpenProcess check, which goes by the
+	/// name called, can't see (https://github.com/ANicholasson/raid-bridge/pull/49).
+	/// </summary>
+	public static IReadOnlyList<string> AliasedOpenProcess(string source) =>
+	[
+		.. DeclarationPattern.Matches(source)
+			.Where(declaration => EntryPoint(declaration) == "OpenProcess" && !declaration.Groups["name"].Value.StartsWith("OpenProcess", StringComparison.Ordinal))
+			.Select(declaration => $"OpenProcess declared as {declaration.Groups["name"].Value}, which the OpenProcess check can't see"),
+	];
+
 	/// <summary>Declarations of functions off the list, declarations it can't read, and run-time lookups.</summary>
 	public static IReadOnlyList<string> FindIn(string source)
 	{
@@ -52,6 +63,7 @@ public static class NativeImports
 		return
 		[
 			.. declared.Where(entry => !Allowed.Contains(entry))
+				.Concat(AliasedOpenProcess(source))
 				.Concat(Enumerable.Repeat("a native import declaration the guardrail can't read", Math.Max(unreadable, 0)))
 				.Concat(RuntimeLookupPattern.Matches(source).Select(match => match.Value))
 				.Distinct(),

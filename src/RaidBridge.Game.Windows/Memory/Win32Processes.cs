@@ -22,12 +22,12 @@ internal interface IWin32Process : IDisposable
 
 	bool HasExited();
 
-	/// <summary>The modules the process has loaded, each with its image base and the path of its file.</summary>
-	IReadOnlyList<LoadedModule> Modules();
+	/// <summary>The full path of the process's own executable file.</summary>
+	string ImagePath();
+
+	/// <summary>Where each module the process has loaded starts in its memory.</summary>
+	IReadOnlyList<ulong> ModuleBases();
 
 	/// <summary>Copies from the process's memory at the address into the buffer: the bytes copied, and Windows' error code if it copied fewer than asked, else 0.</summary>
 	(int Read, int Error) Read(ulong address, Span<byte> buffer);
 }
-
-/// <summary>A module a process loaded: its image base and the path of its file.</summary>
-internal sealed record LoadedModule(ulong ImageBase, string FilePath);
