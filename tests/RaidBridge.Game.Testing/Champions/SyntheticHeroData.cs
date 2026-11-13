@@ -43,7 +43,7 @@ public sealed record SyntheticHeroData(
 				Grade = 5,
 				Level = 50,
 				InBathhouse = true,
-				Skills = [new(Id: 41, TypeId: 60101, Level: 2)],
+				Skills = [new(Id: 41, TypeId: 60101, Level: 2), new(Id: 42, TypeId: 60105, Level: 1)],
 				Masteries = [],
 				DoubleAscend = new(Grade: 1, Blessing: null),
 			},
@@ -61,12 +61,16 @@ public sealed record SyntheticHeroData(
 			new(52401, new("l10n:skill-type/name?id=52401#static", null)),
 			new(52402, new("l10n:skill-type/name?id=52402#static", "Synthetic Guard")),
 			new(60101, new("l10n:skill-type/name?id=60101#static", null)),
+			// A passive the champion screen hides, with the placeholder text the game holds for such skills
+			// (https://github.com/ANicholasson/raid-bridge/issues/26).
+			new(60105, new("l10n:skill-type/name?id=60105#static", "Skill 60105 name")) { Visibility = 1 },
 		],
 		StaticDataLocalization: new Dictionary<string, string>
 		{
 			["l10n:hero-type/name?id=5240#static"] = "Synthetic Knight",
 			["l10n:skill-type/name?id=52401#static"] = "Synthetic Strike",
 			["l10n:skill-type/name?id=60101#static"] = "Synthetic Volley",
+			["l10n:skill-type/name?id=60105#static"] = "Skill 60105 name",
 		},
 		ClientLocalization: new Dictionary<string, string>
 		{
@@ -206,7 +210,11 @@ public sealed record SyntheticBattleStats(
 	public double IgnoreDefence { get; init; }
 }
 
-public sealed record SyntheticSkillType(int Id, SyntheticText Name);
+public sealed record SyntheticSkillType(int Id, SyntheticText Name)
+{
+	/// <summary>SharedModel.Meta.Skills.Visibility: 0, Visible, unless set.</summary>
+	public int Visibility { get; init; }
+}
 
 /// <summary>A SharedLTextKey: the key the localization tables are looked up by, and the default text.</summary>
 public sealed record SyntheticText(string Key, string? DefaultValue);

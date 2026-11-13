@@ -561,7 +561,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `rarity`, `affinity`, `faction` and `rank`: such as `"Legendary"`, `"Void"`, `"DarkElves"` and `"Stars6"`.
   - `level` and `empowerment`: numbers, `empowerment` 0 for none.
   - `awakening` and `blessing`: such as `"Stars2"` and `"Necromancy"`, or `null` when the Champion has none.
-  - `skills`: each skill's `typeId`, `name` and `level`, in the order the game keeps them.
+  - `skills`: each skill the champion screen shows, with its `typeId`, `name` and `level`, in the order the game keeps them. The game gives some Champions hidden skills too, such as a passive that works behind one the screen shows, and the screen leaves those out; so does the Snapshot, since the game holds no name for them that the player ever sees, only placeholder text such as "Skill 107305 name".
   - `masteries`: the ids of the masteries the Champion took, in the order the game keeps them, or `[]`, without names: raid-bridge has found no mastery names in the game's data.
   - `locked`: whether the player locked the Champion.
   - `marker`: the marker the player set, such as `"Favorite"`, or `"None"`.
