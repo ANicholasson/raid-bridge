@@ -5,6 +5,7 @@
 		<Project Path="src/RaidBridge.Export/RaidBridge.Export.csproj" />
 		<Project Path="src/RaidBridge.Game/RaidBridge.Game.csproj" />
 		<Project Path="src/RaidBridge.Game.Linux/RaidBridge.Game.Linux.csproj" />
+		<Project Path="src/RaidBridge.Game.Windows/RaidBridge.Game.Windows.csproj" />
 	</Folder>
 	<Folder Name="/third_party/">
 		<Project Path="third_party/LibCpp2IL/LibCpp2IL.csproj" />
@@ -16,6 +17,7 @@
 		<Project Path="tests/RaidBridge.Game.Testing/RaidBridge.Game.Testing.csproj" />
 		<Project Path="tests/RaidBridge.Game.Linux.Tests/RaidBridge.Game.Linux.Tests.csproj" />
 		<Project Path="tests/RaidBridge.Game.Tests/RaidBridge.Game.Tests.csproj" />
+		<Project Path="tests/RaidBridge.Game.Windows.Tests/RaidBridge.Game.Windows.Tests.csproj" />
 		<Project Path="tests/RaidBridge.Guardrails.Tests/RaidBridge.Guardrails.Tests.csproj" />
 	</Folder>
 </Solution>

@@ -6,7 +6,7 @@ Reads your own RAID: Shadow Legends account data (champions, artifacts, relics, 
 
 Data out only. raid-bridge never injects code into the game, never writes to its memory and never automates play.
 
-Status: early. `raid-bridge snapshot` writes a Snapshot holding the account, its champions, the artifacts and relics they wear, the artifacts and relics nobody wears, the relic stones in no socket, its resources, shards and items, its Great Hall and Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its missions. It reads the running game on Linux, where the Windows game runs under Steam's Proton, with no setup and no root. There is no Windows reader yet. The format is in [docs/snapshot.md](docs/snapshot.md).
+Status: early. `raid-bridge snapshot` writes a Snapshot holding the account, its champions, the artifacts and relics they wear, the artifacts and relics nobody wears, the relic stones in no socket, its resources, shards and items, its Great Hall and Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its missions. It reads the running game on Linux, where the Windows game runs under Steam's Proton, with no setup and no root. A Windows reader is being proven against the running game. The format is in [docs/snapshot.md](docs/snapshot.md).
 
 ## Fair play and risk
 
@@ -21,7 +21,7 @@ raid-bridge is a fan project. It is not made, endorsed or supported by Plarium. 
 | | Status |
 | --- | --- |
 | Linux on x86-64, with the game run through Plarium Play under Steam's Proton | Supported |
-| Windows | Not yet: the reader is designed for a Windows adapter ([ADR-0002](docs/adr/0002-platform-specific-memory-adapter.md)), but none exists |
+| Windows, with the game run through Plarium Play | In progress: the adapter exists ([ADR-0002](docs/adr/0002-platform-specific-memory-adapter.md)) but isn't yet proven against the running game |
 | macOS | Not supported |
 
 raid-bridge reads only the build RAID ships today: IL2CPP metadata version 39 and Unity 6000.3.18f1. When a game update changes either, raid-bridge stops with an error naming the version it doesn't know, the metadata version first, until support is added ([ADR-0003](docs/adr/0003-il2cpp-runtime-layouts-per-unity-version.md)). <!-- (PR #59) --> Building and running the tests works on Linux and Windows, which CI checks; macOS isn't checked.

@@ -11,10 +11,9 @@
 		<ProjectReference Include="../RaidBridge.Export/RaidBridge.Export.csproj" />
 		<ProjectReference Include="../RaidBridge.Game/RaidBridge.Game.csproj" />
 		<ProjectReference Include="../RaidBridge.Game.Linux/RaidBridge.Game.Linux.csproj" />
+		<ProjectReference Include="../RaidBridge.Game.Windows/RaidBridge.Game.Windows.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="RaidBridge.Cli.Tests" />
-		<!-- The adapter's live check runs the command as Program wires it. -->
-		<InternalsVisibleTo Include="RaidBridge.Game.Linux.Tests" />
 	</ItemGroup>
 </Project>

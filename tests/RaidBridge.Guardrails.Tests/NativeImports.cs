@@ -3,13 +3,26 @@ using System.Text.RegularExpressions;
 namespace RaidBridge.Guardrails.Tests;
 
 /// <summary>
-/// The native functions raid-bridge may call (spec #20): process_vm_readv to read the Game client, and getuid and
-/// geteuid to know who it runs as. Every P/Invoke declaration and CsWin32 NativeMethods.txt entry must name one, and
+/// The native functions raid-bridge may call (spec #20): on Linux, process_vm_readv to read the Game client, and getuid
+/// and geteuid to know who it runs as; on Windows, OpenProcess to open it for reading only, ReadProcessMemory to read
+/// it, the two module calls to find GameAssembly.dll, GetProcessTimes for when it started, and GetExitCodeProcess for
+/// whether it has exited. Every P/Invoke declaration and CsWin32 NativeMethods.txt entry must name one, and
 /// nothing may look up a native function at run time, which would get round the list. Extend it, never trim it.
 /// </summary>
 public static class NativeImports
 {
-	public static readonly IReadOnlyList<string> Allowed = ["process_vm_readv", "getuid", "geteuid"];
+	public static readonly IReadOnlyList<string> Allowed =
+	[
+		"process_vm_readv",
+		"getuid",
+		"geteuid",
+		"OpenProcess",
+		"ReadProcessMemory",
+		"K32EnumProcessModulesEx",
+		"K32GetModuleFileNameExW",
+		"GetProcessTimes",
+		"GetExitCodeProcess",
+	];
 
 	/// <summary>Ways to reach a native function without declaring it.</summary>
 	public static readonly IReadOnlyList<string> RuntimeLookups = ["NativeLibrary", "GetDelegateForFunctionPointer", "delegate* unmanaged"];

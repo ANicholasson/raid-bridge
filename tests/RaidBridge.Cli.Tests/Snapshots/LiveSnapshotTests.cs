@@ -1,13 +1,14 @@
 using System.Text.Json;
-using RaidBridge.Cli;
 using RaidBridge.Cli.Snapshots;
 using RaidBridge.Export.Accounts;
 
-namespace RaidBridge.Game.Linux.Tests.Snapshots;
+namespace RaidBridge.Cli.Tests.Snapshots;
 
 /// <summary>
-/// Gated: <c>raid-bridge snapshot</c>, wired as Program wires it, against the running Game client (spec #20). The salt
-/// and the Snapshot go to throwaway folders, so the run leaves the player's own salt alone.
+/// Gated: <c>raid-bridge snapshot</c>, wired as Program wires it, against the running Game client (spec #20), through
+/// whichever memory adapter this platform has. The salt and the Snapshot go to throwaway folders, so the run leaves the
+/// player's own salt alone. Opt in with RAIDBRIDGE_LIVE=1, and only ever with one of the maintainer's own Accounts
+/// logged in (#12, #39); opting in without the Game client is a failure, not a skip.
 /// </summary>
 public sealed class LiveSnapshotTests : IDisposable
 {
@@ -287,7 +288,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// <summary>A Snapshot of the running Game client, written as the command line writes it.</summary>
 	private JsonDocument Snapshot()
 	{
-		LiveGame.RequireOptIn();
+		Assert.SkipUnless(Environment.GetEnvironmentVariable("RAIDBRIDGE_LIVE") == "1", "Gated: set RAIDBRIDGE_LIVE=1, with the Game client running on one of the maintainer's Accounts, to run.");
 		using var output = new StringWriter();
 		using var error = new StringWriter();
 
