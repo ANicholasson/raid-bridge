@@ -34,6 +34,24 @@ public sealed class ResourceReadingTests : IDisposable
 		Assert.Equal([new Item("HeroXpBooster100P_1Day", 3), new Item("SkillUpgradeItemEpic", 1)], _game.Source().Read().Items);
 	}
 
+	/// <summary>
+	/// The Relic upgrade materials are a Resource and Items like any other, under the game's code names: Starstones are
+	/// Meteor, and Rank N Basalt is Carbon_RankN (https://github.com/ANicholasson/raid-bridge/issues/29).
+	/// </summary>
+	[Fact]
+	public void Reads_the_relic_upgrade_materials_under_the_game_names()
+	{
+		using var game = SyntheticGameClient.Create(resourceData: new(
+			new Dictionary<int, double> { [4000] = 3140 },
+			[],
+			new Dictionary<int, int> { [19002] = 1, [19001] = 9 }));
+
+		var account = game.Source().Read();
+
+		Assert.Equal([new Resource("Meteor", 3140)], account.Resources);
+		Assert.Equal([new Item("Carbon_Rank1", 9), new Item("Carbon_Rank2", 1)], account.Items);
+	}
+
 	/// <summary>The game holds an amount as a double: it is read as held, not rounded to a whole number.</summary>
 	[Fact]
 	public void Reads_a_resource_amount_exactly_as_the_game_holds_it()

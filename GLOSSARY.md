@@ -81,12 +81,20 @@ An Artifact on the Account that no Champion wears.
 _Avoid_: vault Artifact (the Vault holds Champions), spare, inventory
 
 **Relic**:
-A piece of equipment a Champion wears beside its Artifacts, with bonuses of its own. The materials it is crafted from are Resources.
+A piece of equipment a Champion wears beside its Artifacts, with bonuses of its own. The materials it is crafted from are Resources, and so are the Starstones that level it up; the Basalt that raises its Relic rank is Items.
 _Avoid_: Artifact (a Relic isn't one), relic item
 
 **Relic rank**:
 A Relic's own rank, one to six, which caps how far it can be levelled. It is not a Champion's Rank.
 _Avoid_: rank (alone, for a Relic), stars
+
+**Starstone**:
+What a Relic is levelled up with. The game's code keeps Starstones among the Resources as meteor.
+_Avoid_: meteor (outside the game's code names)
+
+**Basalt**:
+What raises a Relic's Relic rank by one: Rank 1 Basalt takes a Relic of Relic rank 1 to Relic rank 2, and so on to Rank 5 Basalt. The game's code keeps it among the Items as carbon, one per Relic rank.
+_Avoid_: carbon (outside the game's code names)
 
 **Unworn Relic**:
 A Relic on the Account that no Champion wears.
