@@ -3,6 +3,7 @@ using System.Text.Json;
 using RaidBridge.Domain.Arena;
 using RaidBridge.Domain.Artifacts;
 using RaidBridge.Domain.Champions;
+using RaidBridge.Domain.Missions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Snapshots;
 using RaidBridge.Domain.Stats;
@@ -152,11 +153,59 @@ internal static class SnapshotJson
 			json.WriteEndArray();
 			json.WriteEndObject();
 
+			WriteMissions(json, snapshot.Missions);
+
 			json.WriteEndObject();
 		}
 
 		buffer.WriteByte((byte)'\n');
 		return buffer.ToArray();
+	}
+
+	/// <summary>The finished groups by name, and each open group with its Missions, a count the game doesn't hold written as null.</summary>
+	private static void WriteMissions(Utf8JsonWriter json, MissionGroups missions)
+	{
+		json.WriteStartObject("missions");
+		json.WriteStartArray("completedGroups");
+		foreach (var group in missions.Completed)
+		{
+			json.WriteStringValue(group);
+		}
+
+		json.WriteEndArray();
+		json.WriteStartArray("openGroups");
+		foreach (var group in missions.Open)
+		{
+			json.WriteStartObject();
+			json.WriteString("group", group.Group);
+			json.WriteString("section", group.Section);
+			json.WriteStartArray("missions");
+			foreach (var mission in group.Missions)
+			{
+				json.WriteStartObject();
+				json.WriteNumber("prototypeId", mission.PrototypeId);
+				json.WriteString("category", mission.Category);
+				json.WriteString("state", mission.State);
+				json.WriteString("name", mission.Name);
+				if (mission.Collected is { } collected)
+				{
+					json.WriteNumber("collected", collected);
+				}
+				else
+				{
+					json.WriteNull("collected");
+				}
+
+				json.WriteNumber("required", mission.Required);
+				json.WriteEndObject();
+			}
+
+			json.WriteEndArray();
+			json.WriteEndObject();
+		}
+
+		json.WriteEndArray();
+		json.WriteEndObject();
 	}
 
 	private static void WriteArenaStanding(Utf8JsonWriter json, string? league, long points, int battles, int wins, int losses)

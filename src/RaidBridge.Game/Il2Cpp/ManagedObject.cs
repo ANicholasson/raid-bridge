@@ -122,6 +122,13 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 		return new(nullable?.Enum("value", enumType, declaredType: "T").Value, where, address);
 	}
 
+	/// <summary>A Nullable&lt;enum&gt; field, as the member of the enum its value stands for, or null when it has none.</summary>
+	public FieldValue<GameEnumMember?> NullableEnumMember(string fieldName, string enumType)
+	{
+		var (nullable, where, address) = Nullable(fieldName, enumType);
+		return new(nullable?.EnumMember("value", enumType, declaredType: "T").Value, where, address);
+	}
+
 	/// <summary>A Nullable&lt;int&gt; field's value, or null when it has none.</summary>
 	public FieldValue<int?> NullableInt32(string fieldName)
 	{

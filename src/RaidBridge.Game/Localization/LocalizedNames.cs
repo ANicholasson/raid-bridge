@@ -32,6 +32,22 @@ internal sealed class LocalizedNames(ManagedObject staticData)
 	}
 
 	/// <summary>
+	/// The text a SharedLTextKey field of <paramref name="owner"/> gives, for the <paramref name="named"/> thing, from the
+	/// localization tables only. Its default text is refused, not stood in: for a Mission it is a developer's note, such
+	/// as "Have 5 heroes level 60", not the text the screen shows
+	/// (https://github.com/ANicholasson/raid-bridge/issues/33).
+	/// </summary>
+	public string InTables(ManagedObject owner, string fieldName, string named)
+	{
+		var name = owner.Object(fieldName, TextKey);
+		var key = name.String("Key").Value;
+		return key is { Length: > 0 } && Localized(key) is { } localized
+			? localized
+			: throw new GameDataException(
+				$"{named} has no text: its {TextKey} at 0x{name.Address:X} has the key \"{key}\", which isn't in the Game client's localization tables.");
+	}
+
+	/// <summary>
 	/// The text the first table holding the key gives it, passing over a table that holds the key with no text (code
 	/// review, #25). Each table is read when a key isn't in the ones before it.
 	/// </summary>
