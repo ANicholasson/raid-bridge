@@ -79,7 +79,7 @@ Green tests are not acceptance for reader code. A reader change is proven agains
 - **Capture**: vocabulary lands in `GLOSSARY.md` as it resolves (a glossary only, never a spec or a scratchpad); ADRs at the bar hard-to-reverse ∧ surprising ∧ real trade-off; research in `docs/research/`.
 - **Breakdown**: `/to-spec`, then `/to-tickets` into tracer-bullet slices filed as GitHub issues.
 - **Implement**: one slice per PR. Every changed file earns its place: no drive-by refactors. Flag ambiguity as an open question; never invent behaviour or settle a decision the grill hasn't.
-- **Review**: `/code-review` locally before the first push, and once per iteration after it, never per fix. Then the review bots: triage EVERY finding (fix it with a regression test, or rebut it with the mechanism), reply per thread, resolve, and repeat until a round returns zero findings. A line that exists because of a review finding carries provenance at the site, `(CodeRabbit, PR #3)` style. NEVER merge: the maintainer merges.
+- **Review**: `/code-review` locally before the first push, and once per iteration after it, never per fix. Then the review bots, Cursor Bugbot and Codex: triage EVERY finding (fix it with a regression test, or rebut it with the mechanism), reply per thread, resolve, and repeat until a round returns zero findings. A line that exists because of a review finding carries provenance at the site, naming the bot and the PR, `(Bugbot, https://github.com/ANicholasson/raid-bridge/pull/NN)` style. Earlier provenance names CodeRabbit, the review bot until 2026-11-13, and stays as it is. NEVER merge: the maintainer merges.
 
 ## Doc-sync rule
 
