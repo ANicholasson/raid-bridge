@@ -671,7 +671,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `openGroups`: each group the Account has open, in the game's order, or `[]`. Each has its `group`, such as `"Group4"`; the `section` of the Missions screen it is in, such as `"ArbiterSection"`; and its `missions`, in the order the game gives them. Each Mission has:
     - `prototypeId`: the Mission's id, the same on every Account.
     - `category`: the kind of task, such as `"Dungeons"`, `"Heroes"` or `"Clan"`, which the screen shows as an icon.
-    - `state`: `"New"`, `"InProgress"` or `"Completed"`, as the game holds it.
+    - `state`: `"New"`, `"InProgress"` or `"Completed"`, as the game holds it. The Missions screen lists a group's Missions in this order from the first one not finished: the one `"InProgress"` open, and each `"New"` one after it locked.
     - `name`: the line the Missions screen shows for it, such as `"Upgrade 5 Champions to Level 60"`, in the language the player set, with its numbers already in it.
     - `collected` and `required`: the Mission's progress, the count the game holds towards the count it requires, such as `4` of `10` battles or `25347525` of `10000000` damage. A count can pass what is required. `collected` is `null` when the game holds no count of its own: for a Mission such as "Upgrade 5 Champions to Level 60" it works the progress out from the Account each time the screen opens, and raid-bridge doesn't, so the Champions in `champions` say how far it is.
 
