@@ -6,14 +6,14 @@ Everything above the "Live check" section comes from the installed game's own fi
 
 ## In short
 
-The saved teams and the team last attacked with in the Classic Arena are in the Game client and hold Champions today. Whether Artifact presets are held before the player opens them is still open (see the Live check).
+The saved teams and the team last attacked with in the Classic Arena are in the Game client and hold Champions today. Artifact presets are held too, once the Account has any (see the Live check).
 
 | What the player sees | Where the game keeps it | Live |
 | --- | --- | --- |
 | Saved teams (the "presets" on the team screen) | `UserHeroData.HeroesAiPresets` | 2 saved teams |
 | The team each place remembers, the Classic and Tag Arena's among them | `UserHeroData.BattlePresets`, by a key made from the place | 64 places |
 | The Tag Arena defence teams as saved teams | `UserArenaData.DefensePresets` of the Tag Arena | 3 teams, the same Champions as its defence teams |
-| Artifact presets, per Champion | `ExternalArtifactsStorage._presets` | none held; see the open question |
+| Artifact presets, per Champion | `ExternalArtifactsStorage._presets`, and `UserArtifactData.UpdatedPresetsByHero` for presets made since the game started | none at first; one after the maintainer saved one |
 
 The Classic Arena attack team is not a field of `UserArenaData`. It is the team the Game client remembers for the Classic Arena as a place, `BattlePresets[3014]`, which follows each attack (live check), the same way it remembers the last team for each dungeon, Faction Wars crypt or Clan Boss.
 
@@ -102,15 +102,16 @@ Read on 2026-11-13 with a throwaway gated test, deleted before commit, from the 
 - `BattlePresets`: 64 places. Key 3014, the Classic Arena, held four Champions, the same four as its defence team in another order. Key 6014, the Tag Arena, held twelve, a different split from its three defence teams. Keys matched the formula for the campaign (1012 to 1124), dungeons (2015 to 2185), the Clan Boss (4015), Faction Wars (5015 to 5165), a Doom Tower region (7035), the Hydra (8056) and Chimera rotations (13015 to 13045), and stage keys of seven digits for the Doom Tower (7011010 to 7031020) and eight for the co-operation event (15019001, 15019002).
 - `PresetIdsByRegionKey`: empty. `LastBattleDatas`: empty.
 - Classic `DefensePresets`: null. Tag `DefensePresets`: 3 teams, ids 601 to 603, four Champions each, `Position` 0, each position's `Sequences` 1, which matches `Pvp`'s `SequencesCount` (which type the game counts 601 to 603 as wasn't traced).
-- Artifact presets: `ExternalArtifactsStorage._presets._presets` empty, revision -1; `UserArtifactData.NextPresetId` 1, `UpdatedPresetsByHero` empty. `DeletedPresetHeroIds` held over a thousand Champion ids, most no longer on the Account: it looks like a log of Champions whose presets were cleared when they left, and isn't needed.
+- Artifact presets: `ExternalArtifactsStorage._presets._presets` empty, revision -1; `UserArtifactData.NextPresetId` 1, `UpdatedPresetsByHero` empty. `DeletedPresetHeroIds` held over a thousand Champion ids, most no longer on the Account: it looks like a log of Champions whose presets were cleared when they left, and was empty after a restart. It isn't needed.
 
 Every Champion id read was a Champion in `HeroById`.
 
 Then the maintainer fought one Classic Arena battle with a different team, and a second read found key 3014 changed to exactly that team, in the order the result screen listed it, with the leader second. The maintainer's screenshots showed the earlier team as the one the Arena's team screen offered, with its leader first. So key 3014 is the team last attacked with. The Clan Boss's key 4015 had changed between the reads too.
 
-Still open:
+Artifact presets, checked the same day:
 
-- **Where a saved Artifact preset ends up.** The Account had none at the first read. The maintainer then saved one for one Champion, and a third read found it not in `ExternalArtifactsStorage._presets` (still empty, revision -1) but in `UserArtifactData.UpdatedPresetsByHero`, under that Champion's id: one Artifact preset of six Artifacts and one accessory preset of three, ids 2 and 3, `_revision` 1, and `NextPresetId` up from 1 to 2. So a preset made in this session is held as a change not yet sent to the storage. Whether presets saved earlier are loaded into `_presets` when the game starts, or only when a Champion's presets are opened, is still unproven: reading again after the game restarts settles it.
+- **Where a saved Artifact preset ends up.** The Account had none at the first read. The maintainer then saved one for one Champion, and a third read found it not in `ExternalArtifactsStorage._presets` (still empty, revision -1) but in `UserArtifactData.UpdatedPresetsByHero`, under that Champion's id: one Artifact preset of six Artifacts and one accessory preset of three, ids 2 and 3, `_revision` 1, and `NextPresetId` up from 1 to 2. So a preset made in this session is held as a change not yet sent to the storage.
+- **After a restart.** The maintainer then restarted the game, and a fourth read found the preset in `ExternalArtifactsStorage._presets` (revision 1, the same ids and Artifacts), `UpdatedPresetsByHero` empty and `DeletedPresetHeroIds` empty. Presets saved earlier are loaded with the Account when the game starts; the maintainer's report doesn't say whether that Champion's presets were opened first, so that one detail is unchecked. Everything else read (saved teams, `BattlePresets` with the new Classic Arena attack team) was the same as before the restart, so all of it outlives a session.
 
 ## What a build ticket needs
 
@@ -122,6 +123,6 @@ To decide in the grill:
 4. **Skill priorities.** Each position carries the AI's skill priorities per round. They name skills by id and are useful to an advisor, but double the shape. Recommend leaving them out of the first slice.
 5. **The Tag Arena's twelve ids.** `BattlePresets[6014]` holds three teams in one array. Splitting it into three teams of four assumes every team is full, which an Arena with an empty position would break; check the team screen with an empty position before splitting.
 6. **Stage keys.** Leave out keys that aren't `region * 10 + slots`, or decode `GetBattlePresetKey(Stage, …)` further first.
-7. **Artifact presets.** Read them as the game does, `ArtifactPresets.GetPresets`: the storage's `_presets` with `UpdatedPresetsByHero` laid over it and `DeletedPresetHeroIds` taken out. Wait for the restart check above; if earlier presets are held only after the player opens them, leave them out or write them as "as far as the Game client has loaded".
+7. **Artifact presets.** Read them as the game does, `ArtifactPresets.GetPresets`: the storage's `_presets` with `UpdatedPresetsByHero` laid over it and `DeletedPresetHeroIds` taken out. Presets saved in earlier sessions were loaded after a restart, so they can be written as the game holds them.
 
 Parse, don't trust: a team names Champions by id, and each must be a Champion in `HeroById`, as the Arena reader checks today. An empty position can be a null entry in a saved team but is simply absent in a remembered one, and both shapes need a test.
