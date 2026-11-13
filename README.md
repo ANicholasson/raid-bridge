@@ -41,7 +41,7 @@ if (($userPath -split ';') -notcontains $dir) {
 }
 ```
 
-The last lines add raid-bridge's folder to your own PATH once, leaving its other entries as they are; open a new terminal before the first run, and if it still doesn't find `raid-bridge`, sign out of Windows and back in. A terminal opened before the .NET SDK was installed won't find `dotnet` either. If Windows' Smart App Control is on, it may refuse to run a program built on your own machine, on reputation alone; turning Smart App Control off is the only way round that today.
+The last lines add raid-bridge's folder to your own PATH once, leaving its other entries as they are; open a new terminal before the first run, and if it still doesn't find `raid-bridge`, sign out of Windows and back in. A terminal opened before the .NET SDK was installed won't find `dotnet` either. If Windows' Smart App Control is on, it may block these unsigned local builds, on reputation alone. raid-bridge isn't signed today; a build signed with a trusted code-signing certificate would pass it. Turning Smart App Control off also works, but it is a system-wide protection against untrusted programs, and Windows can't turn it back on without a reinstall, so weigh that first.
 
 On Linux, with the game running through Plarium Play under Steam's Proton:
 
