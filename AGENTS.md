@@ -44,7 +44,7 @@ Fair play. These define the product: a violation is a bug even when a task seems
 
 Platform:
 
-- Only the memory adapter is platform-specific (ADR-0002), one adapter per platform behind one port, Linux (the game under Proton) first. Everything else targets `net10.0` with no platform API, so it builds and tests on Windows, Linux and macOS. CI runs `verify.sh` on all three, and agents run on Linux.
+- Only the memory adapter is platform-specific (ADR-0002), one adapter per platform behind one port, Linux (the game under Proton) first. Everything else targets `net10.0` with no platform API, so it builds and tests on Windows, Linux and macOS. CI runs `verify.sh` on Windows and Linux, with macOS off until raid-bridge supports it (2026-11-13), and agents run on Linux.
 - Raid Toolkit (`raid-toolkit/raid-toolkit-sdk`, `raid-toolkit/account-extension`, both MIT) is a reference for WHAT to read, never a dependency. Code ported from it keeps its MIT notice in a comment at the site, naming the source file. Its core, `IL2CPP-Toolkit/Core`, has no license: never copy from it.
 - Game updates move classes and offsets. The installed game's files locate the static roots and give the expected field names and types; each object's field offsets come from its runtime class in memory and are checked against them (ADR-0001). Nothing hard-codes an offset or a field index of the game's own classes. <!-- (CodeRabbit, PR #21) --> The IL2CPP runtime's own structures are the one exception: one layout table per Unity version, and any other version is refused (ADR-0003).
 

@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Everything but the memory adapter builds and tests on Windows, Linux and macOS (ADR-0002), so each runs the gate.
+  # Everything but the memory adapter builds and tests on Windows and Linux (ADR-0002), so each runs the gate.
   # One job per platform rather than a matrix, so the gate below reads each platform's own result instead of the
   # matrix's combined one (CodeRabbit, PR #64).
   linux:
@@ -26,19 +26,21 @@ jobs:
     uses: ./.github/workflows/platform.yml
     with:
       os: windows-latest
-  macos:
-    uses: ./.github/workflows/platform.yml
-    with:
-      os: macos-latest
+  # macOS is off until raid-bridge supports it: its runners waited 10 to 15 minutes to start, and PR runs were
+  # cancelled while waiting (2026-11-13). To turn it back on, uncomment this job and its three lines in the gate below.
+  # macos:
+  #   uses: ./.github/workflows/platform.yml
+  #   with:
+  #     os: macos-latest
 
   # The one check branch rules require: green only when every platform is.
   verify:
-    needs: [linux, windows, macos]
+    needs: [linux, windows] # , macos]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - run: test "$LINUX" = success && test "$WINDOWS" = success && test "$MACOS" = success
+      - run: test "$LINUX" = success && test "$WINDOWS" = success # && test "$MACOS" = success
         env:
           LINUX: ${{ needs.linux.result }}
           WINDOWS: ${{ needs.windows.result }}
-          MACOS: ${{ needs.macos.result }}
+          # MACOS: ${{ needs.macos.result }}

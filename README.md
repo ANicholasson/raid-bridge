@@ -24,7 +24,7 @@ raid-bridge is a fan project. It is not made, endorsed or supported by Plarium. 
 | Windows | Not yet: the reader is designed for a Windows adapter ([ADR-0002](docs/adr/0002-platform-specific-memory-adapter.md)), but none exists |
 | macOS | Not supported |
 
-raid-bridge reads only the build RAID ships today: IL2CPP metadata version 39 and Unity 6000.3.18f1. When a game update changes either, raid-bridge stops with an error naming the version it doesn't know, the metadata version first, until support is added ([ADR-0003](docs/adr/0003-il2cpp-runtime-layouts-per-unity-version.md)). <!-- (CodeRabbit, PR #59) --> Building and running the tests works on Linux, Windows and macOS.
+raid-bridge reads only the build RAID ships today: IL2CPP metadata version 39 and Unity 6000.3.18f1. When a game update changes either, raid-bridge stops with an error naming the version it doesn't know, the metadata version first, until support is added ([ADR-0003](docs/adr/0003-il2cpp-runtime-layouts-per-unity-version.md)). <!-- (CodeRabbit, PR #59) --> Building and running the tests works on Linux and Windows, which CI checks; macOS isn't checked.
 
 ## Install
 
