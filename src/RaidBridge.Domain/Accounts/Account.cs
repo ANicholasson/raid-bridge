@@ -28,7 +28,7 @@ public sealed record Account(
 	IReadOnlyList<Shard> Shards,
 	IReadOnlyList<Item> Items,
 	IReadOnlyList<GreatHallAffinity> GreatHall,
-	IReadOnlyList<GreatHallArea> AreaBonuses,
+	IReadOnlyList<AreaBonus> AreaBonuses,
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,

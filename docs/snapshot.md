@@ -685,7 +685,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   `classicArena`'s `defenceTeam` is the `id`s of the Champions in its defence team, in the game's order of positions, and `tagArena`'s `defenceTeams` is its three defence teams, in the game's order, each a list of `id`s the same way. Each `id` is a Champion in `champions`, defending only once in that Arena. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`, kept in its place among the teams. Both are always written: with no defence team set, `defenceTeam` is `[]` and `defenceTeams` is `[]`.
 
 - `liveArena`: the Account's Live Arena. It has:
-  - `league`: the league the Account is in, such as `"SilverII"`. The game holds no league for the Live Arena: it works the league out from the points each time, as the highest whose points the Account has reached, and so does raid-bridge, from the game's own table. An Account that has never fought there is in `"BronzeI"`, with the 900 points it starts with.
+  - `league`: the league the Account is in, such as `"SilverII"`. The game holds no league for the Live Arena: it works the league out from the points each time, as the highest whose points the Account has reached, and `"BronzeI"` below them all, and so does raid-bridge, from the game's own table. An Account that has never fought there is in `"BronzeI"`, with the 900 points it starts with.
   - `points`: the Account's Live Arena points.
   - `wins` and `losses`: the game's counts of the Account's Live Arena wins and losses, each 0 or more.
 

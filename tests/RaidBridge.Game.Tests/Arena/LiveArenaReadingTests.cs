@@ -61,12 +61,15 @@ public sealed class LiveArenaReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.LiveArena\.LiveArenaLeagueInfo\.MinPoints at 0x[0-9A-F]+ is 950, for BronzeII, but the league before it in SharedModel\.Meta\.LiveArena\.StaticLiveArenaData\.LeagueInfoById needs 1300, where raid-bridge expects each league to need more points than the one before it\.$");
 	}
 
-	[Fact]
-	public void Refuses_points_no_league_reaches()
+	/// <summary>The game starts its walk at BronzeI, so points below every league's are BronzeI to it, and to raid-bridge.</summary>
+	[Theory]
+	[InlineData(899)]
+	[InlineData(0)]
+	public void Reads_points_below_every_league_as_bronze_i(long points)
 	{
-		using var game = Live(899);
+		using var game = Live(points);
 
-		RefusesMatching(game, @"^SharedModel\.Meta\.LiveArena\.UserLiveArenaData\.Points at 0x[0-9A-F]+ is 899, in the Live Arena, which is fewer points than any league in SharedModel\.Meta\.LiveArena\.StaticLiveArenaData\.LeagueInfoById needs\.$");
+		Assert.Equal("BronzeI", game.Source().Read().LiveArena.League);
 	}
 
 	[Fact]

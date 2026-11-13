@@ -149,16 +149,18 @@ internal static class ArenaReader
 	}
 
 	/// <summary>
-	/// The league whose <c>MinPoints</c> is the highest the points reach. The game starts its walk at BronzeI, so points
-	/// below every league's would be BronzeI to it; the Account starts at BronzeI's own <c>MinPoints</c>, so raid-bridge
-	/// refuses such points rather than name a league they don't reach.
+	/// The league whose <c>MinPoints</c> is the highest the points reach. The game starts its walk at BronzeI, its code's
+	/// literal 1, so points below every league's are BronzeI to it, and to raid-bridge too (code review,
+	/// https://github.com/ANicholasson/raid-bridge/issues/32): an Account starts at BronzeI's own 900 points at metadata
+	/// v39, and refusing such points would refuse the whole Snapshot over a league the screen does show.
 	/// </summary>
 	private static string LiveLeague(FieldValue<long> points, ManagedObject staticData)
 	{
 		const string LiveLeagueId = "SharedModel.Meta.LiveArena.LiveArenaLeagueId";
 		const string LeagueInfo = "SharedModel.Meta.LiveArena.LiveArenaLeagueInfo";
 		const string Leagues = "SharedModel.Meta.LiveArena.StaticLiveArenaData.LeagueInfoById";
-		string? reached = null;
+		// LiveArenaExtensions.GetLeagueIdByPoints starts from the literal 1, BronzeI's number.
+		var reached = "BronzeI";
 		FieldValue<int>? previous = null;
 		foreach (var (league, entry) in staticData
 			.Object("LiveArenaData", "SharedModel.Meta.LiveArena.StaticLiveArenaData")
@@ -178,7 +180,7 @@ internal static class ArenaReader
 			}
 		}
 
-		return reached ?? throw new GameDataException($"{points}, in the Live Arena, which is fewer points than any league in {Leagues} needs.");
+		return reached;
 	}
 
 	/// <summary>

@@ -5,4 +5,4 @@ namespace RaidBridge.Domain.GreatHall;
 /// of each stat bought for it, in the order the game's enum gives the stats. Only levels: the bonus a level gives is
 /// the game's static data, not the Account's.
 /// </summary>
-public sealed record GreatHallArea(string Area, IReadOnlyList<GreatHallLevel> Levels);
+public sealed record AreaBonus(string Area, IReadOnlyList<GreatHallLevel> Levels);

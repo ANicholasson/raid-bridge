@@ -50,7 +50,7 @@ internal static class AccountReader
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
 		var missions = MissionReader.Read(userWrapper, staticData, names);
-		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.Areas, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
 	}
 
 	private static AccountId Id(ManagedObject appModel)

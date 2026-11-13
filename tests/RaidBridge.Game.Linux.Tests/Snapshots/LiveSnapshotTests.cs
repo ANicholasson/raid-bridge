@@ -109,7 +109,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// <summary>
 	/// The Area Bonuses are written as each area's levels by stat, each from 1, an area with none left out
 	/// (https://github.com/ANicholasson/raid-bridge/issues/32). It accepts {}: the main Account had bought no level and
-	/// held no Crests to buy one with (2026-11-13), which its Area Bonuses screen showed.
+	/// held no Crests to buy one with (2026-11-13), as the player confirmed; a bought level is proven only by the synthetic Game client so far.
 	/// </summary>
 	[Fact]
 	public void Reads_the_area_bonuses()
@@ -183,7 +183,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// <summary>
 	/// The Live Arena is written with a league, which the game always has, and points and counts of 0 or more
 	/// (https://github.com/ANicholasson/raid-bridge/issues/32). On the main Account, which had never fought in it
-	/// (2026-11-13), it read BronzeI with 900 points, 0 wins and 0 losses, which its Live Arena screen showed.
+	/// (2026-11-13), as the player confirmed, it read BronzeI with 900 points, 0 wins and 0 losses; a league above BronzeI is proven only by the synthetic Game client so far.
 	/// </summary>
 	[Fact]
 	public void Reads_the_live_arena()

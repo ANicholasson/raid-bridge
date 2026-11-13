@@ -48,7 +48,7 @@ internal static class GreatHallReader
 			.ToList();
 		return new(
 			[.. affinities.Select(affinity => new GreatHallAffinity(affinity.Name, [.. affinity.Levels.Select(level => level.Level)]))],
-			Areas(village, staticData),
+			AreaBonuses(village, staticData),
 			affinities.ToDictionary(affinity => affinity.Name, affinity => (IReadOnlyList<StatBonus>)[.. affinity.Levels.SelectMany(level => level.Bonuses)], StringComparer.Ordinal));
 	}
 
@@ -58,14 +58,14 @@ internal static class GreatHallReader
 	/// the number of bonuses its area's tier lists for the stat, as the Great Hall's are. The tiers are read only once a
 	/// level needs checking.
 	/// </summary>
-	private static IReadOnlyList<GreatHallArea> Areas(ManagedObject village, ManagedObject staticData)
+	private static IReadOnlyList<AreaBonus> AreaBonuses(ManagedObject village, ManagedObject staticData)
 	{
 		var tiers = new Lazy<Dictionary<GameEnumMember, Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>>>(() => Tiers(staticData));
 		return [.. village
 			.Dictionary("ObservatoryBonusLevelByStatByLocation", $"System.Collections.Generic.Dictionary`2<{Location}, {Levels}>")
 			.ByEnumKey(Location)
 			.OrderBy(area => area.Key.Value)
-			.Select(area => new GreatHallArea(
+			.Select(area => new AreaBonus(
 				area.Key.Name,
 				area.Value.DictionaryOrNull() is { } levels
 					? [.. levels
@@ -84,7 +84,7 @@ internal static class GreatHallReader
 								throw new GameDataException($"{level}, but the {TierInfo} that lists {area.Key.Name} holds no levels of {stat.Key.Name}.");
 							}
 
-							return new GreatHallLevel(stat.Key.Name, level.Where(value => value >= 1 && value <= bonuses.Count, $"a level from 1 to {bonuses.Count}"));
+							return new GreatHallLevel(stat.Key.Name, Checked(level, bonuses));
 						})]
 					: []))
 			.Where(area => area.Levels.Count > 0)];
@@ -111,28 +111,34 @@ internal static class GreatHallReader
 						throw new GameDataException($"{level}, but {StaticVillageData}.CapitolBonusByStatKind holds no levels of {stat.Key.Name}.");
 					}
 
-					var value = level.Where(value => value >= 1 && value <= bonuses.Count, $"a level from 1 to {bonuses.Count}");
+					var value = Checked(level, bonuses);
 					return (
 						new GreatHallLevel(stat.Key.Name, value),
 						StatNames.BonusOf(stat.Key.Name, bonuses[value - 1], $"The Great Hall's {stat.Key.Name}") is { } bonus ? (IReadOnlyList<StatBonus>)[bonus] : []);
 				})];
 
-	/// <summary>
-	/// The bonus of each level of each stat the Great Hall raises, each a BonusValue, level 1 taking the first. A stat it
-	/// lists no bonus for has no levels, as one it doesn't list.
-	/// </summary>
+	/// <summary>A level, from 1 to the number of bonuses the static data lists for its stat, the first being level 1's.</summary>
+	private static int Checked(FieldValue<int> level, IReadOnlyList<ManagedObject> bonuses) =>
+		level.Where(value => value >= 1 && value <= bonuses.Count, $"a level from 1 to {bonuses.Count}");
+
+	/// <summary>The bonus of each level of each stat the Great Hall raises, from the static data's CapitolBonusByStatKind.</summary>
 	private static Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>> Table(ManagedObject staticData) =>
-		staticData
-			.Object("VillageData", StaticVillageData)
-			.Dictionary("CapitolBonusByStatKind", $"System.Collections.Generic.Dictionary`2<{StatKind}, System.Collections.Generic.List`1<{BonusValue}>>")
+		BonusTable(staticData.Object("VillageData", StaticVillageData), "CapitolBonusByStatKind");
+
+	/// <summary>
+	/// A static table of the bonus of each level of each stat, each a BonusValue, level 1 taking the first. A stat it lists
+	/// no bonus for has no levels, as one it doesn't list.
+	/// </summary>
+	private static Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>> BonusTable(ManagedObject owner, string fieldName) =>
+		owner
+			.Dictionary(fieldName, $"System.Collections.Generic.Dictionary`2<{StatKind}, System.Collections.Generic.List`1<{BonusValue}>>")
 			.ByEnumKey(StatKind)
 			.Select(stat => (stat.Key, Bonuses: stat.Value.List().Objects(BonusValue)))
 			.Where(stat => stat.Bonuses.Count > 0)
 			.ToDictionary(stat => stat.Key, stat => stat.Bonuses);
 
 	/// <summary>
-	/// Each area's table of bonuses, from the tier that lists it: the bonus of each level of each stat, level 1 taking
-	/// the first, a stat with no bonuses left out as in the Great Hall's table. The game finds an area's tier by
+	/// Each area's table of bonuses, from the tier that lists it, in the shape of the Great Hall's. The game finds an area's tier by
 	/// <c>VillageExtensions.GetTierInfoOrThrow</c>, so an area two tiers list is refused rather than given either.
 	/// </summary>
 	private static Dictionary<GameEnumMember, Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>> Tiers(ManagedObject staticData)
@@ -143,12 +149,7 @@ internal static class GreatHallReader
 			.List("ObservatoryTiers", $"System.Collections.Generic.List`1<{TierInfo}>")
 			.Objects(TierInfo))
 		{
-			var table = tier
-				.Dictionary("BonusByStatKind", $"System.Collections.Generic.Dictionary`2<{StatKind}, System.Collections.Generic.List`1<{BonusValue}>>")
-				.ByEnumKey(StatKind)
-				.Select(stat => (stat.Key, Bonuses: stat.Value.List().Objects(BonusValue)))
-				.Where(stat => stat.Bonuses.Count > 0)
-				.ToDictionary(stat => stat.Key, stat => stat.Bonuses);
+			var table = BonusTable(tier, "BonusByStatKind");
 			foreach (var area in tier.List("LocationIds", $"System.Collections.Generic.List`1<{Location}>").EnumMembers(Location))
 			{
 				if (!tables.TryAdd(area.Value, table))
@@ -165,5 +166,5 @@ internal static class GreatHallReader
 /// <summary>The Account's Great Hall, its Area Bonuses, and the bonuses the Great Hall gives a Champion of each Affinity, by the Affinity's name.</summary>
 internal sealed record AccountGreatHall(
 	IReadOnlyList<GreatHallAffinity> Affinities,
-	IReadOnlyList<GreatHallArea> Areas,
+	IReadOnlyList<AreaBonus> AreaBonuses,
 	IReadOnlyDictionary<string, IReadOnlyList<StatBonus>> BonusesByAffinity);
