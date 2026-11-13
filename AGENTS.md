@@ -8,7 +8,7 @@ Status: `raid-bridge snapshot` writes a Snapshot holding the Account, its Champi
 
 ## Agent skills
 
-The slash commands named here (`/grill-with-docs`, `/wayfinder`, `/to-spec`, `/to-tickets`, `/code-review`) are skills from [mattpocock/skills](https://github.com/mattpocock/skills), enabled for Claude Code in `.claude/settings.json`. Where they aren't installed, read `skills/<area>/<name>/SKILL.md` in that repo and follow it.
+The slash commands named here (`/grill-with-docs`, `/wayfinder`, `/to-spec`, `/to-tickets`, `/code-review`) are skills from [mattpocock/skills](https://github.com/mattpocock/skills), enabled in `.claude/settings.json`. Where they aren't installed, read `skills/<area>/<name>/SKILL.md` in that repo and follow it.
 
 ### Issue tracker
 
@@ -46,7 +46,7 @@ Platform:
 
 - Only the memory adapter is platform-specific (ADR-0002), one adapter per platform behind one port, Linux (the game under Proton) first. Everything else targets `net10.0` with no platform API, so it builds and tests on Windows, Linux and macOS. CI runs `verify.sh` on Windows and Linux, with macOS off until raid-bridge supports it (2026-11-13), and agents run on Linux.
 - Raid Toolkit (`raid-toolkit/raid-toolkit-sdk`, `raid-toolkit/account-extension`, both MIT) is a reference for WHAT to read, never a dependency. Code ported from it keeps its MIT notice in a comment at the site, naming the source file. Its core, `IL2CPP-Toolkit/Core`, has no license: never copy from it.
-- Game updates move classes and offsets. The installed game's files locate the static roots and give the expected field names and types; each object's field offsets come from its runtime class in memory and are checked against them (ADR-0001). Nothing hard-codes an offset or a field index of the game's own classes. <!-- (CodeRabbit, PR #21) --> The IL2CPP runtime's own structures are the one exception: one layout table per Unity version, and any other version is refused (ADR-0003).
+- Game updates move classes and offsets. The installed game's files locate the static roots and give the expected field names and types; each object's field offsets come from its runtime class in memory and are checked against them (ADR-0001). Nothing hard-codes an offset or a field index of the game's own classes. <!-- (PR #21) --> The IL2CPP runtime's own structures are the one exception: one layout table per Unity version, and any other version is refused (ADR-0003).
 
 Code:
 
@@ -55,8 +55,8 @@ Code:
 - Boundaries are project references: a project that must not see another does not reference it, and whatever other projects don't need is `internal`.
 - Test support the test projects share lives in `tests/RaidBridge.Game.Testing`: the fake memory port, the contract suite every memory adapter passes, and the synthetic Game client the reader is tested through. Nothing in `src/` references it.
 - Parse game data, don't trust it. A value read from memory is checked into a typed model, and a mismatch throws an error naming the type, the field and the address. Never a default, never a silent skip, never a made-up number.
-- Tests never need the game, Windows or the network. Whatever does is a gated check that skips without the game: the installed-files check in `RaidBridge.Game.Tests`, and the running Game client's checks in the memory adapter's own test project. <!-- (CodeRabbit, PR #27) -->
-- Package versions live in `Directory.Packages.props`, and restores are locked (`packages.lock.json`; refresh with `dotnet restore --force-evaluate`). A new package is justified in the PR body. Dependabot opens at most one grouped NuGet PR and one grouped GitHub Actions PR a month (`.github/dependabot.yml`), and security updates may come separately (CodeRabbit, PR #60). A NuGet PR leaves the lock files stale, so refresh them on its branch before it can pass.
+- Tests never need the game, Windows or the network. Whatever does is a gated check that skips without the game: the installed-files check in `RaidBridge.Game.Tests`, and the running Game client's checks in the memory adapter's own test project. <!-- (PR #27) -->
+- Package versions live in `Directory.Packages.props`, and restores are locked (`packages.lock.json`; refresh with `dotnet restore --force-evaluate`). A new package is justified in the PR body. Dependabot opens at most one grouped NuGet PR and one grouped GitHub Actions PR a month (`.github/dependabot.yml`), and security updates may come separately (PR #60). A NuGet PR leaves the lock files stale, so refresh them on its branch before it can pass.
 - Third-party code must keep working, not merely be pinned. When a package is unmaintained or lags a fix we need, patch it in our tree (keeping its license notice and naming the upstream commit) or re-implement the part we use; never ship around a known bug (decided 2026-11-01).
 - Vendored third-party code lives in `third_party/<name>/`, never in `src/`, one folder per upstream (decided 2026-11-01):
   - The folder keeps upstream's own license file and an `UPSTREAM.md` naming the source URL, the pinned commit, what was dropped, and every patch with its reason.
@@ -71,7 +71,7 @@ Code:
 
 Gated checks skip unless `RAIDBRIDGE_LIVE=1`. The installed-files check also needs `RAIDBRIDGE_GAME_DIR`, the folder holding `Raid.exe`, and fails rather than skips when it's missing, so an opted-in run never passes by reading nothing.
 
-Green tests are not acceptance for reader code. A reader change is proven against the running Game client on its adapter's platform (the maintainer's Linux install, the game under Proton, for the Linux adapter), and the PR says plainly what has only compiled (CodeRabbit, PR #2).
+Green tests are not acceptance for reader code. A reader change is proven against the running Game client on its adapter's platform (the maintainer's Linux install, the game under Proton, for the Linux adapter), and the PR says plainly what has only compiled (PR #2).
 
 ## Working agreement
 
@@ -79,7 +79,7 @@ Green tests are not acceptance for reader code. A reader change is proven agains
 - **Capture**: vocabulary lands in `GLOSSARY.md` as it resolves (a glossary only, never a spec or a scratchpad); ADRs at the bar hard-to-reverse ∧ surprising ∧ real trade-off; research in `docs/research/`.
 - **Breakdown**: `/to-spec`, then `/to-tickets` into tracer-bullet slices filed as GitHub issues.
 - **Implement**: one slice per PR. Every changed file earns its place: no drive-by refactors. Flag ambiguity as an open question; never invent behaviour or settle a decision the grill hasn't.
-- **Review**: `/code-review` locally before the first push, and once per iteration after it, never per fix. Then the review bots, Cursor Bugbot and Codex: triage EVERY finding (fix it with a regression test, or rebut it with the mechanism), reply per thread, resolve, and repeat until a round returns zero findings. A line that exists because of a review finding carries provenance at the site, naming the bot and the PR, `(Bugbot, https://github.com/ANicholasson/raid-bridge/pull/NN)` style. Earlier provenance names CodeRabbit, the review bot until 2026-11-13, and stays as it is. NEVER merge: the maintainer merges.
+- **Review**: `/code-review` locally before the first push, and once per iteration after it, never per fix. Then the PR's review: triage EVERY finding (fix it with a regression test, or rebut it with the mechanism), reply per thread, resolve, and repeat until a round returns zero findings. A line that exists because of a review finding carries provenance at the site, naming the PR, `(https://github.com/ANicholasson/raid-bridge/pull/NN)` style. NEVER merge: the maintainer merges.
 
 ## Doc-sync rule
 

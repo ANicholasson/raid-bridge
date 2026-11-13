@@ -22,7 +22,7 @@ public class NoNetworkGuardrailTests
 		Assert.Empty(violations);
 	}
 
-	/// <summary>A project file's <c>&lt;Using&gt;</c> imports a namespace into every file without naming it there (Codex, PR #61).</summary>
+	/// <summary>A project file's <c>&lt;Using&gt;</c> imports a namespace into every file without naming it there (PR #61).</summary>
 	[Fact]
 	public void No_project_file_imports_a_network_namespace()
 	{

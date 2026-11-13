@@ -1,6 +1,6 @@
 # raid-bridge
 
-Reads a player's own RAID: Shadow Legends account out of the game client and writes it as JSON Snapshots. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/3) -->
+Reads a player's own RAID: Shadow Legends account out of the game client and writes it as JSON Snapshots. <!-- (https://github.com/ANicholasson/raid-bridge/pull/3) -->
 
 ## Language
 
@@ -37,7 +37,7 @@ The group a Champion belongs to, such as Banner Lords or Dark Elves. The game's 
 _Avoid_: fraction, race
 
 **Awakening**:
-A Champion's second progression, raised with Souls and capped by how far the Champion has ascended. It is separate from rank. The game's code calls it double ascend. <!-- (Codex, PR #17) -->
+A Champion's second progression, raised with Souls and capped by how far the Champion has ascended. It is separate from rank. The game's code calls it double ascend. <!-- (PR #17) -->
 _Avoid_: double ascend
 
 **Blessing**:
@@ -45,7 +45,7 @@ A power the player gives an awakened Champion, such as Necromancy. The game's co
 _Avoid_: buff
 
 **Empowerment**:
-Further power a Champion gains, by level, 0 for none. The game's code calls it the empower level. <!-- No rank named: (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+Further power a Champion gains, by level, 0 for none. The game's code calls it the empower level. <!-- No rank named: (https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: empower level
 
 **Mastery**:
@@ -93,7 +93,7 @@ A Relic on the Account that no Champion wears.
 _Avoid_: spare Relic, inventory
 
 **Relic stone**:
-A stone the Account owns, with a shape. It goes in a Relic's socket of the same shape, or sits in no socket. It adds skills, not stats. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/16) -->
+A stone the Account owns, with a shape. It goes in a Relic's socket of the same shape, or sits in no socket. It adds skills, not stats. <!-- (https://github.com/ANicholasson/raid-bridge/pull/16) -->
 _Avoid_: gem, socket (the socket is the slot, not the stone)
 
 **Resource**:
@@ -129,7 +129,7 @@ The Arena where one team of up to four Champions fights another player's defence
 _Avoid_: arena (when Tag Arena could be meant)
 
 **Tag Arena**:
-The Arena where three teams of up to four Champions each face another player's three teams, in three battles. The game's code calls it the 3x3 arena. <!-- (CodeRabbit, PR #40) -->
+The Arena where three teams of up to four Champions each face another player's three teams, in three battles. The game's code calls it the 3x3 arena. <!-- (PR #40) -->
 _Avoid_: 3v3, arena3x3
 
 **Live Arena**:
@@ -141,7 +141,7 @@ A task on the game's Missions screen, such as Arbiter's, with a reward for finis
 _Avoid_: recommended quest, quest (for a Mission)
 
 **Base stats**:
-A Champion's own stats at its rank, level and ascension, before any bonus: the white numbers on the champion screen. Two Champions of one type, rank and level can differ by ascension. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
+A Champion's own stats at its rank, level and ascension, before any bonus: the white numbers on the champion screen. Two Champions of one type, rank and level can differ by ascension. <!-- (https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: raw stats, unscaled stats
 
 **Stat source**:
@@ -149,5 +149,5 @@ One thing that adds to a Champion's stats beyond its Base stats, such as its Art
 _Avoid_: bonus (alone, since an Artifact's bonuses are one source)
 
 **Total stats**:
-A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. A Snapshot writes them unrounded; the screen rounds each Stat source before it adds them. <!-- The Arena league isn't named either way: research settles it (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6). It settled that the screen counts it, while the Account has a Classic Arena defence team (https://github.com/ANicholasson/raid-bridge/issues/20). -->
+A Champion's eight stats as the champion screen shows them: its Base stats plus every Stat source the screen counts. A bonus that applies only in battle, such as a leader skill's or a buff's, isn't part of them. A Snapshot writes them unrounded; the screen rounds each Stat source before it adds them. <!-- The Arena league isn't named either way: research settles it (https://github.com/ANicholasson/raid-bridge/pull/6). It settled that the screen counts it, while the Account has a Classic Arena defence team (https://github.com/ANicholasson/raid-bridge/issues/20). -->
 _Avoid_: effective stats, battle stats

@@ -651,7 +651,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     - `relic`: what the Relics the Champion wears add, the `bonuses` of each in `relics` above. A Relic stone adds skills, not stats.
     - `arenaLeague`: what the Account's Classic Arena league adds, a share of `Health`, `Attack` and `Defence` that rises with the league, from 1% in BronzeI to 25% in Platinum in the game's data today. Every Champion gets it, but only while the Account has a Classic Arena defence, as the game counts it: while the game's list of defence Champions, which it keeps beside the team written in `classicArena.defenceTeam`, names any. With none, the game gives nothing, whatever `classicArena`'s league. The two lists have agreed on every Account read so far.
 
-    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment, on an Account with no Classic Arena defence team, has only `base`, and a `total` equal to it. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/21) -->
+    A Stat source holds only the stats it raises, and is left out when it raises none, so a Champion that wears nothing, has no mastery that raises a stat, gets nothing from the Great Hall or Faction Guardians, and has neither a blessing nor Empowerment, on an Account with no Classic Arena defence team, has only `base`, and a `total` equal to it. <!-- (https://github.com/ANicholasson/raid-bridge/pull/21) -->
 
   Each Relic stone has:
   - `id`: the stone's id on the Account.
@@ -736,7 +736,7 @@ The same Account always gets the same hash on the same machine, so anything read
 
 raid-bridge makes the salt on its first run: 32 random bytes in `$XDG_CONFIG_HOME/raid-bridge/salt`, or `~/.config/raid-bridge/salt` when `XDG_CONFIG_HOME` isn't set. The file is readable by the player only (mode 0600), and raid-bridge never prints or logs it.
 
-Keep that file. If it is lost or deleted, the next run makes a new salt, and from then on every hash is different: the hashes no longer show that new Snapshots come from the same Account as the old ones. raid-bridge never replaces a salt file it finds, and refuses to run if the file isn't a salt. On Linux and macOS it also refuses to run if other users may read or change the salt: the file may grant nothing to its group or others, and its folder no write to them. Windows has no such modes, so there the check doesn't run. <!-- (CodeRabbit, PR #42) -->
+Keep that file. If it is lost or deleted, the next run makes a new salt, and from then on every hash is different: the hashes no longer show that new Snapshots come from the same Account as the old ones. raid-bridge never replaces a salt file it finds, and refuses to run if the file isn't a salt. On Linux and macOS it also refuses to run if other users may read or change the salt: the file may grant nothing to its group or others, and its folder no write to them. Windows has no such modes, so there the check doesn't run. <!-- (PR #42) -->
 
 ## The file
 

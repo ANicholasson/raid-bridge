@@ -97,7 +97,7 @@ internal static class ChampionReader
 		var type = heroTypes.TryGetValue(typeId.Value, out var heroType)
 			? heroType.Object(HeroType)
 			: throw new GameDataException($"{typeId}, which isn't a type in the game's StaticHeroData.HeroTypeById.");
-		// A corrupt entry or a torn read could key one type's data under another's id (CodeRabbit, PR #30).
+		// A corrupt entry or a torn read could key one type's data under another's id (PR #30).
 		_ = type.Int32("Id").Where(value => value == typeId.Value, $"the id HeroTypeById keeps it under, {typeId.Value}");
 		var doubleAscend = hero.ObjectOrNull("DoubleAscendData", "SharedModel.Meta.DoubleAscend.User.HeroDoubleAscendData");
 		var masteries = hero.ObjectOrNull("MasteryData", "SharedModel.Meta.Masteries.HeroMasteryData");

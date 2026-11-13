@@ -24,7 +24,7 @@ raid-bridge is a fan project. It is not made, endorsed or supported by Plarium. 
 | Windows | Not yet: the reader is designed for a Windows adapter ([ADR-0002](docs/adr/0002-platform-specific-memory-adapter.md)), but none exists |
 | macOS | Not supported |
 
-raid-bridge reads only the build RAID ships today: IL2CPP metadata version 39 and Unity 6000.3.18f1. When a game update changes either, raid-bridge stops with an error naming the version it doesn't know, the metadata version first, until support is added ([ADR-0003](docs/adr/0003-il2cpp-runtime-layouts-per-unity-version.md)). <!-- (CodeRabbit, PR #59) --> Building and running the tests works on Linux and Windows, which CI checks; macOS isn't checked.
+raid-bridge reads only the build RAID ships today: IL2CPP metadata version 39 and Unity 6000.3.18f1. When a game update changes either, raid-bridge stops with an error naming the version it doesn't know, the metadata version first, until support is added ([ADR-0003](docs/adr/0003-il2cpp-runtime-layouts-per-unity-version.md)). <!-- (PR #59) --> Building and running the tests works on Linux and Windows, which CI checks; macOS isn't checked.
 
 ## Install
 
@@ -36,7 +36,7 @@ mkdir -p ~/.local/bin
 ln -sf ~/.local/share/raid-bridge/raid-bridge ~/.local/bin/raid-bridge
 ```
 
-To update, pull a newer version and run the same commands again. <!-- mkdir: (CodeRabbit, PR #56) -->
+To update, pull a newer version and run the same commands again. <!-- mkdir: (PR #56) -->
 
 ## Use
 
@@ -46,13 +46,13 @@ Start the game, log in, then run as the user who plays it:
 raid-bridge snapshot
 ```
 
-It writes `snapshot-<UTC time as yyyyMMddTHHmmssZ>.json` into the current folder, never overwriting a file, and prints its path. `--out PATH` writes somewhere else; inside a git clone, only `snapshot-*.json` names are ignored, so keep other names outside it. <!-- (CodeRabbit, PR #56) --> raid-bridge finds the game's files from the running game; `--game-dir DIR` names the folder holding `Raid.exe` instead.
+It writes `snapshot-<UTC time as yyyyMMddTHHmmssZ>.json` into the current folder, never overwriting a file, and prints its path. `--out PATH` writes somewhere else; inside a git clone, only `snapshot-*.json` names are ignored, so keep other names outside it. <!-- (PR #56) --> raid-bridge finds the game's files from the running game; `--game-dir DIR` names the folder holding `Raid.exe` instead.
 
 A Snapshot carries no account id, player name or clan name. The account is identified only by a keyed hash of its id (`account.idHash`), so whatever reads your Snapshots can tell your accounts apart without learning their ids. The key is a random salt made on the first run at `$XDG_CONFIG_HOME/raid-bridge/salt` (by default `~/.config/raid-bridge/salt`). Keep it: a new salt gives the same account a new hash.
 
 ## Developing
 
-Start with [AGENTS.md](AGENTS.md), which humans and coding agents share, then [GLOSSARY.md](GLOSSARY.md) and the [decision records](docs/adr/). `./scripts/verify.sh` runs every check CI runs and needs only the .NET 10 SDK. No test needs the game: checks against the running game are opt-in (see AGENTS.md, Checks). [CONTRIBUTING.md](CONTRIBUTING.md) says how to propose a change, and [SECURITY.md](SECURITY.md) how to report a vulnerability privately.
+Start with [AGENTS.md](AGENTS.md), then [GLOSSARY.md](GLOSSARY.md) and the [decision records](docs/adr/). `./scripts/verify.sh` runs every check CI runs and needs only the .NET 10 SDK. No test needs the game: checks against the running game are opt-in (see AGENTS.md, Checks). [CONTRIBUTING.md](CONTRIBUTING.md) says how to propose a change, and [SECURITY.md](SECURITY.md) how to report a vulnerability privately.
 
 ## License
 

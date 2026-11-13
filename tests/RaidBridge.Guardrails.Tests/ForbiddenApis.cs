@@ -36,7 +36,7 @@ public static class ForbiddenApis
 		"DebugActiveProcess",
 		"NtDebugActiveProcess",
 		"NtSuspendProcess",
-		// Ending the game (Codex, PR #1)
+		// Ending the game (PR #1)
 		"TerminateProcess",
 		"NtTerminateProcess",
 		"ZwTerminateProcess",
@@ -65,7 +65,7 @@ public static class ForbiddenApis
 
 	/// <summary>
 	/// Members of <see cref="System.Diagnostics.Process"/> that open the process with PROCESS_ALL_ACCESS, or end it
-	/// (Codex, PR #1).
+	/// (PR #1).
 	/// </summary>
 	public static readonly IReadOnlyList<string> ForbiddenProcessMembers = ["Handle", "SafeHandle", "Kill", "CloseMainWindow"];
 
@@ -130,32 +130,32 @@ public static class ForbiddenApis
 
 	/// <summary>Opening, creating or replacing a file for writing, by .NET or by open(2)'s flags.</summary>
 	private static readonly Regex FileWritePattern = new(
-		// The last alternative is FileInfo's members, on any receiver (CodeRabbit, PR #29).
+		// The last alternative is FileInfo's members, on any receiver (PR #29).
 		@"\b(?:FileAccess\.\w*Write|FileMode\.(?!Open\b)\w+|File\.(?:OpenWrite|Create\w*|WriteAll\w*|AppendAll\w*|AppendText|Copy|Move|Replace)|StreamWriter|O_(?:WRONLY|RDWR|CREAT|TRUNC|APPEND))\b|\.(?:OpenWrite|CreateText|AppendText)\s*\(",
 		RegexOptions.CultureInvariant);
 
 	/// <summary>
 	/// A File.Open or FileStream call and its own arguments, nested parentheses balanced, so another call's
 	/// FileAccess.Read can't vouch for it. Its overloads without an access open the file for reading and writing
-	/// (CodeRabbit, PR #29).
+	/// (PR #29).
 	/// </summary>
 	private static readonly Regex OpenCallPattern = new(
 		// Any receiver's Open, FileInfo's included, and string literals taken whole, so a parenthesis in a path can't
-		// unbalance the arguments (CodeRabbit, PR #29).
+		// unbalance the arguments (PR #29).
 		@"(?<call>\w*\.Open\b|\bFileStream)\s*\((?<arguments>(?>""(?:[^""\\]|\\.)*""|[^()""]+|\((?<depth>)|\)(?<-depth>))*(?(depth)(?!)))\)",
 		RegexOptions.CultureInvariant);
 
-	// FileAccess.Read as a whole argument, so "FileAccess.Read | extraAccess" can't pass as read-only (CodeRabbit, PR #29).
+	// FileAccess.Read as a whole argument, so "FileAccess.Read | extraAccess" can't pass as read-only (PR #29).
 	private static readonly Regex ReadAccessPattern = new(@"(?:^|,)\s*(?:access\s*:\s*)?(?:System\.IO\.)?FileAccess\.Read\s*(?:,|$)", RegexOptions.CultureInvariant);
 
-	// String literals are emptied before the access is looked for, so a path can't spell it (CodeRabbit, PR #29).
+	// String literals are emptied before the access is looked for, so a path can't spell it (PR #29).
 	private static readonly Regex StringLiteralPattern = new(@"""(?:[^""\\]|\\.)*""", RegexOptions.CultureInvariant);
 
 	private static readonly Regex ProcessMemberPattern = new(
 		$@"\.(?:{string.Join('|', ForbiddenProcessMembers.Select(Regex.Escape))})\b",
 		RegexOptions.CultureInvariant);
 
-	// Unanchored, so every call on a line is checked, not just the first (CodeRabbit, PR #1).
+	// Unanchored, so every call on a line is checked, not just the first (PR #1).
 	private static readonly Regex OpenProcessCallPattern = new(
 		@"\bOpenProcess\w*\s*\(\s*(?<access>[^,\r\n]*)",
 		RegexOptions.CultureInvariant);
@@ -195,7 +195,7 @@ public static class ForbiddenApis
 			.Select(access => $"OpenProcess({access})");
 
 	// Only the statement the match is in, so a declaration can't hide a call after it on the same line
-	// (CodeRabbit, PR #1).
+	// (PR #1).
 	private static string StatementBefore(string source, int index)
 	{
 		var start = source.LastIndexOfAny(['\n', ';', '{', '}'], Math.Max(index - 1, 0)) + 1;

@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 # A new push to a pull request supersedes its run in progress; every push to main keeps its own result, so it gets a
-# group of its own, because GitHub drops a waiting run when a newer one joins its group (CodeRabbit, PR #65).
+# group of its own, because GitHub drops a waiting run when a newer one joins its group (PR #65).
 concurrency:
   group: verify-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   # Everything but the memory adapter builds and tests on Windows and Linux (ADR-0002), so each runs the gate.
   # One job per platform rather than a matrix, so the gate below reads each platform's own result instead of the
-  # matrix's combined one (CodeRabbit, PR #64).
+  # matrix's combined one (PR #64).
   linux:
     uses: ./.github/workflows/platform.yml
     with:

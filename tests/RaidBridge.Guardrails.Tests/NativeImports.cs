@@ -22,7 +22,7 @@ public static class NativeImports
 		@"\[[^\]]*?\b(?:LibraryImport|DllImport)(?:Attribute)?\s*\((?<arguments>[^)]*)\)[^\]]*\](?:\s*\[[^\]]*\])*\s*(?:[\w<>?*,.\[\]]+\s+)+(?<name>\w+)\s*\(",
 		RegexOptions.CultureInvariant);
 
-	// One literal and nothing more, so "getuid" + "_other" can't pass as getuid (CodeRabbit, PR #29).
+	// One literal and nothing more, so "getuid" + "_other" can't pass as getuid (PR #29).
 	private static readonly Regex EntryPointPattern = new(@"\bEntryPoint\s*=\s*""(?<entry>[^""]+)""\s*(?:,|$)", RegexOptions.CultureInvariant);
 
 	private static readonly Regex RuntimeLookupPattern = new(@"\bNativeLibrary\b|\bGetDelegateForFunctionPointer\b|\bdelegate\s*\*\s*unmanaged\b", RegexOptions.CultureInvariant);

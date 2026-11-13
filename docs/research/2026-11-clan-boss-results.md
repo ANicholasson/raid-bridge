@@ -120,4 +120,4 @@ A build is feasible but small: **today's Clan Boss totals**. That's per difficul
 
 The player can compare days by keeping a Snapshot from each day. Within a day, a run's damage and team can be had by taking a Snapshot right after each key and subtracting the total in the Snapshot before it. Each Champion's damage, turn of death and the boss's turns are out of reach with the manual Snapshot flow. Per-Champion figures stay with the result screen's screenshot.
 
-**Decision (2026-11-13):** no separate ticket for now. The maintainer's priority, after the bot's review, is missions, then Area Bonuses and crests, then Starstones and Basalt, then this small Clan Boss version (day total, keys, last team and Affinity per difficulty) if it's cheap.
+**Decision (2026-11-13):** no separate ticket for now. The maintainer's priority is missions, then Area Bonuses and crests, then Starstones and Basalt, then this small Clan Boss version (day total, keys, last team and Affinity per difficulty) if it's cheap.

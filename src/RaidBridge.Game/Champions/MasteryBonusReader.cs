@@ -58,7 +58,7 @@ internal sealed class MasteryBonusReader
 				throw new GameDataException($"Champion {championId} has mastery {id}, which isn't a mastery in the game's {StaticMasteryData}.MasteryById.");
 			}
 
-			// A corrupt entry or a torn read could key one mastery under another's id (CodeRabbit, PR #21).
+			// A corrupt entry or a torn read could key one mastery under another's id (PR #21).
 			_ = mastery.Object(MasteryType).Int32("Id").Where(value => value == id, $"the id MasteryById keeps it under, {id}");
 
 			if (!_bonuses.TryGetValue(id, out var entry))
