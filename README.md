@@ -50,7 +50,7 @@ mkdir -p ~/.local/bin
 ln -sf ~/.local/share/raid-bridge/raid-bridge ~/.local/bin/raid-bridge
 ```
 
-To update, pull a newer version and run the `dotnet publish` line again. <!-- mkdir: (PR #56) -->
+To update, pull a newer version and run the same commands again. <!-- mkdir: (PR #56) -->
 
 ## Use
 
