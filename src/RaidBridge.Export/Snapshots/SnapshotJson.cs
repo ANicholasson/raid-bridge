@@ -156,13 +156,19 @@ internal static class SnapshotJson
 			json.WriteEndArray();
 			json.WriteEndObject();
 
-			var live = snapshot.LiveArena;
-			json.WriteStartObject("liveArena");
-			json.WriteString("league", live.League);
-			json.WriteNumber("points", live.Points);
-			json.WriteNumber("wins", live.Wins);
-			json.WriteNumber("losses", live.Losses);
-			json.WriteEndObject();
+			if (snapshot.LiveArena is { } live)
+			{
+				json.WriteStartObject("liveArena");
+				json.WriteString("league", live.League);
+				json.WriteNumber("points", live.Points);
+				json.WriteNumber("wins", live.Wins);
+				json.WriteNumber("losses", live.Losses);
+				json.WriteEndObject();
+			}
+			else
+			{
+				json.WriteNull("liveArena");
+			}
 
 			WriteMissions(json, snapshot.Missions);
 

@@ -28,6 +28,18 @@ public sealed class LiveArenaReadingTests : IDisposable
 		Assert.Equivalent(new LiveArena("BronzeI", 900, 0, 0), game.Source().Read().LiveArena, strict: true);
 	}
 
+	/// <summary>An Account the game holds no Live Arena data for, as one below its unlock level may be, has no Live Arena, and the rest still reads.</summary>
+	[Fact]
+	public void Reads_no_live_arena_when_the_game_holds_no_data()
+	{
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = null });
+
+		var account = game.Source().Read();
+
+		Assert.Null(account.LiveArena);
+		Assert.Equal("SilverIII", account.ClassicArena.League);
+	}
+
 	/// <summary>A league's MinPoints is the first point of it, and one point fewer is the league before.</summary>
 	[Theory]
 	[InlineData(949, "BronzeI")]
@@ -40,7 +52,7 @@ public sealed class LiveArenaReadingTests : IDisposable
 	{
 		using var game = Live(points);
 
-		Assert.Equal(league, game.Source().Read().LiveArena.League);
+		Assert.Equal(league, game.Source().Read().LiveArena!.League);
 	}
 
 	/// <summary>The league comes from the static data's MinPoints, not from a table raid-bridge holds.</summary>
@@ -49,7 +61,7 @@ public sealed class LiveArenaReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { LiveLeagues = [(1, 900), (2, 1000), (11, 1520)] });
 
-		Assert.Equal("SilverI", game.Source().Read().LiveArena.League);
+		Assert.Equal("SilverI", game.Source().Read().LiveArena!.League);
 	}
 
 	/// <summary>The game walks the leagues in the order it holds them, so a league that needs no more points than the one before would be read differently by it.</summary>
@@ -69,7 +81,7 @@ public sealed class LiveArenaReadingTests : IDisposable
 	{
 		using var game = Live(points);
 
-		Assert.Equal("BronzeI", game.Source().Read().LiveArena.League);
+		Assert.Equal("BronzeI", game.Source().Read().LiveArena!.League);
 	}
 
 	[Fact]
@@ -85,7 +97,7 @@ public sealed class LiveArenaReadingTests : IDisposable
 	[InlineData(0, -3, "Defeats", -3)]
 	public void Refuses_a_negative_count(int wins, int losses, string field, int count)
 	{
-		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = SyntheticArenaData.Default.Live with { Wins = wins, Losses = losses } });
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = SyntheticArenaData.Default.Live! with { Wins = wins, Losses = losses } });
 
 		RefusesMatching(game, $@"^SharedModel\.Meta\.LiveArena\.UserLiveArenaData\.{field} at 0x[0-9A-F]+ is {count}, in the Live Arena, where raid-bridge expects 0 or more\.$");
 	}
@@ -142,7 +154,7 @@ public sealed class LiveArenaReadingTests : IDisposable
 	public void Dispose() => _game.Dispose();
 
 	private static SyntheticGameClient Live(long points) =>
-		SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = SyntheticArenaData.Default.Live with { Points = points } });
+		SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = SyntheticArenaData.Default.Live! with { Points = points } });
 
 	private static void Refuses(SyntheticGameClient game, string message) =>
 		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);

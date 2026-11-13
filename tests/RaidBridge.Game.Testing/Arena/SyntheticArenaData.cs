@@ -21,8 +21,8 @@ public sealed record SyntheticArenaData(SyntheticClassicArena Classic, Synthetic
 		[22] = Percent(0.16) with { Speed = 0.05, Resistance = 0.05, Accuracy = 0.05 },
 	};
 
-	/// <summary>The Live Arena: 1520 points, which reach SilverII in <see cref="LiveLeagues"/>, 14 wins and 9 losses.</summary>
-	public SyntheticLiveArena Live { get; init; } = new(Points: 1520, Wins: 14, Losses: 9);
+	/// <summary>The Live Arena: 1520 points, which reach SilverII in <see cref="LiveLeagues"/>, 14 wins and 9 losses. Null holds no LiveArenaData.</summary>
+	public SyntheticLiveArena? Live { get; init; } = new(Points: 1520, Wins: 14, Losses: 9);
 
 	/// <summary>
 	/// The static data's LiveArenaData.LeagueInfoById: each league, by its number, with its MinPoints, in the order the

@@ -211,6 +211,17 @@ public partial class SnapshotFormatTests
 			StringComparison.Ordinal);
 	}
 
+	/// <summary>An Account with no Live Arena data is written with a null liveArena, never left out.</summary>
+	[Fact]
+	public void Writes_no_live_arena_as_null()
+	{
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions);
+
+		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
+
+		Assert.Contains("\"defenceTeams\": []\n  },\n  \"liveArena\": null,\n  \"missions\": {", written, StringComparison.Ordinal);
+	}
+
 	/// <summary>An amount the game holds as a fraction is written as held, never rounded.</summary>
 	[Fact]
 	public void Writes_a_resource_amount_exactly_as_the_game_holds_it()

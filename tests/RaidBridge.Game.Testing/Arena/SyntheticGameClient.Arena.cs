@@ -140,7 +140,7 @@ public sealed partial class SyntheticGameClient
 	/// whose base class UserLiveArenaData holds the points, wins and losses; and the static data's LiveArenaData, whose
 	/// LeagueInfoById holds each league's LiveArenaLeagueInfo, with its MinPoints.
 	/// </summary>
-	private void LayOutTheLiveArena(ulong userWrapperObject, SyntheticLiveArena live, IReadOnlyList<(int League, int MinPoints)> leagues)
+	private void LayOutTheLiveArena(ulong userWrapperObject, SyntheticLiveArena? live, IReadOnlyList<(int League, int MinPoints)> leagues)
 	{
 		var systemObject = _runtime.SystemObject;
 		var userLiveArenaData = Declare(
@@ -172,12 +172,16 @@ public sealed partial class SyntheticGameClient
 			"System.Object",
 			("LeagueInfoById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.LiveArena.LiveArenaLeagueId, SharedModel.Meta.LiveArena.LiveArenaLeagueInfo>", GenericInstanceTypeCode, 0x10));
 
-		var dataObject = _runtime.Object(updatableUserLiveArenaData, 0x20);
-		_heap.Int64(dataObject + 0x10, live.Points);
-		_heap.Int32(dataObject + 0x18, live.Wins);
-		_heap.Int32(dataObject + 0x1C, live.Losses);
 		var wrapperObject = _runtime.Object(liveArenaWrapper, 0x18);
-		_heap.Pointer(wrapperObject + 0x10, dataObject);
+		if (live is not null)
+		{
+			var dataObject = _runtime.Object(updatableUserLiveArenaData, 0x20);
+			_heap.Int64(dataObject + 0x10, live.Points);
+			_heap.Int32(dataObject + 0x18, live.Wins);
+			_heap.Int32(dataObject + 0x1C, live.Losses);
+			_heap.Pointer(wrapperObject + 0x10, dataObject);
+		}
+
 		Slot("Client.Model.Guard.UserWrapper.LiveArena", userWrapperObject + 0x78, wrapperObject);
 
 		var staticObject = _runtime.Object(staticLiveArenaData, 0x18);

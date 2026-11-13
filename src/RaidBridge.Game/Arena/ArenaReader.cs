@@ -50,7 +50,7 @@ internal static class ArenaReader
 			defenseHeroIds is not null && Enumerable.Range(0, defenseHeroIds.Length).Any(index => defenseHeroIds.Int32(index).Value != -1));
 	}
 
-	public static (ClassicArena Classic, TagArena Tag, LiveArena Live) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
+	public static (ClassicArena Classic, TagArena Tag, LiveArena? Live) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
 	{
 		var championIds = champions.Select(champion => champion.Id).ToHashSet();
 		return (Classic(classic, new(championIds)), Tag(userWrapper, new(championIds)), Live(userWrapper, staticData));
@@ -133,12 +133,19 @@ internal static class ArenaReader
 	/// until one they don't. raid-bridge takes the last league the points reach, the same league as long as each
 	/// league needs more points than the one before it, which it checks rather than trusts.
 	/// </summary>
-	private static LiveArena Live(ManagedObject userWrapper, ManagedObject staticData)
+	private static LiveArena? Live(ManagedObject userWrapper, ManagedObject staticData)
 	{
 		const string Arena = "the Live Arena";
+		// An Account below the Live Arena's unlock level may hold no LiveArenaData, which is no Live Arena, not a
+		// failure of the whole Snapshot (code review, https://github.com/ANicholasson/raid-bridge/issues/32).
 		var data = userWrapper
 			.Object("LiveArena", "Client.Model.Gameplay.LiveArena.LiveArenaWrapper")
-			.Object("LiveArenaData", "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData");
+			.ObjectOrNull("LiveArenaData", "Client.Model.Gameplay.LiveArena.UpdatableUserLiveArenaData");
+		if (data is null)
+		{
+			return null;
+		}
+
 		var points = data.Int64("Points");
 		if (points.Value < 0)
 		{

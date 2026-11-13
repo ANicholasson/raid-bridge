@@ -32,5 +32,5 @@ public sealed record Account(
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,
-	LiveArena LiveArena,
+	LiveArena? LiveArena,
 	MissionGroups Missions);

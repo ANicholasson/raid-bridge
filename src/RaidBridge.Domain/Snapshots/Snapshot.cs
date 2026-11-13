@@ -31,5 +31,5 @@ public sealed record Snapshot(
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,
-	LiveArena LiveArena,
+	LiveArena? LiveArena,
 	MissionGroups Missions);
