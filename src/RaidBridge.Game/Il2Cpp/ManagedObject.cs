@@ -37,10 +37,13 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 		return new(Runtime.Double(address, () => where), where, address);
 	}
 
-	/// <summary>A bool field, which holds 0 or 1 and nothing else.</summary>
-	public FieldValue<bool> Boolean(string fieldName)
+	/// <summary>
+	/// A bool field, which holds 0 or 1 and nothing else. <paramref name="declaredType"/> is <c>System.Boolean</c>
+	/// unless the field is a generic class's, such as Nullable&lt;T&gt;'s <c>T</c>.
+	/// </summary>
+	public FieldValue<bool> Boolean(string fieldName, string declaredType = "System.Boolean")
 	{
-		var (where, address, _) = Locate(fieldName, "System.Boolean", BooleanCode);
+		var (where, address, _) = Locate(fieldName, declaredType, BooleanCode);
 		var value = Runtime.Byte(address, () => where);
 		return value <= 1
 			? new(value == 1, where, address)
@@ -128,6 +131,16 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 		var (nullable, where, address) = Nullable(fieldName, enumType);
 		return new(nullable?.EnumMember("value", enumType, declaredType: "T").Value, where, address);
 	}
+
+	/// <summary>A Nullable&lt;bool&gt; field's value, or null when it has none.</summary>
+	public FieldValue<bool?> NullableBoolean(string fieldName)
+	{
+		var (nullable, where, address) = Nullable(fieldName, "System.Boolean");
+		return new(nullable?.Boolean("value", "T").Value, where, address);
+	}
+
+	/// <summary>Whether a Nullable&lt;T&gt; field of <paramref name="typeArgument"/> has a value, whatever the value is.</summary>
+	public bool HasValue(string fieldName, string typeArgument) => Nullable(fieldName, typeArgument).Nullable is not null;
 
 	/// <summary>A Nullable&lt;int&gt; field's value, or null when it has none.</summary>
 	public FieldValue<int?> NullableInt32(string fieldName)

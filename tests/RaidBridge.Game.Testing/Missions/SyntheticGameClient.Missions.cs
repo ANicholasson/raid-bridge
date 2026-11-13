@@ -74,7 +74,25 @@ public sealed partial class SyntheticGameClient
 
 		var hero = Counts("QuestCompletionByHero", wide: false);
 		var fuse = Counts("QuestCompletionByFuse", wide: false);
-		var battle = Counts("QuestCompletionByBattle", wide: true);
+		var battle = _runtime.Class(
+			Completions,
+			"QuestCompletionByBattle",
+			systemObject,
+			new SyntheticField("CountRequired", Int64TypeCode, 0x10),
+			new SyntheticField("CountCollected", Int64TypeCode, 0x18),
+			new SyntheticField("AreaTypeId", GenericInstanceTypeCode, 0x20, GenericClass: NullableClass(0x4)),
+			new SyntheticField("AllowDifferentAlliances", GenericInstanceTypeCode, 0x28, GenericClass: NullableClass(0x1)),
+			new SyntheticField("AllianceBossId", GenericInstanceTypeCode, 0x30, GenericClass: NullableClass(0x4)),
+			new SyntheticField("AllianceBossRevision", GenericInstanceTypeCode, 0x38, GenericClass: NullableClass(0x8)));
+		_metadata.Class(
+			$"{Completions}.QuestCompletionByBattle",
+			"System.Object",
+			("CountRequired", "System.Int64", false),
+			("CountCollected", "System.Int64", false),
+			("AreaTypeId", "System.Nullable`1<SharedModel.Meta.Stages.AreaTypeId>", false),
+			("AllowDifferentAlliances", "System.Nullable`1<System.Boolean>", false),
+			("AllianceBossId", "System.Nullable`1<SharedModel.Meta.Alliances.Boss.AllianceBossTypeId>", false),
+			("AllianceBossRevision", "System.Nullable`1<System.Int64>", false));
 		var quest = Declare(
 			Completions,
 			"QuestCompletionByQuest",
@@ -95,18 +113,24 @@ public sealed partial class SyntheticGameClient
 			"System.Object",
 			[("StateId", "SharedModel.Meta.Quests.QuestCompletionStateId", ValueTypeTypeCode, 0x10), .. CompletionKinds.Select((kind, index) => (kind.Field, kind.Type, ClassTypeCode, 0x18 + (index * 8)))]);
 		var completionSize = 0x18 + (CompletionKinds.Length * 8);
-		var questState = Declare(
+		var questState = _runtime.Class(
 			"SharedModel.Meta.Quests.Data",
 			"QuestState",
 			systemObject,
+			new SyntheticField("QuestId", Int32TypeCode, 0x10),
+			new SyntheticField("PrototypeId", Int32TypeCode, 0x14),
+			new SyntheticField("StateId", ValueTypeTypeCode, 0x18),
+			new SyntheticField("Completions", GenericInstanceTypeCode, 0x20),
+			new SyntheticField("AdvancedDailyTypeId", GenericInstanceTypeCode, 0x28, GenericClass: NullableClass(0x4)));
+		_metadata.Class(
+			"SharedModel.Meta.Quests.Data.QuestState",
 			"System.Object",
-			("QuestId", "System.Int32", Int32TypeCode, 0x10),
-			("PrototypeId", "System.Int32", Int32TypeCode, 0x14),
-			("StateId", "SharedModel.Meta.Quests.QuestStateId", ValueTypeTypeCode, 0x18),
-			("Completions", $"System.Collections.Generic.List`1<{Completions}.QuestCompletion>", GenericInstanceTypeCode, 0x20));
+			("QuestId", "System.Int32", false),
+			("PrototypeId", "System.Int32", false),
+			("StateId", "SharedModel.Meta.Quests.QuestStateId", false),
+			("Completions", $"System.Collections.Generic.List`1<{Completions}.QuestCompletion>", false),
+			("AdvancedDailyTypeId", "System.Nullable`1<SharedModel.Meta.AdvancedDaily.AdvancedDailyTypeId>", false));
 
-		var nullableCategory = _runtime.Class("System", "Nullable`1", _runtime.ValueType, new SyntheticField("hasValue", BooleanTypeCode, ObjectHeaderSize), new SyntheticField("value", ValueTypeTypeCode, ObjectHeaderSize + 0x4));
-		var nullableGroup = _runtime.Class("System", "Nullable`1", _runtime.ValueType, new SyntheticField("hasValue", BooleanTypeCode, ObjectHeaderSize), new SyntheticField("value", ValueTypeTypeCode, ObjectHeaderSize + 0x4));
 		var questClass = _runtime.Class(
 			"SharedModel.Meta.Quests.Data",
 			"Quest",
@@ -116,8 +140,8 @@ public sealed partial class SyntheticGameClient
 			new SyntheticField("CategoryId", ValueTypeTypeCode, 0x18),
 			new SyntheticField("Weight", Int32TypeCode, 0x1C),
 			new SyntheticField("Name", ClassTypeCode, 0x20),
-			new SyntheticField("RecommendedQuestCategoryId", GenericInstanceTypeCode, 0x28, GenericClass: _runtime.GenericClass(nullableCategory)),
-			new SyntheticField("RecommendedQuestGroupId", GenericInstanceTypeCode, 0x30, GenericClass: _runtime.GenericClass(nullableGroup)));
+			new SyntheticField("RecommendedQuestCategoryId", GenericInstanceTypeCode, 0x28, GenericClass: NullableClass(0x4)),
+			new SyntheticField("RecommendedQuestGroupId", GenericInstanceTypeCode, 0x30, GenericClass: NullableClass(0x4)));
 		_metadata.Class(
 			"SharedModel.Meta.Quests.Data.Quest",
 			"System.Object",
@@ -155,7 +179,7 @@ public sealed partial class SyntheticGameClient
 		ulong Task(SyntheticTask task)
 		{
 			var (taskClass, wide) = tasks[task.Kind];
-			var taskObject = _runtime.Object(taskClass, 0x20);
+			var taskObject = _runtime.Object(taskClass, 0x48);
 			if (task.Kind == "ByQuest")
 			{
 				return taskObject;
@@ -165,6 +189,11 @@ public sealed partial class SyntheticGameClient
 			{
 				_heap.Int64(taskObject + 0x10, task.Required);
 				_heap.Int64(taskObject + 0x18, task.Collected);
+				Nullable(taskObject + 0x20, task.AreaTypeId);
+				if (task.AllowDifferentAlliances is { } allow)
+				{
+					_heap.Bytes(taskObject + 0x28, [1, Bool(allow)]);
+				}
 			}
 			else
 			{
@@ -177,7 +206,7 @@ public sealed partial class SyntheticGameClient
 
 		var states = missionData.States.Select(state =>
 		{
-			var stateObject = _runtime.Object(questState, 0x28);
+			var stateObject = _runtime.Object(questState, 0x30);
 			_heap.Int32(stateObject + 0x10, state.QuestId);
 			_heap.Int32(stateObject + 0x14, state.PrototypeId);
 			_heap.Int32(stateObject + 0x18, state.StateId);
@@ -252,6 +281,15 @@ public sealed partial class SyntheticGameClient
 		var staticQuestDataObject = _runtime.Object(staticQuestData, 0x18);
 		_heap.Pointer(staticQuestDataObject + 0x10, recommendedQuestDataObject);
 		Slot("SharedModel.Meta.StaticData.QuestData", _clientStaticData + 0x68, staticQuestDataObject);
+
+		// A Nullable<T> whose value sits valueOffset bytes after its hasValue, as T's alignment puts it.
+		ulong NullableClass(int valueOffset) =>
+			_runtime.GenericClass(_runtime.Class(
+				"System",
+				"Nullable`1",
+				_runtime.ValueType,
+				new SyntheticField("hasValue", BooleanTypeCode, ObjectHeaderSize),
+				new SyntheticField("value", valueOffset == 1 ? BooleanTypeCode : valueOffset == 8 ? Int64TypeCode : ValueTypeTypeCode, ObjectHeaderSize + valueOffset)));
 
 		ulong Counts(string name, bool wide) =>
 			Declare(

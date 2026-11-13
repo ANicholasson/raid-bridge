@@ -423,6 +423,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			"SharedModel.Meta.Quests.RecommendedQuestGroupId",
 			("Undefined", 0), ("Group1", 1), ("Group2", 2), ("Group3", 3), ("Group4", 4), ("Group5", 5), ("Group6", 6), ("Group7", 7));
 		_metadata.Enum("SharedModel.Meta.Quests.RecommendedQuestSectionId", ("Undefined", 0), ("ArbiterSection", 1), ("RamantuSection", 2));
+		_metadata.Enum("SharedModel.Meta.Stages.AreaTypeId", ("Unknown", 0), ("Story", 1), ("Dungeon", 2), ("Arena", 3), ("AllianceBoss", 4));
 	}
 
 	/// <summary>

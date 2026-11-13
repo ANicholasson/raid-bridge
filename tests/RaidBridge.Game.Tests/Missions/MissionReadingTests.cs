@@ -226,7 +226,56 @@ public sealed class MissionReadingTests : IDisposable
 	{
 		using var game = Create(Default with { OpenGroups = [2, 2] });
 
-		RefusesMatching(game, @"^System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+ is Group2, which ActiveGroups holds twice\.$");
+		RefusesMatching(game, @"^System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+ is Group2, in ActiveGroups, but ActiveGroups holds it already\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_finished_group_held_twice()
+	{
+		using var game = Create(Default with { CompletedGroups = [1, 1] });
+
+		RefusesMatching(game, @"^System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+ is Group1, in CompletedGroups, but CompletedGroups holds it already\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_group_both_open_and_finished()
+	{
+		using var game = Create(Default with { CompletedGroups = [1, 2] });
+
+		RefusesMatching(game, @"^System\.Collections\.Generic\.List`1\._items\[1\] at 0x[0-9A-F]+ is Group2, in CompletedGroups, but ActiveGroups holds it already\.$");
+	}
+
+	/// <summary>
+	/// The screen shows an unfinished clan battle's progress from the clan's Clan Boss data, not from its stored count,
+	/// so the stored count isn't the Mission's progress, and is written as null: for a clan's quest, by its prototype
+	/// id or its AllowDifferentAlliances, unless the battle is in the Clan Boss's area.
+	/// </summary>
+	[Theory]
+	[InlineData(9103, null, true, null)]
+	[InlineData(7_360_000, null, null, null)]
+	[InlineData(8_359_999, null, null, null)]
+	[InlineData(9103, 4, true, 7L)]
+	[InlineData(8_360_000, null, null, 7L)]
+	[InlineData(9103, 2, false, 7L)]
+	public void Reads_a_clan_battle_from_the_clan_boss_data_only_outside_its_area(int prototypeId, int? area, bool? allowDifferentAlliances, long? expected)
+	{
+		using var game = Create(Default with
+		{
+			Quests = [.. Default.Quests.Select(quest => quest.Id == 53 ? quest with { PrototypeId = prototypeId, Name = new($"l10n:quest/name?id={prototypeId}#static", "dev") } : quest)],
+			States = [.. Default.States.Select(state => state.QuestId == 53 ? State(53, prototypeId, InProgress, new SyntheticTask("ByBattle", 7, 2_000_000, area, allowDifferentAlliances)) : state)],
+			Localization = new Dictionary<string, string>(Default.Localization) { [$"l10n:quest/name?id={prototypeId}#static"] = "Deal damage" },
+		});
+
+		Assert.Equal((expected, 2_000_000), Progress(game, prototypeId));
+	}
+
+	/// <summary>A finished Mission's progress is its stored count, wherever the battle was.</summary>
+	[Fact]
+	public void Reads_a_finished_clan_battle_from_its_stored_count()
+	{
+		using var game = Create(Default with { States = [.. Default.States.Select(state => state.QuestId == 53 ? State(53, 9103, Completed, new SyntheticTask("ByBattle", 2_500_000, 2_000_000, AllowDifferentAlliances: true)) : state)] });
+
+		Assert.Equal((2_500_000, 2_000_000), Progress(game, 9103));
 	}
 
 	[Fact]

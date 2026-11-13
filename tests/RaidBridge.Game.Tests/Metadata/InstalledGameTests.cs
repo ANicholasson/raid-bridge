@@ -263,9 +263,9 @@ public class InstalledGameTests
 		{ "SharedModel.Battle.Core.Setup.HeroSlotSetup", "ArtifactSetups", "System.Collections.Generic.List`1<SharedModel.Battle.Core.Setup.ArtifactSetup>", false },
 		{ "SharedModel.Battle.Core.Setup.AcademySetup", "PercentBonus", "SharedModel.Meta.Heroes.BattleStats", false },
 		{ "SharedModel.Battle.Core.Setup.AcademySetup", "FlatBonus", "SharedModel.Meta.Heroes.BattleStats", false },
-		// Missions (https://github.com/ANicholasson/raid-bridge/issues/33), on the route docs/research/2026-11-missions.md
-		// found: every quest by its id on QuestWrapperReadOnly, each open quest's state and the Mission groups in its
-		// UserQuestData, and each group's section in the static data.
+		// Missions (https://github.com/ANicholasson/raid-bridge/issues/33), on the route the missions research found
+		// (https://github.com/ANicholasson/raid-bridge/pull/37): every quest by its id on QuestWrapperReadOnly, each open
+		// quest's state and the Mission groups in its UserQuestData, and each group's section in the static data.
 		{ "Client.Model.Guard.UserWrapper", "Quests", "Client.Model.Gameplay.Quests.QuestWrapper", false },
 		{ "Client.Model.Gameplay.Quests.QuestWrapper", "Quests", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Quests.Data.Quest>", false },
 		{ "Client.Model.Gameplay.Quests.QuestWrapper", "QuestData", "SharedModel.Meta.Quests.Data.UserQuestData", false },
@@ -286,6 +286,12 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.ClientStaticData", "QuestData", "SharedModel.Meta.Quests.Data.StaticQuestData", false },
 		{ "SharedModel.Meta.Quests.Data.StaticQuestData", "RecommendedQuestData", "SharedModel.Meta.Quests.RecommendedQuests.RecommendedQuestData", false },
 		{ "SharedModel.Meta.Quests.RecommendedQuests.RecommendedQuestData", "GroupsBySection", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Quests.RecommendedQuestSectionId, System.Collections.Generic.List`1<SharedModel.Meta.Quests.RecommendedQuestGroupId>>", false },
+		// What decides whether the screen shows an unfinished battle's progress from the clan's Clan Boss data instead.
+		{ "SharedModel.Meta.Quests.Data.QuestState", "AdvancedDailyTypeId", "System.Nullable`1<SharedModel.Meta.AdvancedDaily.AdvancedDailyTypeId>", false },
+		{ "SharedModel.Meta.Quests.Completions.QuestCompletionByBattle", "AllowDifferentAlliances", "System.Nullable`1<System.Boolean>", false },
+		{ "SharedModel.Meta.Quests.Completions.QuestCompletionByBattle", "AreaTypeId", "System.Nullable`1<SharedModel.Meta.Stages.AreaTypeId>", false },
+		{ "SharedModel.Meta.Quests.Completions.QuestCompletionByBattle", "AllianceBossId", "System.Nullable`1<SharedModel.Meta.Alliances.Boss.AllianceBossTypeId>", false },
+		{ "SharedModel.Meta.Quests.Completions.QuestCompletionByBattle", "AllianceBossRevision", "System.Nullable`1<System.Int64>", false },
 		// Each kind of task a completion counts, and its counts: longs for ByBattle, which counts damage too, ints for the
 		// others. The kinds that hold no count are refused on a Mission, so they are pinned by type only.
 		{ "SharedModel.Meta.Quests.Completions.QuestCompletion", "ByClient", "SharedModel.Meta.Quests.Completions.QuestCompletionByClient", false },
@@ -463,6 +469,7 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Quests.RecommendedQuestGroupId", "Group10", 10 },
 		{ "SharedModel.Meta.Quests.RecommendedQuestSectionId", "ArbiterSection", 1 },
 		{ "SharedModel.Meta.Quests.RecommendedQuestSectionId", "Missions3Section", 3 },
+		{ "SharedModel.Meta.Stages.AreaTypeId", "AllianceBoss", 4 },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7): the rank's first and last members, and the socket
 		// shapes'. At v39 neither enum declares a member for 0.
 		{ "SharedModel.Meta.Relics.StaticData.RelicRank", "Rank1", 1 },

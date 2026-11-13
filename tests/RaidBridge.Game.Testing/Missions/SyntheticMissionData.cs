@@ -48,7 +48,7 @@ public sealed record SyntheticMissionData(
 		[
 			State(51, 9101, Completed, new SyntheticTask("ByHero", Collected: -1, Required: 2)),
 			State(52, 9102, InProgress, new SyntheticTask("ByBattle", Collected: 4, Required: 10)),
-			State(53, 9103, New, new SyntheticTask("ByBattle", Collected: 0, Required: 2_000_000)),
+			State(53, 9103, New, new SyntheticTask("ByBattle", Collected: 0, Required: 2_000_000, AreaTypeId: 4)),
 			State(60, 7001, InProgress, new SyntheticTask("ByFuse", Collected: 1, Required: 3)),
 		],
 		GroupsBySection: Sections,
@@ -86,6 +86,7 @@ public sealed record SyntheticQuestState(int QuestId, int PrototypeId, int State
 
 /// <summary>
 /// A task a completion counts, in the QuestCompletion field named <see cref="Kind"/>, such as ByHero, with its counts.
-/// ByBattle's are longs, the others' ints; ByQuest holds none.
+/// ByBattle's are longs, the others' ints; ByQuest holds none. A ByBattle task can name an AreaTypeId, such as 4 for
+/// the Clan Boss's, and hold AllowDifferentAlliances; both are null unless given.
 /// </summary>
-public sealed record SyntheticTask(string Kind, long Collected, long Required);
+public sealed record SyntheticTask(string Kind, long Collected, long Required, int? AreaTypeId = null, bool? AllowDifferentAlliances = null);
