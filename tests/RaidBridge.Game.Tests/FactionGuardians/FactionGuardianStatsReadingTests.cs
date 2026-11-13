@@ -69,7 +69,7 @@ public sealed class FactionGuardianStatsReadingTests : IDisposable
 
 	/// <summary>
 	/// The slots are read once, so the Faction Guardians written and what they give the Champions can't come from two
-	/// states of a slot the player changes in between (CodeRabbit, PR #22).
+	/// states of a slot the player changes in between (PR #22).
 	/// </summary>
 	[Fact]
 	public void Reads_each_guardian_slot_once()

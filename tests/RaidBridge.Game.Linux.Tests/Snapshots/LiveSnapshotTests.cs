@@ -66,7 +66,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// <summary>
 	/// The Resources, Shards and Items are written as objects of counts, none negative. Every Account holds silver and
 	/// energy, and the secondary Account holds a Shard and Items, so the check can't pass by reading none of any
-	/// (#34; CodeRabbit, PR #43).
+	/// (#34; PR #43).
 	/// </summary>
 	[Fact]
 	public void Reads_the_resources_shards_and_items()
@@ -110,7 +110,7 @@ public sealed class LiveSnapshotTests : IDisposable
 	/// The Faction Guardians are written as each Faction's slots by rarity, every slot one or two Champions of
 	/// <c>champions</c>, of that Faction and rarity, none guarding twice. It accepts {}, because the secondary Account,
 	/// one of the two live runs use, has placed none. On the main Account, with Guardians placed in five Factions (2026-11-01),
-	/// every assertion held, and so did one that the slots aren't empty (#36; Codex, PR #45).
+	/// every assertion held, and so did one that the slots aren't empty (#36; PR #45).
 	/// </summary>
 	[Fact]
 	public void Reads_the_faction_guardians()

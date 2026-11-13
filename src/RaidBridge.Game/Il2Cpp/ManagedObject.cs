@@ -83,7 +83,7 @@ internal sealed record ManagedObject(Il2CppRuntime Runtime, ulong Address, Runti
 	public FieldValue<GameEnumMember?> EnumMemberOrUnnamed(string fieldName, string enumType, long unnamed)
 	{
 		var (where, address, _) = Locate(fieldName, enumType, ValueTypeCode);
-		// Before the value is read, so a wider enum can't pass for the unnamed value on its low four bytes (CodeRabbit, PR #21).
+		// Before the value is read, so a wider enum can't pass for the unnamed value on its low four bytes (PR #21).
 		RequireInt32(Runtime, enumType);
 		var value = Runtime.Int32(address, () => where);
 		return value == unnamed

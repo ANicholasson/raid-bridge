@@ -6,7 +6,7 @@ updates:
   # NuGet PR fails the locked restore until someone runs `dotnet restore --force-evaluate` on its
   # branch and pushes the lock files (AGENTS.md). Bring such a PR up to date with GitHub's Update branch, not
   # `@dependabot rebase`: projects in several folders share Directory.Packages.props, which can make a rebase close
-  # the PR as no longer updatable (dependabot-core issue 15699; CodeRabbit, PR #60).
+  # the PR as no longer updatable (dependabot-core issue 15699; PR #60).
   - package-ecosystem: nuget
     directory: /
     schedule:

@@ -57,7 +57,7 @@ public partial class SnapshotFormatTests
 	/// <summary>
 	/// SilverIII's bonus, which every Champion gets while the Account has a Classic Arena defence team: 10% of Health,
 	/// Attack and Defence, the nearest Fixed being 429496730 / 2^32, as the reader gives it, never a plain 0.1
-	/// (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/24).
+	/// (https://github.com/ANicholasson/raid-bridge/pull/24).
 	/// </summary>
 	private static readonly StatBonus[] SilverIII =
 	[

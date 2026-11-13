@@ -5,7 +5,7 @@
 > - The pure libraries target `net10.0`, not `net8.0` (.NET 8 support ends in November 2026). See ADR-0002.
 > - The memory reader is not Windows-only by design: it is one adapter per platform behind one port, Linux (the game under Proton) first (ADR-0002). `IMemorySource` was a working name; the port is `IGameMemory` in `RaidBridge.Game`'s `Memory/`.
 > - LibCpp2IL's metadata v31 support is verified on paper: `Samboy063.LibCpp2IL` 2022.1.0-pre-release.21 reads metadata versions 23 to 106. raid-bridge vendors a newer LibCpp2IL (`third_party/LibCpp2IL/`), and the installed game ships metadata v39, which a gated check parses (ADR-0001).
-> - "The research report" is the RAID Data Bridge report Claude wrote for the maintainer on 2026-10-27. It is not in this repo.
+> - "The research report" is the RAID Data Bridge report written for the maintainer on 2026-10-27. It is not in this repo.
 
 # Fork review: raid-toolkit-sdk (October 2026)
 

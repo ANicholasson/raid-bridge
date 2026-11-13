@@ -26,7 +26,7 @@ internal static class FactionGuardianReader
 
 	/// <summary>
 	/// The Account's guardian slots, read once, so the Faction Guardians written and what they give the Champions come
-	/// from the same state of the Game client (CodeRabbit, PR #22): each Faction's, in the enum's order, then each
+	/// from the same state of the Game client (PR #22): each Faction's, in the enum's order, then each
 	/// rarity's, in the enum's order, then each slot's two positions, in the game's order.
 	/// </summary>
 	public static GuardianSlots Capture(ManagedObject userWrapper) =>
