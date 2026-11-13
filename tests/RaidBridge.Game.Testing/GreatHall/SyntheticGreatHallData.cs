@@ -72,9 +72,9 @@ public sealed record SyntheticGreatHallData(
 	public static SyntheticGreatHallData OnlyArea(int area, IReadOnlyDictionary<int, int> levels) =>
 		None with { Areas = new Dictionary<int, IReadOnlyDictionary<int, int>?> { [area] = levels } };
 
-	/// <summary>One Affinity's levels, by StatKindId, and nothing else.</summary>
+	/// <summary>One Affinity's levels, by StatKindId, and nothing else: no Area Bonus either (Cursor Bugbot, PR 44).</summary>
 	public static SyntheticGreatHallData Only(int element, IReadOnlyDictionary<int, int> levels) =>
-		new(new Dictionary<int, IReadOnlyDictionary<int, int>?> { [element] = levels }, TenLevels);
+		None with { Levels = new Dictionary<int, IReadOnlyDictionary<int, int>?> { [element] = levels } };
 }
 
 /// <summary>An Area Bonus tier, as SharedModel.Meta.Village.ObservatoryTierInfo holds it: its areas, and how many levels it lists a bonus for, by StatKindId.</summary>
