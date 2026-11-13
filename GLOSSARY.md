@@ -124,6 +124,10 @@ _Avoid_: arena (when Tag Arena could be meant)
 The Arena where three teams of up to four Champions each face another player's three teams, in three battles. The game's code calls it the 3x3 arena. <!-- (CodeRabbit, PR #40) -->
 _Avoid_: 3v3, arena3x3
 
+**Mission**:
+A task on the game's Missions screen, such as Arbiter's, with a reward for finishing it. Missions come in groups the Account works through one after another, and each group is in a section of the screen, such as Arbiter's. The game's code calls a Mission a recommended quest; its other quests, such as daily quests, aren't Missions.
+_Avoid_: recommended quest, quest (for a Mission)
+
 **Base stats**:
 A Champion's own stats at its rank, level and ascension, before any bonus: the white numbers on the champion screen. Two Champions of one type, rank and level can differ by ascension. <!-- (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/6) -->
 _Avoid_: raw stats, unscaled stats

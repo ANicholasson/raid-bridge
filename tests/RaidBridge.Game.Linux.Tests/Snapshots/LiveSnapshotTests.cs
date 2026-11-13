@@ -12,6 +12,7 @@ namespace RaidBridge.Game.Linux.Tests.Snapshots;
 public sealed class LiveSnapshotTests : IDisposable
 {
 	private static readonly string[] Affinities = ["Magic", "Force", "Spirit", "Void"];
+	private static readonly string[] MissionStates = ["New", "InProgress", "Completed"];
 
 	private readonly string _workingDirectory = Directory.CreateTempSubdirectory("raid-bridge-live-").FullName;
 	private readonly string _home = Directory.CreateTempSubdirectory("raid-bridge-live-home-").FullName;
@@ -206,6 +207,36 @@ public sealed class LiveSnapshotTests : IDisposable
 
 		Assert.NotEmpty(skills);
 		Assert.All(skills, skill => Assert.DoesNotMatch(@"^Skill \d+ name$", skill.GetProperty("name").GetString()));
+	}
+
+	/// <summary>
+	/// The Missions are written as finished groups and open groups, each open group in a section, each Mission with
+	/// text from the localization tables, a state the game names, and a count of 1 or more required, with a count
+	/// collected of 0 or more or null where the game holds none. On the main Account (2026-11-13), on Arbiter's Group4
+	/// with Group1 to Group3 finished, the run wrote all 60 of its Missions
+	/// (https://github.com/ANicholasson/raid-bridge/issues/33).
+	/// </summary>
+	[Fact]
+	public void Reads_the_missions()
+	{
+		using var json = Snapshot();
+
+		var missions = json.RootElement.GetProperty("missions");
+		var open = missions.GetProperty("openGroups").EnumerateArray().ToList();
+		var all = open.SelectMany(group => group.GetProperty("missions").EnumerateArray()).ToList();
+
+		Assert.All(missions.GetProperty("completedGroups").EnumerateArray(), group => Assert.Matches("^Group[0-9]+$", group.GetString()));
+		Assert.All(open, group => Assert.Matches("^Group[0-9]+$", group.GetProperty("group").GetString()));
+		Assert.All(open, group => Assert.False(string.IsNullOrEmpty(group.GetProperty("section").GetString())));
+		Assert.Equal(all.Count, all.Select(mission => mission.GetProperty("prototypeId").GetInt32()).Distinct().Count());
+		Assert.All(all, mission =>
+		{
+			Assert.Contains(mission.GetProperty("state").GetString(), MissionStates);
+			Assert.False(string.IsNullOrEmpty(mission.GetProperty("name").GetString()));
+			Assert.True(mission.GetProperty("required").GetInt64() >= 1, "required is below 1.");
+			var collected = mission.GetProperty("collected");
+			Assert.True(collected.ValueKind == JsonValueKind.Null || collected.GetInt64() >= 0, "collected is below 0.");
+		});
 	}
 
 	public void Dispose()

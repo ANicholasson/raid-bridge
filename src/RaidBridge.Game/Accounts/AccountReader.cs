@@ -6,6 +6,7 @@ using RaidBridge.Game.FactionGuardians;
 using RaidBridge.Game.GreatHall;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
+using RaidBridge.Game.Missions;
 using RaidBridge.Game.Relics;
 using RaidBridge.Game.Resources;
 
@@ -16,8 +17,8 @@ namespace RaidBridge.Game.Accounts;
 /// <c>AppModel.&lt;UserId&gt;k__BackingField</c>, with <c>_userWrapper.User.Id</c> as the fallback (spec #20, #19),
 /// then the Champions, the Artifacts and the Relics, named from the static data in
 /// <c>AppModel.StaticDataManager.StaticData</c>, the Resources, Shards and Items, the Great Hall, the Faction
-/// Guardians, and the Classic and Tag Arena, each Guardian and each Champion in an Arena defence team one of those
-/// Champions.
+/// Guardians, the Classic and Tag Arena, and the Missions, each Guardian and each Champion in an Arena defence team one
+/// of those Champions.
 /// It never goes near <c>_userWrapper.Social</c>: its UserSocialData holds emails, real names and birth dates.
 /// </summary>
 internal static class AccountReader
@@ -48,7 +49,8 @@ internal static class AccountReader
 		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, champions);
-		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, factionGuardians, arena.Classic, arena.Tag);
+		var missions = MissionReader.Read(userWrapper, staticData, names);
+		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, factionGuardians, arena.Classic, arena.Tag, missions);
 	}
 
 	private static AccountId Id(ManagedObject appModel)

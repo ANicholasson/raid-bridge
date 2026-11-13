@@ -5,7 +5,7 @@ namespace RaidBridge.Domain.Snapshots;
 /// <summary>
 /// The one use case: read the Account, hash its id with the player's salt, stamp the moment in UTC, and sort the
 /// Champions, the Unworn Artifacts, the Unworn Relics and the Relic stones in no socket by id. The
-/// Resources, Shards, Items, the Great Hall and the Faction Guardians keep the order the game gives them.
+/// Resources, Shards, Items, the Great Hall, the Faction Guardians and the Missions keep the order the game gives them.
 /// </summary>
 public sealed class TakeSnapshot(ISnapshotSource source, ISaltStore salts, TimeProvider clock)
 {
@@ -27,6 +27,7 @@ public sealed class TakeSnapshot(ISnapshotSource source, ISaltStore salts, TimeP
 			account.GreatHall,
 			account.FactionGuardians,
 			account.ClassicArena,
-			account.TagArena);
+			account.TagArena,
+			account.Missions);
 	}
 }

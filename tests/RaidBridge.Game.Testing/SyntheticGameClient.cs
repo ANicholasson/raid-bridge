@@ -11,6 +11,7 @@ using RaidBridge.Game.Testing.FactionGuardians;
 using RaidBridge.Game.Testing.GreatHall;
 using RaidBridge.Game.Testing.Il2Cpp;
 using RaidBridge.Game.Testing.Memory;
+using RaidBridge.Game.Testing.Missions;
 using RaidBridge.Game.Testing.Relics;
 using RaidBridge.Game.Testing.Resources;
 using static RaidBridge.Game.Testing.Il2Cpp.Unity6000Layout;
@@ -22,8 +23,8 @@ namespace RaidBridge.Game.Testing;
 /// <see cref="FakeGameMemory"/> with the game's objects laid out as Unity 6000.3.18f1's IL2CPP runtime lays them out,
 /// the heroes of a <see cref="SyntheticHeroData"/>, the Artifacts of a <see cref="SyntheticArtifactData"/>, the Relics
 /// of a <see cref="SyntheticRelicData"/>, the Resources, Shards and Items of a <see cref="SyntheticResourceData"/>, the Great Hall of a
-/// <see cref="SyntheticGreatHallData"/>, the Faction Guardians of a <see cref="SyntheticGuardianData"/> and the Classic
-/// and Tag Arena of a <see cref="SyntheticArenaData"/> among them, and a matching description of its metadata. Every id
+/// <see cref="SyntheticGreatHallData"/>, the Faction Guardians of a <see cref="SyntheticGuardianData"/>, the Classic
+/// and Tag Arena of a <see cref="SyntheticArenaData"/> and the quests of a <see cref="SyntheticMissionData"/> among them, and a matching description of its metadata. Every id
 /// and name is synthetic (spec #20). The methods that break it stand for what a game update or a bad read can do.
 /// Each feature's layout, and the methods that break it, are in a partial file in that feature's folder.
 /// </summary>
@@ -67,7 +68,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticResourceData resourceData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
-		SyntheticArenaData arenaData)
+		SyntheticArenaData arenaData,
+		SyntheticMissionData missionData)
 	{
 		Directory = System.IO.Directory.CreateTempSubdirectory("raid-bridge-client-").FullName;
 		var gameAssembly = WriteInstallFolder(Directory, ThisBuild);
@@ -76,7 +78,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_heap = new SyntheticHeap(Memory, 0x2_0000_0000, 0x40000);
 		_runtime = new SyntheticRuntime(_heap);
 		_metadata = new SyntheticMetadata(new GameVersions(39, unityVersion));
-		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, relicData, resourceData, greatHallData, guardianData, arenaData);
+		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, relicData, resourceData, greatHallData, guardianData, arenaData, missionData);
 	}
 
 	/// <summary>The install folder, holding GameAssembly.dll and the other files the reader looks for.</summary>
@@ -99,7 +101,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticResourceData? resourceData = null,
 		SyntheticGreatHallData? greatHallData = null,
 		SyntheticGuardianData? guardianData = null,
-		SyntheticArenaData? arenaData = null) =>
+		SyntheticArenaData? arenaData = null,
+		SyntheticMissionData? missionData = null) =>
 		new(
 			userId,
 			userIdOnUser,
@@ -110,7 +113,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			resourceData ?? SyntheticResourceData.Default,
 			greatHallData ?? SyntheticGreatHallData.Default,
 			guardianData ?? SyntheticGuardianData.Default,
-			arenaData ?? SyntheticArenaData.Default);
+			arenaData ?? SyntheticArenaData.Default,
+			missionData ?? SyntheticMissionData.Default);
 
 	/// <summary>The reader over this Game client, as the command line makes it, with this game's metadata in place of the parsed files.</summary>
 	public ISnapshotSource Source(string? gameDirectory = null) =>
@@ -281,7 +285,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticResourceData resourceData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
-		SyntheticArenaData arenaData)
+		SyntheticArenaData arenaData,
+		SyntheticMissionData missionData)
 	{
 		// The loader moved the image from the base it prefers and wrote the new one into its headers.
 		_image.Bytes(ImageBase, GameAssemblyHeaders(ImageBase, ThisBuild));
@@ -321,7 +326,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("Academy", "Client.Model.Gameplay.Academy.AcademyWrapper", ClassTypeCode, 0x50),
 			("Arena", "Client.Model.Gameplay.Battle.ArenaWrapper", ClassTypeCode, 0x58),
 			("Arena3x3", "Client.Model.Gameplay.Arena3x3.Arena3x3Wrapper", ClassTypeCode, 0x60),
-			("Relics", "Client.Model.Gameplay.Relics.RelicsWrapper", ClassTypeCode, 0x68));
+			("Relics", "Client.Model.Gameplay.Relics.RelicsWrapper", ClassTypeCode, 0x68),
+			("Quests", "Client.Model.Gameplay.Quests.QuestWrapper", ClassTypeCode, 0x70));
 		var user = Declare("Client.Model.Gameplay.User", "User", systemObject, "System.Object", ("Id", "System.Int64", Int64TypeCode, 0x20));
 		var socialWrapper = Declare(
 			"Client.Model.Gameplay.Social",
@@ -337,7 +343,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.App.SingleInstance`1._instance", statics, appModelObject);
 		_heap.Int64(appModelObject + 0x48, userId);
 
-		var userWrapperObject = _runtime.Object(userWrapper, 0x70);
+		var userWrapperObject = _runtime.Object(userWrapper, 0x78);
 		Slot("Client.Model.AppModel._userWrapper", appModelObject + 0x18, userWrapperObject);
 		var userObject = _runtime.Object(user, 0x28);
 		Slot("Client.Model.Guard.UserWrapper.User", userWrapperObject + 0x18, userObject);
@@ -350,7 +356,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_socialData.Add((socialWrapperObject, 0x18));
 		_socialData.Add((socialDataObject, 0x40));
 
-		Slot("Client.Model.AppModel.<StaticDataManager>k__BackingField", appModelObject + 0x50, LayOutTheStaticData(heroData, artifactData));
+		Slot("Client.Model.AppModel.<StaticDataManager>k__BackingField", appModelObject + 0x50, LayOutTheStaticData(heroData, artifactData, missionData));
 		Slot("Client.Model.Guard.UserWrapper.Heroes", userWrapperObject + 0x20, LayOutTheHeroes(heroData));
 		Slot("Client.Model.Guard.UserWrapper.Artifacts", userWrapperObject + 0x28, LayOutTheArtifacts(artifactData));
 		LayOutTheResources(userWrapperObject, resourceData);
@@ -358,6 +364,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		LayOutTheFactionGuardians(userWrapperObject, guardianData, heroData);
 		LayOutTheArena(userWrapperObject, arenaData);
 		LayOutTheRelics(userWrapperObject, relicData);
+		LayOutTheMissions(userWrapperObject, missionData);
 	}
 
 	/// <summary>The class library's classes the reader looks into, and the game's enums, as the metadata declares them.</summary>
@@ -409,13 +416,21 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum(
 			"SharedModel.Meta.Battle.Arena.ArenaLeagueId",
 			("None", 0), ("BronzeI", 1), ("BronzeIV", 4), ("SilverIII", 13), ("GoldII", 22), ("Platinum", 30));
+		_metadata.Enum("SharedModel.Meta.Quests.QuestCategoryId", ("None", 0), ("Periodic", 3), ("Recommended", 7));
+		_metadata.Enum("SharedModel.Meta.Quests.QuestStateId", ("Undefined", 0), ("New", 10), ("InProgress", 20), ("Completed", 30));
+		_metadata.Enum("SharedModel.Meta.Quests.RecommendedQuestCategoryId", ("Dungeons", 1), ("Heroes", 5), ("Clan", 6));
+		_metadata.Enum(
+			"SharedModel.Meta.Quests.RecommendedQuestGroupId",
+			("Undefined", 0), ("Group1", 1), ("Group2", 2), ("Group3", 3), ("Group4", 4), ("Group5", 5), ("Group6", 6), ("Group7", 7));
+		_metadata.Enum("SharedModel.Meta.Quests.RecommendedQuestSectionId", ("Undefined", 0), ("ArbiterSection", 1), ("RamantuSection", 2));
+		_metadata.Enum("SharedModel.Meta.Stages.AreaTypeId", ("Unknown", 0), ("Story", 1), ("Dungeon", 2), ("Arena", 3), ("AllianceBoss", 4));
 	}
 
 	/// <summary>
 	/// AppModel's static data manager, holding ClientStaticData: hero types by id, skill types by id, and the two
 	/// localization tables, from string to string.
 	/// </summary>
-	private ulong LayOutTheStaticData(SyntheticHeroData heroData, SyntheticArtifactData artifactData)
+	private ulong LayOutTheStaticData(SyntheticHeroData heroData, SyntheticArtifactData artifactData, SyntheticMissionData missionData)
 	{
 		const string Table = "System.Collections.Generic.Dictionary`2<System.String, System.String>";
 		var systemObject = _runtime.SystemObject;
@@ -476,7 +491,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("MasteryData", "SharedModel.Meta.Masteries.StaticMasteryData", ClassTypeCode, 0x48),
 			("AcademyData", "SharedModel.Meta.Academy.Static.StaticAcademyData", ClassTypeCode, 0x50),
 			("DoubleAscendData", "SharedModel.Meta.DoubleAscend.Static.StaticDoubleAscendData", ClassTypeCode, 0x58),
-			("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", ClassTypeCode, 0x60));
+			("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", ClassTypeCode, 0x60),
+			("QuestData", "SharedModel.Meta.Quests.Data.StaticQuestData", ClassTypeCode, 0x68));
 		var clientStaticData = Declare(
 			"SharedModel.Meta",
 			"ClientStaticData",
@@ -598,11 +614,11 @@ public sealed partial class SyntheticGameClient : IDisposable
 			return setInfoObject;
 		})]));
 
-		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x68);
+		var clientStaticDataObject = _runtime.Object(clientStaticData, 0x70);
 		_clientStaticData = clientStaticDataObject;
 		_heap.Pointer(clientStaticDataObject + 0x10, staticHeroDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x18, staticSkillDataObject);
-		_heap.Pointer(clientStaticDataObject + 0x20, Localization(heroData.StaticDataLocalization));
+		_heap.Pointer(clientStaticDataObject + 0x20, Localization(heroData.StaticDataLocalization.Concat(missionData.Localization).ToDictionary()));
 		_heap.Pointer(clientStaticDataObject + 0x28, Localization(heroData.ClientLocalization));
 		_heap.Pointer(clientStaticDataObject + 0x30, staticArtifactDataObject);
 		_heap.Pointer(clientStaticDataObject + 0x48, LayOutTheMasteries(heroData, statBonus));

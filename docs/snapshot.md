@@ -2,11 +2,11 @@
 
 A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
-A Snapshot holds the Account, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, and its Classic and Tag Arena.
+A Snapshot holds the Account, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall, its Faction Guardians, its Classic and Tag Arena, and its Missions.
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
 
 ```json
 {
@@ -545,6 +545,43 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       ],
       []
     ]
+  },
+  "missions": {
+    "completedGroups": [
+      "Group1"
+    ],
+    "openGroups": [
+      {
+        "group": "Group2",
+        "section": "ArbiterSection",
+        "missions": [
+          {
+            "prototypeId": 9101,
+            "category": "Heroes",
+            "state": "Completed",
+            "name": "Upgrade 2 Champions to Level 30",
+            "collected": null,
+            "required": 2
+          },
+          {
+            "prototypeId": 9102,
+            "category": "Dungeons",
+            "state": "InProgress",
+            "name": "Clear Stage 10 of a Synthetic Keep 10 times",
+            "collected": 4,
+            "required": 10
+          },
+          {
+            "prototypeId": 9103,
+            "category": "Clan",
+            "state": "New",
+            "name": "Deal 2,000,000 damage to the Synthetic Boss",
+            "collected": 0,
+            "required": 2000000
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -629,7 +666,16 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 
   `classicArena`'s `defenceTeam` is the `id`s of the Champions in its defence team, in the game's order of positions, and `tagArena`'s `defenceTeams` is its three defence teams, in the game's order, each a list of `id`s the same way. Each `id` is a Champion in `champions`, defending only once in that Arena. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`, kept in its place among the teams. Both are always written: with no defence team set, `defenceTeam` is `[]` and `defenceTeams` is `[]`.
 
-`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock`, `stat` and `shape`, and the names in `resources`, `shards`, `items`, `greatHall` and `factionGuardians`, and each `league`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
+- `missions`: the Account's Missions, the tasks on the game's Missions screen, such as Arbiter's. The game gives them out in groups, a section of the screen holding several, and holds the Missions of the groups the Account has open, and only the names of those it has finished. So `missions` has:
+  - `completedGroups`: the groups the Account has finished, such as `"Group1"`, in the game's order, or `[]`.
+  - `openGroups`: each group the Account has open, in the game's order, or `[]`. Each has its `group`, such as `"Group4"`; the `section` of the Missions screen it is in, such as `"ArbiterSection"`; and its `missions`, in the order the game gives them. Each Mission has:
+    - `prototypeId`: the Mission's id, the same on every Account.
+    - `category`: the kind of task, such as `"Dungeons"`, `"Heroes"` or `"Clan"`, which the screen shows as an icon.
+    - `state`: `"New"`, `"InProgress"` or `"Completed"`, as the game holds it. The Missions screen lists a group's Missions in this order from the first one not finished: the one `"InProgress"` open, and each `"New"` one after it locked.
+    - `name`: the line the Missions screen shows for it, such as `"Upgrade 5 Champions to Level 60"`, in the language the player set, with its numbers already in it.
+    - `collected` and `required`: the Mission's progress, the count the game holds towards the count it requires, such as `4` of `10` battles or `25347525` of `10000000` damage. A count can pass what is required. `collected` is `null` when the game holds no count the screen shows. The game marks a Mission that counts from the Account, such as "Upgrade 5 Champions to Level 60", as holding no count, and while it is unfinished the screen works its progress out from the Account each time it opens; raid-bridge doesn't, so the Champions in `champions` say how far it is. It keeps that mark once the Mission is finished, when `state` says it is done. An unfinished battle Mission of a clan's, outside the Clan Boss's own battles, is `null` too: the screen shows its progress from the clan's Clan Boss data, not from the count the Mission holds. Damage to the Demon Lord is counted on the Mission itself.
+
+`rarity`, `affinity`, `faction`, `rank`, `awakening`, `blessing`, `marker`, `slot`, `setId`, `factionLock`, `stat` and `shape`, and the names in `resources`, `shards`, `items`, `greatHall` and `factionGuardians`, each `league`, and a Mission's `group`, `section`, `category` and `state`, are written as the names the game's own code gives them, which aren't always the words the game shows: `rank` `"Stars6"` is six stars, `faction` `"DarkElves"` is Dark Elves, the set `"AttackSpeed"` is the Speed set, the Shards `"Legendary"` and `"Mythical"` are Sacred and Primal, and the Item `"SkillUpgradeItemEpic"` is an Epic Tome.
 
 An Artifact's `value` and `glyph` are exactly what the game holds. The game keeps them in fixed point, as a whole number of steps of 2^-32, so a value the game shows as 6% is held as the nearest step, 0.0600000000558793â€¦, and written as the shortest number that reads back as exactly that step: `0.060000000055879354`. Round it to show it, never to store it.
 
@@ -649,6 +695,8 @@ Keys are camelCase, apart from the game's own names, and always come in this ord
 ## Names
 
 A Champion's, a skill's, an Artifact set's, a Relic's and a Relic stone's name, and a Relic skill's `description`, is the text the Game client shows for it, in the language the player set: raid-bridge looks its key up in the client's loaded localization tables, and takes the default text the game gives the key when neither table holds it. If there is neither, the run fails rather than write a made-up name.
+
+A Mission's `name` comes from those tables alone. The default text the game gives a Mission's key is a developer's note, such as "Have 5 heroes level 60", not what the screen shows, so a Mission whose key neither table holds fails the run instead.
 
 A Relic's or a stone's skill has no name of its own in the game's data, only placeholder text such as "Skill 3000000 name", so it is written with the description the Relic's screen shows instead: the description of its Relic type, of the Faction's entry that adds it, or of its stone's type. The description belongs to that source, so if a source ever lists more than one skill, each carries the same text; in the game's data today each Relic type and each stone type lists one. The game holds a description with colour tags that only style it on screen, such as `<color=#1ee600>2%</color>` around a number shown in colour, and they are left out, so `"Wearer deals <color=#1ee600>2%</color> more damage"` is written `"Wearer deals 2% more damage"`.
 
