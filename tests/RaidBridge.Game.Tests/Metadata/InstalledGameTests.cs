@@ -448,6 +448,12 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Shards.ShardTypeId", "Mythical", 7 },
 		{ "SharedModel.Meta.BlackMarket.BlackMarketItemId", "HeroXpBooster100P_1Day", 3001 },
 		{ "SharedModel.Meta.BlackMarket.BlackMarketItemId", "SkillUpgradeItemEpic", 5002 },
+		// The Relic upgrade materials (https://github.com/ANicholasson/raid-bridge/issues/29), which docs/snapshot.md names:
+		// Starstones are the Resource Meteor, and Rank N Basalt the Item Carbon_RankN.
+		{ "SharedModel.Meta.Account.ResourceTypeId", "Meteor", 4000 },
+		{ "SharedModel.Meta.BlackMarket.BlackMarketItemId", "Carbon_Rank1", 19001 },
+		{ "SharedModel.Meta.BlackMarket.BlackMarketItemId", "Carbon_Rank2", 19002 },
+		{ "SharedModel.Meta.BlackMarket.BlackMarketItemId", "Carbon_Rank5", 19005 },
 		// The keys of the Great Hall (#35): each Affinity, and each stat the Great Hall raises. At v39 neither enum declares
 		// a member for 0.
 		{ "SharedModel.Meta.Heroes.Element", "Magic", 1 },

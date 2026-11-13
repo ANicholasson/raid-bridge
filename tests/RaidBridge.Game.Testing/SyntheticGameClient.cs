@@ -410,11 +410,11 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_metadata.Enum(
 			"SharedModel.Battle.Effects.StatKindId",
 			("Health", 1), ("Attack", 2), ("Defence", 3), ("Speed", 4), ("Resistance", 5), ("Accuracy", 6), ("CriticalChance", 7), ("CriticalDamage", 8), ("CriticalHeal", 9), ("IgnoreDefence", 10));
-		_metadata.Enum("SharedModel.Meta.Account.ResourceTypeId", ("Energy", 1), ("Silver", 2), ("Token", 3), ("Gem", 4));
+		_metadata.Enum("SharedModel.Meta.Account.ResourceTypeId", ("Energy", 1), ("Silver", 2), ("Token", 3), ("Gem", 4), ("Meteor", 4000));
 		_metadata.Enum("SharedModel.Meta.Shards.ShardTypeId", ("Mystery", 1), ("Ancient", 3), ("Legendary", 5), ("Void", 6), ("Mythical", 7));
 		_metadata.Enum(
 			"SharedModel.Meta.BlackMarket.BlackMarketItemId",
-			("HeroXpBooster100P_1Day", 3001), ("SkillUpgradeItemRare", 5001), ("SkillUpgradeItemEpic", 5002), ("HeroRankUpItemGrade2", 6501));
+			("HeroXpBooster100P_1Day", 3001), ("SkillUpgradeItemRare", 5001), ("SkillUpgradeItemEpic", 5002), ("HeroRankUpItemGrade2", 6501), ("Carbon_Rank1", 19001), ("Carbon_Rank2", 19002));
 		_metadata.Enum("SharedModel.Meta.Relics.StaticData.RelicRank", ("Rank1", 1), ("Rank2", 2), ("Rank3", 3), ("Rank4", 4), ("Rank5", 5), ("Rank6", 6));
 		_metadata.Enum("SharedModel.Meta.Relics.StaticData.RelicStoneShapeKindId", ("Circle", 1), ("Triangle", 2), ("Square", 3), ("Diamond", 4), ("Pentagon", 5));
 		_metadata.Enum(
