@@ -134,6 +134,15 @@ public sealed class MissionReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Quests\.Data\.Quest\.RecommendedQuestGroupId at 0x[0-9A-F]+ is Group3, in Mission 9103, but the Account's open groups are Group2\.$");
 	}
 
+	/// <summary>The game's QuestStateId names Undefined too, which isn't a state a Mission is written with.</summary>
+	[Fact]
+	public void Refuses_a_mission_in_the_undefined_state()
+	{
+		using var game = Create(Default with { States = [.. Default.States.Select(state => state.QuestId == 52 ? state with { StateId = 0 } : state)] });
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Quests\.Data\.QuestState\.StateId at 0x[0-9A-F]+ is Undefined, where raid-bridge expects New, InProgress or Completed, in Mission 9102\.$");
+	}
+
 	[Fact]
 	public void Refuses_a_mission_with_no_group()
 	{

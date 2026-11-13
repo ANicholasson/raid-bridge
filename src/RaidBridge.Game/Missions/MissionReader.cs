@@ -166,7 +166,8 @@ internal static class MissionReader
 			throw new GameDataException($"{statePrototypeId}, in the state of {named}, quest {id}.");
 		}
 
-		var stateId = state.Enum("StateId", "SharedModel.Meta.Quests.QuestStateId").Value;
+		// The game's QuestStateId names Undefined too, which docs/snapshot.md doesn't list (CodeRabbit, https://github.com/ANicholasson/raid-bridge/pull/40).
+		var stateId = state.Enum("StateId", "SharedModel.Meta.Quests.QuestStateId").Where(id => id is "New" or "InProgress" or "Completed", $"New, InProgress or Completed, in {named}");
 		var (collected, required) = Progress(state, prototypeId, finished: stateId == "Completed", named);
 		var group = Required(quest.NullableEnumMember("RecommendedQuestGroupId", GroupId), named, "group");
 		return new(
