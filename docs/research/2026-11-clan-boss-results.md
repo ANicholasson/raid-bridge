@@ -2,12 +2,13 @@
 
 Findings for https://github.com/ANicholasson/raid-bridge/issues/34: whether the Game client holds Clan Boss battle results in a form a Snapshot could read. The ask was a run's date, boss and difficulty, keys used, total damage, the boss's turns, and each Champion's damage dealt and taken, healing and turn of death, so that one run can be compared with another.
 
-The class and field names below come from the installed game's own files (`global-metadata.dat` and `GameAssembly.dll` at IL2CPP metadata v39, Unity 6000.3.18f1), parsed with the vendored LibCpp2IL. The "Live check" section then reads the running Game client on the maintainer's Linux install, through the Linux adapter, logged in to the main Account. It reads only the Account's own entries: other clan members' entries were counted, never read.
+The class and field names below come from the installed game's own files (`global-metadata.dat` and `GameAssembly.dll` at IL2CPP metadata v39, Unity 6000.3.18f1), parsed with the vendored LibCpp2IL. The "Live check" section then reads the running Game client on the maintainer's Linux install, through the Linux adapter, logged in to the main Account. It reads the Account's own entries. Of other clan members' entries it read only their damage, summed, to check it against the boss's total.
 
 ## The short answer
 
-- **Today's Clan Boss, per difficulty: yes.** The client holds the Account's damage, keys spent and team for each difficulty of the current Clan Boss day, and for each Champion in that team its damage dealt, damage taken and healing.
-- **Best single attack per difficulty: yes.** A personal best per difficulty, and the previous day's total on the Account's profile.
+- **Today's Clan Boss, per difficulty: partly.** The client holds the Account's total damage and keys spent on each difficulty of the current Clan Boss day, and the **last** team used there, as the game's Clan Boss score list shows it. Not each battle's damage, and not the team behind the best one.
+- **Each Champion's damage dealt, damage taken and healing: no.** The fields exist, but they hold 0 for Clan Boss, and the score list doesn't show them either (live check).
+- **Best single attack per difficulty: not dependably.** A personal best per difficulty exists, but it didn't change after a day's fights (live check). The Account's profile holds the previous day's total.
 - **History of past days: no.** Each new Clan Boss day replaces the previous one. A Snapshot taken after each day's fights is the only history, kept by the player.
 - **Each battle on its own, the boss's turns, turn of death, battle time: no**, except while that battle's result screen is open. The full battle record lives only as long as the battle and its result screen, and in a small on-disk queue until the server accepts the result.
 
@@ -72,7 +73,7 @@ This is the clan's scoreboard, the one the game shows under the Clan Boss's scor
 
 `_userWrapper.Alliance.UserAllianceData` (`UpdatableUserAllianceData` : `SharedModel.Meta.Alliances.UserAllianceData`) holds the Account's side:
 
-- `MaxSingleDamageByBossId`: `Dictionary<AllianceBossTypeId, long>`, the best single attack per difficulty. Only difficulties the Account has fought appear.
+- `MaxSingleDamageByBossId`: `Dictionary<AllianceBossTypeId, long>`, by its name the best single attack per difficulty. It held 2 difficulties, and didn't gain the one fought during the live check.
 - `CurrentBossAttack`: a `UserBossAttackInfo` (`Id`, `StartTime`, `InitialHp`), the last attack the Account started.
 - `ReceivedRewards` and `RewardInfo`: the chests per difficulty, by damage range.
 
@@ -99,15 +100,22 @@ A read-only probe read the running Game client on the main Account, through the 
 - The Account hadn't attacked the new day's boss yet, so it had no entry in any `AttackInfoByUserId`.
 - `MaxSingleDamageByBossId` held 2 difficulties. `Activities.AllianceBossData` named the previous day's revision (one less than the bosses'), with that day's total and the best on the profile.
 
-**Still open:** whether the Account's `HeroInfos` after two attacks is one team with summed figures, the last team, or both teams. Pending the maintainer's two Clan Boss fights.
+**After two fights.** The maintainer then fought Hard twice with two different teams, the stronger team first and a weaker one second. Read again:
+
+- The Account's entry on Hard held `GivenDamage` 41,498,308 and `SpentKeys` 2: both battles, added up. The bosses' `DamageTaken` went up by the same amount.
+- `HeroInfos` held 5 Champions: the **second** team only, with their stars, level and Awakening. `TotalPower` was that team's power. The stronger first team was gone.
+- Every `ShortHeroInfo.DamageDealt`, `DamageTaken` and `RestoredHp` was 0, and every `EquippedSets` was empty.
+- The game's Clan Boss score list (clan screen, on the maintainer's screenshot) showed the same thing: 41.49M with 2 keys, the second team, team power 105.76K, and no per-Champion figures. Reading again after opening that list (which also refreshed another difficulty's figures) changed nothing on the Account's entry.
+- `MaxSingleDamageByBossId` still held only Brutal and Nightmare, with no entry for Hard. `Activities.AllianceBossData` still named the previous day. `CurrentBossAttack.StartTime` was the second battle's start.
+- Only the difficulty fought had its `Element` updated; the others kept the value from the last clan refresh. Fields that the server sends with the clan's data can lag behind the battles.
 
 ## What a build ticket would need
 
-A build is feasible for **today's Clan Boss**, not for history or a battle-by-battle breakdown. It would need:
+A build is feasible but small: **today's Clan Boss totals**. That's per difficulty the Account's damage and keys spent for the day, and the last team used, as the score list shows. Neither a run-by-run comparison nor per-Champion figures are possible. It would need:
 
-1. The shape, through `/grill-with-docs`: a `clanBoss` section with the day's start and end, and per difficulty the Account's damage, keys spent, best single attack, and the team's Champions with damage dealt, damage taken and healing; how a Champion is named when only its type is known; and how to write an Account with no clan, or one that hasn't attacked today.
+1. The shape, through `/grill-with-docs`: a `clanBoss` section with the day's start and end, and per difficulty the Account's damage, keys spent and last team; whether to write `MaxSingleDamageByBossId` at all, given it didn't move; how a Champion is named when only its type is known; and how to write an Account with no clan, or one that hasn't attacked today.
 2. The reader: the routes above, the Account's own key only, `AttackInfoByUserId` null treated as "nobody attacked".
 3. Glossary terms for the Clan Boss, its difficulties and the Clan Boss day.
 4. A live check against the Clan Boss score screen after a fight.
 
-The player can compare runs across days by keeping a Snapshot from each day. Turn of death, the boss's turns, and each battle on its own are out of reach with the manual Snapshot flow.
+The player can compare days by keeping a Snapshot from each day, but not runs within a day. Each Champion's damage, turn of death, the boss's turns and each battle on its own are out of reach with the manual Snapshot flow. Whether the small build is worth a ticket is the maintainer's call.
