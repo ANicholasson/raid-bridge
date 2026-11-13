@@ -115,9 +115,9 @@ Artifact presets, checked the same day:
 
 ## What a build ticket needs
 
-To decide in the grill:
+To decide before building:
 
-1. **Which teams to write.** Saved teams (`HeroesAiPresets`) are what the player made on purpose, and the clearest to write. The remembered teams (`BattlePresets`) are richer, the Classic and Tag Arena attack teams among them, but are an inference from use. The issue asks for saved teams and the Classic Arena attack team, so a small first slice is saved teams plus key 3014, now that the live check settled it. A remembered team doesn't say which Champion leads, so the Snapshot can't either. The Tag Arena's key 6014, the other places, the Tag Arena's `DefensePresets` and Artifact presets go beyond the issue, and are extras for the grill to take or leave.
+1. **Which teams to write.** Saved teams (`HeroesAiPresets`) are what the player made on purpose, and the clearest to write. The remembered teams (`BattlePresets`) are richer, the Classic and Tag Arena attack teams among them, but are an inference from use. The issue asks for saved teams and the Classic Arena attack team, so a small first slice is saved teams plus key 3014, now that the live check settled it. A remembered team doesn't say which Champion leads, so the Snapshot can't either. The Tag Arena's key 6014, the other places, the Tag Arena's `DefensePresets` and Artifact presets go beyond the issue, and are extras to take or leave.
 2. **The place, as a term.** The glossary has no word for what a team is for (the game's `HeroesAiPresetType`) nor for where it was used (`RegionTypeId`). Writing both by the game's member names, as Affinities and leagues are written, fits the format, but needs glossary terms such as "Saved team" and "Remembered team".
 3. **Team names.** A saved team's name is text the player typed. Snapshots stay with the player, but they feed it to other services; decide whether to write the name, or only whether it was named.
 4. **Skill priorities.** Each position carries the AI's skill priorities per round. They name skills by id and are useful to an advisor, but double the shape. Recommend leaving them out of the first slice.

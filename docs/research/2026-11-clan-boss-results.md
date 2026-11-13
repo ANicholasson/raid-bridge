@@ -113,7 +113,7 @@ A read-only probe read the running Game client on the main Account, through the 
 
 A build is feasible but small: **today's Clan Boss totals**. That's per difficulty the Account's damage and keys spent for the day, and the last team used, as the score list shows. Neither a run-by-run comparison nor per-Champion figures are possible. It would need:
 
-1. The shape, through `/grill-with-docs`: a `clanBoss` section with the day's start and end, and per difficulty the Account's damage, keys spent, last team and the boss's Affinity (`AllianceBoss.Element`); whether to write `MaxSingleDamageByBossId` at all, given it didn't move; how a Champion is named when only its type is known; and how to write an Account with no clan, or one that hasn't attacked today.
+1. The shape: a `clanBoss` section with the day's start and end, and per difficulty the Account's damage, keys spent, last team and the boss's Affinity (`AllianceBoss.Element`); whether to write `MaxSingleDamageByBossId` at all, given it didn't move; how a Champion is named when only its type is known; and how to write an Account with no clan, or one that hasn't attacked today.
 2. The reader: the routes above, the Account's own key only, `AttackInfoByUserId` null treated as "nobody attacked".
 3. Glossary terms for the Clan Boss, its difficulties and the Clan Boss day.
 4. A live check against the Clan Boss score list after a fight, including the Affinity: on the live read, Hard showed Force after the fights and the other difficulties Void, and so did the score list's icons. Whether the difficulties really differ, or the unfought ones were stale, has to be settled first.

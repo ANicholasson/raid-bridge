@@ -1,11 +1,13 @@
-## Problem
+## Summary
 
-<!-- What is wrong or missing, in a sentence or two. Link the issue if there is one. -->
+<!-- The smallest view that makes the change clear, beside a sentence or two: a diff sketch of the shape that changes, a call tree, a short file tree or a Snapshot excerpt. Link the issue if there is one. A new package says here why it is needed. -->
 
-## Change
+## Evidence
 
-<!-- What this does about it. A new package says here why it is needed. -->
+<!-- Before and after: the test that failed and now passes, ./scripts/verify.sh, and for a reader change the running game it was checked against. Say plainly what has only been built and tested. -->
 
-## Verification
+## Merge danger
 
-<!-- How you know it works: the test that failed and now passes, ./scripts/verify.sh, and for a reader change the running game it was checked against. Say plainly what has only been built and tested. -->
+**Door:** <!-- two-way (cheap to revert) or one-way (a Snapshot field consumers rely on, a guardrail, anything hard to walk back) -->
+
+**Blast radius:** <!-- one word, then what could break, for whom -->

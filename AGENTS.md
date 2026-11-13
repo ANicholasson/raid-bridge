@@ -1,4 +1,4 @@
-# AGENTS.md: raid-bridge
+# raid-bridge
 
 ## What this project is
 
@@ -7,8 +7,6 @@ raid-bridge reads the player's own RAID: Shadow Legends Account (Champions, Arti
 Status: `raid-bridge snapshot` writes a Snapshot holding the Account, its Champions with their Total stats, their Base stats and what their Artifacts, sets, masteries, the Great Hall, Faction Guardians, Awakening, Empowerment, Relics and the Classic Arena league add, the Artifacts and Relics they wear, the Artifacts and Relics nobody wears, the Relic stones in no socket, its Resources, Shards and Items, its Great Hall and Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions (#23, #25, #26, #33, #34, #35, #36, #37, https://github.com/ANicholasson/raid-bridge/issues/8, https://github.com/ANicholasson/raid-bridge/issues/10, https://github.com/ANicholasson/raid-bridge/issues/11, https://github.com/ANicholasson/raid-bridge/issues/12, https://github.com/ANicholasson/raid-bridge/issues/13, https://github.com/ANicholasson/raid-bridge/issues/14, https://github.com/ANicholasson/raid-bridge/issues/15, https://github.com/ANicholasson/raid-bridge/issues/20, https://github.com/ANicholasson/raid-bridge/issues/32, https://github.com/ANicholasson/raid-bridge/issues/33), read from the running Game client under Proton by the Linux memory adapter (`RaidBridge.Game.Linux`, #24). The Windows memory adapter (`RaidBridge.Game.Windows`, 2026-11-13) reads the Game client as Plarium Play runs it on Windows. The reader parses the installed game's files (`RaidBridge.Game`'s `Metadata/`, #22). The format is in `docs/snapshot.md`.
 
 ## Agent skills
-
-The slash commands named here (`/grill-with-docs`, `/wayfinder`, `/to-spec`, `/to-tickets`, `/code-review`) are skills from [mattpocock/skills](https://github.com/mattpocock/skills), enabled in `.claude/settings.json`. Where they aren't installed, read `skills/<area>/<name>/SKILL.md` in that repo and follow it.
 
 ### Issue tracker
 
@@ -40,12 +38,12 @@ Fair play. These define the product: a violation is a bug even when a task seems
 - No credentials. Nothing asks for, stores or sends Plarium login details.
 - The only network destination is the endpoint the user configures. No telemetry, no update check, no third-party service. `tests/RaidBridge.Guardrails.Tests` fails `verify` on any .NET network API; when sending to that endpoint lands, it lets through only that feature's folder.
 - Account ids leave the machine only as hashes. Fixtures committed here are synthetic or scrubbed, with no real account id, player name or clan name. Real captures and Snapshots stay on the machine that made them (`captures/` and `snapshot-*.json` are gitignored).
-- No personal names, in files, commit messages, PR text or review replies: the repo may be published, and its history with it. Say the maintainer or the player, and date a decision rather than sign it. The public repository starts from one scrubbed commit of an earlier private one, because a GitHub PR page keeps its commits after a history rewrite (decided 2026-10-27).
+- No personal names, in files, commit messages, PR text or review replies: the repo may be published, and its history with it. Say the maintainer or the player, and date a decision rather than sign it.
 
 Platform:
 
-- Only the memory adapter is platform-specific (ADR-0002), one adapter per platform behind one port: Linux (the game under Proton) first, then Windows. Everything else targets `net10.0` with no platform API, so it builds and tests on Windows, Linux and macOS. CI runs `verify.sh` on Windows and Linux, with macOS off until raid-bridge supports it (2026-11-13), and agents run on Linux.
-- Raid Toolkit (`raid-toolkit/raid-toolkit-sdk`, `raid-toolkit/account-extension`, both MIT) is a reference for WHAT to read, never a dependency. Code ported from it keeps its MIT notice in a comment at the site, naming the source file. Its core, `IL2CPP-Toolkit/Core`, has no license: never copy from it.
+- Only the memory adapter is platform-specific (ADR-0002), one adapter per platform behind one port: Linux (the game under Proton) first, then Windows. Everything else targets `net10.0` with no platform API, so it builds and tests on Windows, Linux and macOS. CI runs `verify.sh` on Windows and Linux, with macOS off until raid-bridge supports it (2026-11-13).
+- Raid Toolkit (`raid-toolkit/raid-toolkit-sdk`, `raid-toolkit/account-extension`, both MIT) is a reference for WHAT to read, never a dependency. Code ported from it keeps its MIT notice in a comment at the site, naming the source file. Its core, `IL2CPP-Toolkit/Core`, has no license: never copy from it. Its README says it reads memory without injecting anything, but its type lookups go through a DLL it injects into `Raid.exe` (found by decompiling, 2026-10-27). Before stating what any dependency does to the game process, read its source or decompile it.
 - Game updates move classes and offsets. The installed game's files locate the static roots and give the expected field names and types; each object's field offsets come from its runtime class in memory and are checked against them (ADR-0001). Nothing hard-codes an offset or a field index of the game's own classes. <!-- (PR #21) --> The IL2CPP runtime's own structures are the one exception: one layout table per Unity version, and any other version is refused (ADR-0003).
 
 Code:
@@ -63,7 +61,7 @@ Code:
   - It builds as its own project, referenced only by the module that wraps it, and no other project's API exposes its types.
   - Upstream's code keeps upstream's style: our format check and style analyzers skip `third_party/`, but the guardrails, the locked restore and the build still cover it.
   - The first commit is the untouched copy at the pinned commit. Each patch is its own small commit, marked at the site with `// raid-bridge patch: <why>`. Moving to a newer upstream commit replaces the copy in one commit and re-applies the patches.
-- Commits: conventional, subject ≤50 chars, body only when the why isn't obvious, NO `Co-Authored-By` trailers.
+- Commits: conventional, subject ≤50 chars, body only when the why isn't obvious. Pull requests are squash merged, so the PR title, in the same form, becomes the commit on `main`. Commits, PR text and review replies carry no trailers, footers or tool attribution.
 
 ## Checks
 
@@ -73,20 +71,13 @@ Gated checks skip unless `RAIDBRIDGE_LIVE=1`. The installed-files check also nee
 
 Green tests are not acceptance for reader code. A reader change is proven against the running Game client on its adapter's platform (the maintainer's Linux install, the game under Proton, for the Linux adapter; the maintainer's Windows install for the Windows adapter), and the PR says plainly what has only compiled (PR #2).
 
-## Working agreement
+## Changes
 
-- **Interrogate**: `/grill-with-docs` per vertical before building, one decision per question, each with a recommendation. Work too big for one session goes on a `/wayfinder` map.
-- **Capture**: vocabulary lands in `GLOSSARY.md` as it resolves (a glossary only, never a spec or a scratchpad); ADRs at the bar hard-to-reverse ∧ surprising ∧ real trade-off; research in `docs/research/`.
-- **Breakdown**: `/to-spec`, then `/to-tickets` into tracer-bullet slices filed as GitHub issues.
-- **Implement**: one slice per PR. Every changed file earns its place: no drive-by refactors. Flag ambiguity as an open question; never invent behaviour or settle a decision the grill hasn't.
-- **Review**: `/code-review` locally before the first push, and once per iteration after it, never per fix. Then the PR's review: triage EVERY finding (fix it with a regression test, or rebut it with the mechanism), reply per thread, resolve, and repeat until a round returns zero findings. A line that exists because of a review finding carries provenance at the site, naming the PR, `(https://github.com/ANicholasson/raid-bridge/pull/NN)` style. NEVER merge: the maintainer merges.
+- Vocabulary lands in `GLOSSARY.md` as it resolves (a glossary only, never a spec or a scratchpad); ADRs at the bar hard-to-reverse ∧ surprising ∧ real trade-off; research in `docs/research/`.
+- One change per PR. Every changed file earns its place: no drive-by refactors. Flag ambiguity as an open question; never invent behaviour or settle an open design decision in code.
+- The PR body follows `.github/PULL_REQUEST_TEMPLATE.md`.
+- Every review finding is fixed with a regression test or rebutted with the mechanism, answered in its thread and resolved. A line that exists because of a review finding carries provenance at the site, naming the PR, `(https://github.com/ANicholasson/raid-bridge/pull/NN)` style.
 
 ## Doc-sync rule
 
-Any change that alters a pattern documented here, in an ADR or in any instruction file updates that doc **in the same change**. Stale instruction files are worse than none: they are injected into every agent's context and teach the old pattern.
-
-## Known agent failure modes
-
-Real incidents. Take them personally:
-
-- Trusting a dependency's description over its code. Raid Toolkit was first reported here as "reads memory, no injection" from its README and architecture; decompiling Il2CppToolkit showed that every type lookup goes through a DLL it injects into `Raid.exe` (2026-10-27). Before stating what any dependency does to the game process, read its source or decompile it.
+Any change that alters a pattern documented here, in an ADR or in any instruction file updates that doc **in the same change**. Stale instructions are worse than none: they teach the old pattern.

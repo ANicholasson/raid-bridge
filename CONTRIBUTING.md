@@ -18,7 +18,7 @@ It needs only the .NET 10 SDK and runs everything CI runs: the locked restore, t
 
 ## Opening a pull request
 
-- Conventional commits, with a subject of 50 characters or fewer.
+- Title in Conventional Commits form, with a subject of 50 characters or fewer, such as `fix: refuse a Relic with no level`; pull requests are squash merged, so the title becomes the commit on `main`.
 - One change per pull request, with no drive-by refactors.
 - Say what you verified and how. A change to a reader is proven against the running game; if you could only build and test it, say so plainly.
 - Never attach a Snapshot, a memory capture or a screenshot that shows an account id, player name or clan name. Test fixtures are synthetic.
