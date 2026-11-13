@@ -35,12 +35,13 @@ On Windows, with the game installed through Plarium Play, run this in PowerShell
 ```powershell
 $dir = "$env:LOCALAPPDATA\raid-bridge"
 dotnet publish src/RaidBridge.Cli/RaidBridge.Cli.csproj -c Release -o $dir
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-if (-not $userPath) { $userPath = $dir } elseif (($userPath -split ';') -notcontains $dir) { $userPath += ";$dir" }
-[Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
+$userPath = (Get-Item 'HKCU:\Environment').GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+if (($userPath -split ';') -notcontains $dir) {
+    Set-ItemProperty 'HKCU:\Environment' Path ((@($userPath, $dir) | Where-Object { $_ }) -join ';') -Type ExpandString
+}
 ```
 
-The last three lines add raid-bridge's folder to your own PATH, once, so open a new terminal before the first run. If Windows' Smart App Control is on, it may refuse to run a program built on your own machine, on reputation alone; turning Smart App Control off is the only way round that today.
+The last lines add raid-bridge's folder to your own PATH once, leaving its other entries as they are; open a new terminal before the first run, and if it still doesn't find `raid-bridge`, sign out of Windows and back in. A terminal opened before the .NET SDK was installed won't find `dotnet` either. If Windows' Smart App Control is on, it may refuse to run a program built on your own machine, on reputation alone; turning Smart App Control off is the only way round that today.
 
 On Linux, with the game running through Plarium Play under Steam's Proton:
 
