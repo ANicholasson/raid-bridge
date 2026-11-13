@@ -24,6 +24,12 @@
           "RaidBridge.Game": "[1.0.0, )"
         }
       },
+      "raidbridge.game.windows": {
+        "type": "Project",
+        "dependencies": {
+          "RaidBridge.Game": "[1.0.0, )"
+        }
+      },
       "Samboy063.LibCpp2IL": {
         "type": "Project",
         "dependencies": {

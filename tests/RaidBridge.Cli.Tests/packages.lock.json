@@ -122,7 +122,8 @@
           "RaidBridge.Domain": "[1.0.0, )",
           "RaidBridge.Export": "[1.0.0, )",
           "RaidBridge.Game": "[1.0.0, )",
-          "RaidBridge.Game.Linux": "[1.0.0, )"
+          "RaidBridge.Game.Linux": "[1.0.0, )",
+          "RaidBridge.Game.Windows": "[1.0.0, )"
         }
       },
       "raidbridge.domain": {
@@ -153,6 +154,12 @@
           "RaidBridge.Game": "[1.0.0, )",
           "xunit.v3.assert": "[4.0.3, )",
           "xunit.v3.extensibility.core": "[4.0.3, )"
+        }
+      },
+      "raidbridge.game.windows": {
+        "type": "Project",
+        "dependencies": {
+          "RaidBridge.Game": "[1.0.0, )"
         }
       },
       "Samboy063.LibCpp2IL": {

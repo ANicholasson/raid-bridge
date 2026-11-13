@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		The Windows memory adapter: finds the Game client and reads it through a handle opened with PROCESS_VM_READ and
+		PROCESS_QUERY_LIMITED_INFORMATION only (ADR-0001, ADR-0002). It references only the Game layer's memory port.
+	-->
+	<PropertyGroup>
+		<!-- ReadProcessMemory and the module calls take pointers to the buffers they fill. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="../RaidBridge.Game/RaidBridge.Game.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="RaidBridge.Game.Windows.Tests" />
+	</ItemGroup>
+</Project>

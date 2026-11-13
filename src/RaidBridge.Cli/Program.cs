@@ -4,6 +4,7 @@ using RaidBridge.Export.Accounts;
 using RaidBridge.Game.Linux.Memory;
 using RaidBridge.Game.Memory;
 using RaidBridge.Game.Snapshots;
+using RaidBridge.Game.Windows.Memory;
 
 namespace RaidBridge.Cli;
 
@@ -21,11 +22,14 @@ internal static class Program
 			Environment.CurrentDirectory);
 
 	/// <summary>
-	/// The reader over the running Game client, with the --game-dir folder if any. Only Linux has a memory adapter so
-	/// far (ADR-0002).
+	/// The reader over the running Game client, with the --game-dir folder if any, through this platform's memory
+	/// adapter (ADR-0002). Linux and Windows have one so far.
 	/// </summary>
 	internal static ISnapshotSource OpenGame(string? gameDirectory) =>
-		OperatingSystem.IsLinux()
-			? new GameSnapshotSource(LinuxGameMemory.Open(), gameDirectory)
-			: throw new GameMemoryException("There is no memory adapter for this platform yet, so the Game client can't be read.");
+		new GameSnapshotSource(OpenMemory(), gameDirectory);
+
+	private static IGameMemory OpenMemory() =>
+		OperatingSystem.IsLinux() ? LinuxGameMemory.Open()
+		: OperatingSystem.IsWindows() ? WindowsGameMemory.Open()
+		: throw new GameMemoryException("There is no memory adapter for this platform yet, so the Game client can't be read.");
 }

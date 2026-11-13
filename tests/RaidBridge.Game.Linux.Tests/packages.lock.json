@@ -116,23 +116,8 @@
           "xunit.v3.runner.common": "[4.0.3]"
         }
       },
-      "raid-bridge": {
-        "type": "Project",
-        "dependencies": {
-          "RaidBridge.Domain": "[1.0.0, )",
-          "RaidBridge.Export": "[1.0.0, )",
-          "RaidBridge.Game": "[1.0.0, )",
-          "RaidBridge.Game.Linux": "[1.0.0, )"
-        }
-      },
       "raidbridge.domain": {
         "type": "Project"
-      },
-      "raidbridge.export": {
-        "type": "Project",
-        "dependencies": {
-          "RaidBridge.Domain": "[1.0.0, )"
-        }
       },
       "raidbridge.game": {
         "type": "Project",

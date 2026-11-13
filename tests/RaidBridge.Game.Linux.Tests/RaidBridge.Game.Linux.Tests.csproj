@@ -8,8 +8,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="../../src/RaidBridge.Game.Linux/RaidBridge.Game.Linux.csproj" />
-		<!-- The live check runs raid-bridge snapshot as Program wires it. -->
-		<ProjectReference Include="../../src/RaidBridge.Cli/RaidBridge.Cli.csproj" />
 		<ProjectReference Include="../RaidBridge.Game.Testing/RaidBridge.Game.Testing.csproj" />
 	</ItemGroup>
 	<ItemGroup>

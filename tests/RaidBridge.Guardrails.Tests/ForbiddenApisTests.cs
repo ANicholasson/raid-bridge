@@ -142,7 +142,7 @@ public class NativeImportsTests
 	[Theory]
 	[InlineData("""[LibraryImport("libc", EntryPoint = "process_vm_writev")] private static partial nint ProcessVmRead(int pid);""", "process_vm_writev")]
 	[InlineData("""[DllImport("libc", SetLastError = true)] private static extern int open(string path, int flags);""", "open")]
-	[InlineData("""[DllImportAttribute("kernel32")] static extern bool ReadProcessMemory(nint process, nint address, byte[] buffer, nint size, out nint read);""", "ReadProcessMemory")]
+	[InlineData("""[DllImportAttribute("kernel32")] static extern nint VirtualQueryEx(nint process, nint address, out Region region, nint size);""", "VirtualQueryEx")]
 	[InlineData("""[System.Runtime.InteropServices.DllImport("libc")] static extern nint write(int fd, byte* buffer, nint count);""", "write")]
 	[InlineData("""[SuppressGCTransition, DllImport("libc")] static extern int open(string path, int flags);""", "open")]
 	public void Finds_a_declaration_off_the_list(string source, string hit) =>
@@ -163,7 +163,7 @@ public class NativeImportsTests
 		Assert.Equal([hit], NativeImports.FindIn(source));
 
 	[Fact]
-	public void Allows_the_three_functions_on_the_list() =>
+	public void Allows_the_functions_on_the_list() =>
 		Assert.Empty(NativeImports.FindIn(
 			"""
 			[LibraryImport("libc", EntryPoint = "process_vm_readv", SetLastError = true)]
@@ -172,11 +172,45 @@ public class NativeImportsTests
 			public static partial uint GetUserId();
 			[LibraryImport("libc", EntryPoint = "geteuid")]
 			public static partial uint GetEffectiveUserId();
+			[LibraryImport("kernel32", EntryPoint = "OpenProcess", SetLastError = true)]
+			private static partial SafeProcessHandle OpenProcess(uint desiredAccess, [MarshalAs(UnmanagedType.Bool)] bool inheritHandle, uint processId);
+			[LibraryImport("kernel32", EntryPoint = "ReadProcessMemory", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool ReadProcessMemory(SafeProcessHandle process, nuint address, byte* buffer, nuint size, out nuint read);
+			[LibraryImport("kernel32", EntryPoint = "K32EnumProcessModulesEx", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool EnumProcessModulesEx(SafeProcessHandle process, nint* modules, uint size, out uint needed, uint filter);
+			[LibraryImport("kernel32", EntryPoint = "QueryFullProcessImageNameW", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool QueryFullProcessImageNameW(SafeProcessHandle process, uint flags, char* name, ref uint size);
+			[LibraryImport("kernel32", EntryPoint = "GetProcessTimes", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool GetProcessTimes(SafeProcessHandle process, out long created, out long exited, out long kernel, out long user);
+			[LibraryImport("kernel32", EntryPoint = "GetExitCodeProcess", SetLastError = true)]
+			[return: MarshalAs(UnmanagedType.Bool)]
+			private static partial bool GetExitCodeProcess(SafeProcessHandle process, out uint exitCode);
 			"""));
+
+	/// <summary>
+	/// OpenProcess under another name would let a call ask for any rights unseen, such as Acquire(0x1F0FFF, false, pid)
+	/// (https://github.com/ANicholasson/raid-bridge/pull/49).
+	/// </summary>
+	[Theory]
+	[InlineData("""[LibraryImport("kernel32", EntryPoint = "OpenProcess")] private static partial nint Acquire(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint id);""", "Acquire")]
+	[InlineData("""[DllImport("kernel32", EntryPoint = "OpenProcess")] static extern nint Open(uint access, bool inherit, uint id);""", "Open")]
+	public void Finds_open_process_declared_under_another_name(string source, string name)
+	{
+		Assert.Equal([$"OpenProcess declared as {name}, which the OpenProcess check can't see"], NativeImports.FindIn(source));
+		Assert.Empty(ForbiddenApis.FindIn($"{source} var process = {name}(0x1F0FFF, false, pid);"));
+	}
+
+	[Fact]
+	public void Allows_open_process_declared_under_its_own_name() =>
+		Assert.Empty(NativeImports.FindIn("""[LibraryImport("kernel32", EntryPoint = "OpenProcess", SetLastError = true)] private static partial SafeProcessHandle OpenProcess(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint id);"""));
 
 	[Fact]
 	public void Finds_a_native_methods_entry_off_the_list() =>
-		Assert.Equal(["OpenProcess", "ReadProcessMemory"], NativeImports.FindInNativeMethods("// CsWin32\nOpenProcess\nReadProcessMemory // the read\ngetuid\n"));
+		Assert.Equal(["VirtualQueryEx", "NtQueryInformationProcess"], NativeImports.FindInNativeMethods("// CsWin32\nVirtualQueryEx\nNtQueryInformationProcess // the PEB\nOpenProcess\ngetuid\n"));
 }
 
 public class ForbiddenPackagesTests
