@@ -105,7 +105,11 @@ internal static class ArenaReader
 			classic.Week.Losses,
 			classic.DefencePositions is { } positions ? Team(positions, "the Classic Arena's defence team", defenders) : new([]));
 
-	/// <summary>An Account that holds no <c>Arena3X3DefenseTeamSetup</c> has no defence teams.</summary>
+	/// <summary>
+	/// Teams that hold no Champion between them are written as no defence teams, as no <c>Arena3X3DefenseTeamSetup</c>
+	/// is: the game held one team with no Champion in it for an Account with no Tag Arena defence set
+	/// (https://github.com/ANicholasson/raid-bridge/issues/51). An empty team beside one with a Champion keeps its place.
+	/// </summary>
 	private static TagArena Tag(ManagedObject userWrapper, Defenders defenders)
 	{
 		const string Arena = "the Tag Arena";
@@ -113,14 +117,15 @@ internal static class ArenaReader
 			.Object("Arena3x3", "Client.Model.Gameplay.Arena3x3.Arena3x3Wrapper")
 			.Object("Data", "Client.Model.Gameplay.Battle.Data.UpdatableArena3x3Data");
 		var (battles, wins, losses) = Week(data, Arena);
-		var teams = data.ListOrNull("Arena3X3DefenseTeamSetup", $"System.Collections.Generic.List`1<{TeamSetup}>")?.Objects(TeamSetup) ?? [];
+		var setups = data.ListOrNull("Arena3X3DefenseTeamSetup", $"System.Collections.Generic.List`1<{TeamSetup}>")?.Objects(TeamSetup) ?? [];
+		var teams = setups.Select((team, index) => Team(Positions(team), $"team {index + 1} of {Arena}'s defence", defenders)).ToList();
 		return new(
 			LeagueName(data.Enum("LeagueId", League).Value),
 			data.Int64("ArenaPoints").Value,
 			battles,
 			wins,
 			losses,
-			[.. teams.Select((team, index) => Team(Positions(team), $"team {index + 1} of {Arena}'s defence", defenders))]);
+			teams.All(team => team.ChampionIds.Count == 0) ? [] : teams);
 	}
 
 	private static string? LeagueName(string league) => league == NoLeague ? null : league;
