@@ -20,7 +20,7 @@ namespace RaidBridge.Domain.Accounts;
 /// </summary>
 public sealed record Account(
 	AccountId Id,
-	AccountStanding Standing,
+	AccountProfile Profile,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,
 	IReadOnlyList<Relic> UnwornRelics,

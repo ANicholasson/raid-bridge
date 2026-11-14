@@ -37,9 +37,9 @@ internal static class SnapshotJson
 
 			json.WriteStartObject("account");
 			json.WriteString("idHash", snapshot.AccountIdHash.Value);
-			json.WriteNumber("level", snapshot.Standing.Level);
-			json.WriteNumber("experience", snapshot.Standing.Experience);
-			json.WriteNumber("power", snapshot.Standing.Power);
+			json.WriteNumber("level", snapshot.Profile.Level);
+			json.WriteNumber("experience", snapshot.Profile.Experience);
+			json.WriteNumber("power", snapshot.Profile.Power);
 			json.WriteEndObject();
 
 			json.WriteStartArray("champions");

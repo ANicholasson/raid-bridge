@@ -43,6 +43,7 @@ public sealed class SnapshotCommandTests : IDisposable
 		Assert.Matches(@"^0\.1\.0(\+[0-9a-f]{40})?$", root.GetProperty("generator").GetProperty("version").GetString());
 		Assert.Equal("2026-10-31T21:40:05Z", root.GetProperty("capturedAt").GetString());
 		Assert.Equal(AccountIdHash.Of(new AccountId(4_000_000_001), Salts.LoadOrCreate()).Value, root.GetProperty("account").GetProperty("idHash").GetString());
+		Assert.Equal((54, 31_250, 1_234_567.891), (root.GetProperty("account").GetProperty("level").GetInt32(), root.GetProperty("account").GetProperty("experience").GetInt32(), root.GetProperty("account").GetProperty("power").GetDouble()));
 		Assert.Equal([3, 7, 12], root.GetProperty("champions").EnumerateArray().Select(champion => champion.GetProperty("id").GetInt32()));
 		Assert.Equal("Synthetic Knight", root.GetProperty("champions")[0].GetProperty("name").GetString());
 		Assert.Equal([104, 105], root.GetProperty("unwornArtifacts").EnumerateArray().Select(artifact => artifact.GetProperty("id").GetInt32()));

@@ -34,6 +34,7 @@ internal static class AccountReader
 			.Object("<StaticDataManager>k__BackingField", "Client.Model.Gameplay.StaticData.IClientStaticDataManager", "Client.Model.Gameplay.StaticData.ClientStaticDataManager")
 			.Object("<StaticData>k__BackingField", "SharedModel.Meta.ClientStaticData");
 		var userWrapper = appModel.Object("_userWrapper", UserWrapper);
+		var profile = Profile(userWrapper);
 		var names = new LocalizedNames(staticData);
 		var artifacts = ArtifactReader.Read(userWrapper, staticData, names);
 		var relics = RelicReader.Read(userWrapper, staticData, names);
@@ -50,7 +51,7 @@ internal static class AccountReader
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
 		var missions = MissionReader.Read(userWrapper, staticData, names);
-		return new(id, Standing(userWrapper), champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+		return new(id, profile, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
 	}
 
 	/// <summary>
@@ -59,7 +60,7 @@ internal static class AccountReader
 	/// infinite or not a number, and never negative zero, as a Resource's amount isn't
 	/// (https://github.com/ANicholasson/raid-bridge/issues/27).
 	/// </summary>
-	private static AccountStanding Standing(ManagedObject userWrapper)
+	private static AccountProfile Profile(ManagedObject userWrapper)
 	{
 		var account = userWrapper
 			.Object("Account", "Client.Model.Gameplay.Account.AccountWrapper")

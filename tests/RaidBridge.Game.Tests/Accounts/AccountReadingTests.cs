@@ -21,7 +21,7 @@ public sealed class AccountReadingTests : IDisposable
 	/// <summary>The power is a double the game holds, read as held, not rounded to a whole number (https://github.com/ANicholasson/raid-bridge/issues/27).</summary>
 	[Fact]
 	public void Reads_the_account_level_experience_and_power() =>
-		Assert.Equal(new AccountStanding(54, 31_250, 1_234_567.891), _game.Source().Read().Standing);
+		Assert.Equal(new AccountProfile(54, 31_250, 1_234_567.891), _game.Source().Read().Profile);
 
 	/// <summary>A new Account: level 1, no experience and no power yet.</summary>
 	[Fact]
@@ -29,7 +29,7 @@ public sealed class AccountReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(Level: 1, Experience: 0, TotalPower: 0));
 
-		Assert.Equal(new AccountStanding(1, 0, 0), game.Source().Read().Standing);
+		Assert.Equal(new AccountProfile(1, 0, 0), game.Source().Read().Profile);
 	}
 
 	[Theory]
@@ -39,7 +39,7 @@ public sealed class AccountReadingTests : IDisposable
 	[InlineData(1, 0, -0.0, "TotalPower", "-0", "a power of 0 or more")]
 	[InlineData(1, 0, double.NaN, "TotalPower", "NaN", "a power of 0 or more")]
 	[InlineData(1, 0, double.PositiveInfinity, "TotalPower", "Infinity", "a power of 0 or more")]
-	public void Refuses_a_standing_out_of_range(int level, int experience, double power, string field, string value, string expectation)
+	public void Refuses_a_profile_out_of_range(int level, int experience, double power, string field, string value, string expectation)
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(level, experience, power));
 

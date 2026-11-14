@@ -23,7 +23,7 @@ public partial class SnapshotFormatTests
 	private static readonly TagArena NoTagArena = new(null, 0, 0, 0, 0, []);
 	private static readonly LiveArena NewLiveArena = new("BronzeI", 900, 0, 0);
 	private static readonly MissionGroups NoMissions = new([], []);
-	private static readonly AccountStanding NewAccount = new(1, 0, 0);
+	private static readonly AccountProfile NewAccount = new(1, 0, 0);
 
 	/// <summary>A helmet that was ascended, a weapon with a Glyph, and a ring locked to a Faction. 0.06 is the nearest Fixed to it, 257698038 / 2^32.</summary>
 	private static readonly Artifact[] KnightWears =
