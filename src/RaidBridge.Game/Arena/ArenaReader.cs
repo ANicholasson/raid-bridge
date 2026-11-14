@@ -106,9 +106,9 @@ internal static class ArenaReader
 			classic.DefencePositions is { } positions ? Team(positions, "the Classic Arena's defence team", defenders) : new([]));
 
 	/// <summary>
-	/// An Account that holds no <c>Arena3X3DefenseTeamSetup</c> has no defence teams, and so has one whose teams hold no
-	/// Champion between them: the game held one team with no Champion in it for an Account with no Tag Arena defence set
-	/// (https://github.com/ANicholasson/raid-bridge/issues/51). A team with no Champion beside one that has some keeps its place.
+	/// Teams that hold no Champion between them are written as no defence teams, as no <c>Arena3X3DefenseTeamSetup</c>
+	/// is: the game held one team with no Champion in it for an Account with no Tag Arena defence set
+	/// (https://github.com/ANicholasson/raid-bridge/issues/51). An empty team beside one with a Champion keeps its place.
 	/// </summary>
 	private static TagArena Tag(ManagedObject userWrapper, Defenders defenders)
 	{
