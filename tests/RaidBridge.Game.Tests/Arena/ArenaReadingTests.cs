@@ -40,6 +40,41 @@ public sealed class ArenaReadingTests : IDisposable
 		Assert.Equivalent(new TagArena(null, 0, 0, 0, 0, []), account.TagArena, strict: true);
 	}
 
+	/// <summary>
+	/// Tag Arena teams that hold no Champion between them are no defence, as no list of teams is: a live read wrote one
+	/// empty team for an Account with no Tag Arena defence set (https://github.com/ANicholasson/raid-bridge/issues/51).
+	/// </summary>
+	[Theory]
+	[MemberData(nameof(TeamsWithNoChampion))]
+	public void Reads_tag_teams_with_no_champion_as_no_defence(SyntheticTeamSetup[] teams)
+	{
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with
+		{
+			Tag = SyntheticArenaData.Default.Tag with { DefenceTeams = teams },
+		});
+
+		Assert.Empty(game.Source().Read().TagArena.DefenceTeams);
+	}
+
+	public static TheoryData<SyntheticTeamSetup[]> TeamsWithNoChampion() => new()
+	{
+		{ [new(4, [])] },
+		{ [new(4, [0, 0, 0, 0])] },
+		{ [new(4, [0, 0, 0, 0]), new(4, []), new(4, [0])] },
+	};
+
+	/// <summary>An empty team keeps its place before a team with Champions in it, as it does after one.</summary>
+	[Fact]
+	public void Keeps_an_empty_tag_team_before_a_team_with_champions()
+	{
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with
+		{
+			Tag = SyntheticArenaData.Default.Tag with { DefenceTeams = [new(4, [0, 0]), new(4, [7])] },
+		});
+
+		Assert.Equivalent(new ArenaTeam[] { new([]), new([7]) }, game.Source().Read().TagArena.DefenceTeams, strict: true);
+	}
+
 	/// <summary>Four Champions in every position of every team, twelve in the Tag Arena, each defending once in it.</summary>
 	[Fact]
 	public void Reads_full_defence_teams()
