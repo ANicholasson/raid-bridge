@@ -17,7 +17,9 @@ public sealed class TakeSnapshot(ISnapshotSource source, ISaltStore salts, TimeP
 		return new(
 			clock.GetUtcNow(),
 			AccountIdHash.Of(account.Id, salt),
-			account.Profile,
+			account.Level,
+			account.Experience,
+			account.Power,
 			[.. account.Champions.OrderBy(champion => champion.Id)],
 			[.. account.UnwornArtifacts.OrderBy(artifact => artifact.Id)],
 			[.. account.UnwornRelics.OrderBy(relic => relic.Id)],

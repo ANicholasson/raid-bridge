@@ -10,7 +10,9 @@ public sealed class SnapshotFileTests : IDisposable
 	private static readonly Snapshot Snapshot = new(
 		new DateTimeOffset(2026, 10, 31, 21, 40, 5, TimeSpan.Zero),
 		AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])),
-		new(1, 0, 0),
+		1,
+		0,
+		0,
 		[],
 		[],
 		[],

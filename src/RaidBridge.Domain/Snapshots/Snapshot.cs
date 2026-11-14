@@ -19,7 +19,9 @@ namespace RaidBridge.Domain.Snapshots;
 public sealed record Snapshot(
 	DateTimeOffset CapturedAt,
 	AccountIdHash AccountIdHash,
-	AccountProfile Profile,
+	int Level,
+	int Experience,
+	double Power,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,
 	IReadOnlyList<Relic> UnwornRelics,

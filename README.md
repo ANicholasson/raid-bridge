@@ -2,7 +2,7 @@
 
 [![verify](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml/badge.svg)](https://github.com/ANicholasson/raid-bridge/actions/workflows/verify.yml)
 
-Reads your own RAID: Shadow Legends account data (account level and power, champions, artifacts, relics, resources, Great Hall and Area Bonuses, Faction Guardians, Arena defence teams and standings, Live Arena standing, and missions) from the game client running on your computer and exports it as JSON snapshots.
+Reads your own RAID: Shadow Legends account data (account level, experience and power, champions, artifacts, relics, resources, Great Hall and Area Bonuses, Faction Guardians, Arena defence teams and standings, Live Arena standing, and missions) from the game client running on your computer and exports it as JSON snapshots.
 
 Data out only. raid-bridge never injects code into the game, never writes to its memory and never automates play.
 

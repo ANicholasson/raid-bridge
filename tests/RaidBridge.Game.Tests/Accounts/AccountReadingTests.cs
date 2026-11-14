@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RaidBridge.Domain.Accounts;
 using RaidBridge.Game.Testing;
 
@@ -21,7 +22,7 @@ public sealed class AccountReadingTests : IDisposable
 	/// <summary>The power is a double the game holds, read as held, not rounded to a whole number (https://github.com/ANicholasson/raid-bridge/issues/27).</summary>
 	[Fact]
 	public void Reads_the_account_level_experience_and_power() =>
-		Assert.Equal(new AccountProfile(54, 31_250, 1_234_567.891), _game.Source().Read().Profile);
+		Assert.Equal((54, 31_250, 1_234_567.891), LevelAndPower(_game.Source().Read()));
 
 	/// <summary>A new Account: level 1, no experience and no power yet.</summary>
 	[Fact]
@@ -29,7 +30,7 @@ public sealed class AccountReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(Level: 1, Experience: 0, TotalPower: 0));
 
-		Assert.Equal(new AccountProfile(1, 0, 0), game.Source().Read().Profile);
+		Assert.Equal((1, 0, 0d), LevelAndPower(game.Source().Read()));
 	}
 
 	[Theory]
@@ -39,14 +40,14 @@ public sealed class AccountReadingTests : IDisposable
 	[InlineData(1, 0, -0.0, "TotalPower", "-0", "a power of 0 or more")]
 	[InlineData(1, 0, double.NaN, "TotalPower", "NaN", "a power of 0 or more")]
 	[InlineData(1, 0, double.PositiveInfinity, "TotalPower", "Infinity", "a power of 0 or more")]
-	public void Refuses_a_profile_out_of_range(int level, int experience, double power, string field, string value, string expectation)
+	public void Refuses_a_level_or_power_out_of_range(int level, int experience, double power, string field, string value, string expectation)
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(level, experience, power));
 
 		var error = Assert.ThrowsAny<GameClientException>(() => game.Source().Read());
 
 		Assert.Matches(
-			$@"^SharedModel\.Meta\.Account\.UserAccount\.{field} at 0x[0-9A-F]+ is {System.Text.RegularExpressions.Regex.Escape(value)}, where raid-bridge expects {expectation}\.$",
+			$@"^SharedModel\.Meta\.Account\.UserAccount\.{field} at 0x[0-9A-F]+ is {Regex.Escape(value)}, where raid-bridge expects {expectation}\.$",
 			error.Message);
 	}
 
@@ -323,6 +324,8 @@ public sealed class AccountReadingTests : IDisposable
 
 		RefusesMatching(_game, @"^Client\.App\.SingleInstance`1<Client\.Model\.AppModel>'s generic class record at 0x180001000 leads to a runtime class Client\.Model\.AppModel at 0x[0-9A-F]+ whose record is 0x0: the IL2CPP layout for Unity 6000\.3\.18f1 doesn't fit this Game client\.$");
 	}
+
+	private static (int Level, int Experience, double Power) LevelAndPower(Account account) => (account.Level, account.Experience, account.Power);
 
 	public void Dispose() => _game.Dispose();
 
