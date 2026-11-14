@@ -15,7 +15,7 @@ namespace RaidBridge.Game.Accounts;
 /// <summary>
 /// Reads the Account from the game's model: <c>SingleInstance&lt;AppModel&gt;._instance</c>, then the id in
 /// <c>AppModel.&lt;UserId&gt;k__BackingField</c>, with <c>_userWrapper.User.Id</c> as the fallback (spec #20, #19),
-/// then the Champions, the Artifacts and the Relics, named from the static data in
+/// then its level, experience and power in <c>_userWrapper.Account.AccountData</c>, then the Champions, the Artifacts and the Relics, named from the static data in
 /// <c>AppModel.StaticDataManager.StaticData</c>, the Resources, Shards and Items, the Great Hall and its Area Bonuses,
 /// the Faction Guardians, the Classic, Tag and Live Arena, and the Missions, each Guardian and each Champion in an Arena defence team one
 /// of those Champions.
@@ -50,7 +50,24 @@ internal static class AccountReader
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
 		var missions = MissionReader.Read(userWrapper, staticData, names);
-		return new(id, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+		return new(id, Standing(userWrapper), champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+	}
+
+	/// <summary>
+	/// The Account's <c>UserAccount</c>: its <c>Level</c>, 1 or more; its <c>Experience</c>, 0 or more; and its
+	/// <c>TotalPower</c>, which the game holds as a double, so it is read as held, never rounded, but never negative,
+	/// infinite or not a number, and never negative zero, as a Resource's amount isn't
+	/// (https://github.com/ANicholasson/raid-bridge/issues/27).
+	/// </summary>
+	private static AccountStanding Standing(ManagedObject userWrapper)
+	{
+		var account = userWrapper
+			.Object("Account", "Client.Model.Gameplay.Account.AccountWrapper")
+			.Object("AccountData", "SharedModel.Meta.Account.UserAccount");
+		return new(
+			account.Int32("Level").Where(level => level >= 1, "a level of 1 or more"),
+			account.Int32("Experience").Where(experience => experience >= 0, "experience of 0 or more"),
+			account.Double("TotalPower").Where(power => double.IsFinite(power) && !double.IsNegative(power), "a power of 0 or more"));
 	}
 
 	private static AccountId Id(ManagedObject appModel)

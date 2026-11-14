@@ -16,21 +16,22 @@ public class TakeSnapshotTests
 	private static readonly TagArena NoTagArena = new(null, 0, 0, 0, 0, []);
 	private static readonly LiveArena NewLiveArena = new("BronzeI", 900, 0, 0);
 	private static readonly MissionGroups NoMissions = new([], []);
+	private static readonly AccountStanding Standing = new(54, 31_250, 1_234_567.891);
 
 	[Fact]
 	public void Hashes_the_account_id_with_the_salt_and_stamps_the_time()
 	{
 		var salt = new Salt(new byte[Salt.Length]);
 
-		var snapshot = new TakeSnapshot(new Source(new Account(new AccountId(7), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions)), new Salts(salt), new Clock(Now)).Run();
+		var snapshot = new TakeSnapshot(new Source(new Account(new AccountId(7), Standing, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions)), new Salts(salt), new Clock(Now)).Run();
 
-		Assert.Equivalent(new Snapshot(Now, AccountIdHash.Of(new AccountId(7), salt), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions), snapshot, strict: true);
+		Assert.Equivalent(new Snapshot(Now, AccountIdHash.Of(new AccountId(7), salt), Standing, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions), snapshot, strict: true);
 	}
 
 	[Fact]
 	public void Sorts_the_champions_by_id()
 	{
-		var account = new Account(new AccountId(7), [Champion(12), Champion(3), Champion(7)], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), Standing, [Champion(12), Champion(3), Champion(7)], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -40,7 +41,7 @@ public class TakeSnapshotTests
 	[Fact]
 	public void Sorts_the_unworn_artifacts_by_id()
 	{
-		var account = new Account(new AccountId(7), [], [Artifact(105), Artifact(101), Artifact(104)], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), Standing, [], [Artifact(105), Artifact(101), Artifact(104)], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -51,7 +52,7 @@ public class TakeSnapshotTests
 	[Fact]
 	public void Sorts_the_unworn_relics_and_unsocketed_stones_by_id()
 	{
-		var account = new Account(new AccountId(7), [], [], [Relic(203), Relic(201)], [Stone(305), Stone(303)], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), Standing, [], [], [Relic(203), Relic(201)], [Stone(305), Stone(303)], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -65,6 +66,7 @@ public class TakeSnapshotTests
 	{
 		var account = new Account(
 			new AccountId(7),
+			Standing,
 			[],
 			[],
 			[],
@@ -97,7 +99,7 @@ public class TakeSnapshotTests
 	[Fact]
 	public void Loads_the_salt_before_reading_the_game()
 	{
-		var source = new Source(new Account(new AccountId(7), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions));
+		var source = new Source(new Account(new AccountId(7), Standing, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions));
 		var salts = new BrokenSalts();
 
 		Assert.Throws<InvalidDataException>(() => new TakeSnapshot(source, salts, new Clock(Now)).Run());

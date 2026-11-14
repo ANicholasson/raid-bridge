@@ -18,6 +18,38 @@ public sealed class AccountReadingTests : IDisposable
 	public void Reads_the_account_id_from_the_app_model() =>
 		Assert.Equal(new AccountId(4_000_000_001), _game.Source().Read().Id);
 
+	/// <summary>The power is a double the game holds, read as held, not rounded to a whole number (https://github.com/ANicholasson/raid-bridge/issues/27).</summary>
+	[Fact]
+	public void Reads_the_account_level_experience_and_power() =>
+		Assert.Equal(new AccountStanding(54, 31_250, 1_234_567.891), _game.Source().Read().Standing);
+
+	/// <summary>A new Account: level 1, no experience and no power yet.</summary>
+	[Fact]
+	public void Reads_a_new_account()
+	{
+		using var game = SyntheticGameClient.Create(accountData: new(Level: 1, Experience: 0, TotalPower: 0));
+
+		Assert.Equal(new AccountStanding(1, 0, 0), game.Source().Read().Standing);
+	}
+
+	[Theory]
+	[InlineData(0, 0, 0, "Level", "0", "a level of 1 or more")]
+	[InlineData(1, -1, 0, "Experience", "-1", "experience of 0 or more")]
+	[InlineData(1, 0, -0.5, "TotalPower", "-0.5", "a power of 0 or more")]
+	[InlineData(1, 0, -0.0, "TotalPower", "-0", "a power of 0 or more")]
+	[InlineData(1, 0, double.NaN, "TotalPower", "NaN", "a power of 0 or more")]
+	[InlineData(1, 0, double.PositiveInfinity, "TotalPower", "Infinity", "a power of 0 or more")]
+	public void Refuses_a_standing_out_of_range(int level, int experience, double power, string field, string value, string expectation)
+	{
+		using var game = SyntheticGameClient.Create(accountData: new(level, experience, power));
+
+		var error = Assert.ThrowsAny<GameClientException>(() => game.Source().Read());
+
+		Assert.Matches(
+			$@"^SharedModel\.Meta\.Account\.UserAccount\.{field} at 0x[0-9A-F]+ is {System.Text.RegularExpressions.Regex.Escape(value)}, where raid-bridge expects {expectation}\.$",
+			error.Message);
+	}
+
 	[Theory]
 	[InlineData(0)]
 	[InlineData(-7)]
