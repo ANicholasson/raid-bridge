@@ -8,6 +8,9 @@ Reads a player's own RAID: Shadow Legends account out of the game client and wri
 One player's RAID: Shadow Legends account, as the game client holds it.
 _Avoid_: profile, user
 
+**Power**:
+The Account's total power, the one number the game shows beside its level. The game's code calls it total power. <!-- (https://github.com/ANicholasson/raid-bridge/issues/27) -->
+
 **Snapshot**:
 Everything raid-bridge read from one Account at one moment, as one JSON document.
 _Avoid_: dump, export, sync

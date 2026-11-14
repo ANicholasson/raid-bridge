@@ -1,3 +1,4 @@
+using RaidBridge.Game.Testing.Accounts;
 using RaidBridge.Game.Testing.Resources;
 using static RaidBridge.Game.Testing.Il2Cpp.Unity6000Layout;
 
@@ -24,7 +25,7 @@ public sealed partial class SyntheticGameClient
 	/// AccountData's Resources, whose RawValues holds each amount as a double by its ResourceTypeId; ShardData's list of
 	/// Shards; and BlackMarketData's Items, each a box holding its count, by its BlackMarketItemId.
 	/// </summary>
-	private void LayOutTheResources(ulong userWrapperObject, SyntheticResourceData resourceData)
+	private void LayOutTheResources(ulong userWrapperObject, SyntheticResourceData resourceData, SyntheticAccountData accountData)
 	{
 		var systemObject = _runtime.SystemObject;
 
@@ -34,7 +35,15 @@ public sealed partial class SyntheticGameClient
 			systemObject,
 			"System.Object",
 			("RawValues", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Account.ResourceTypeId, System.Double>", GenericInstanceTypeCode, 0x10));
-		var userAccount = Declare("SharedModel.Meta.Account", "UserAccount", systemObject, "System.Object", ("Resources", "SharedModel.Meta.Account.Resources", ClassTypeCode, 0x10));
+		var userAccount = Declare(
+			"SharedModel.Meta.Account",
+			"UserAccount",
+			systemObject,
+			"System.Object",
+			("Resources", "SharedModel.Meta.Account.Resources", ClassTypeCode, 0x10),
+			("Level", "System.Int32", Int32TypeCode, 0x18),
+			("Experience", "System.Int32", Int32TypeCode, 0x1C),
+			("TotalPower", "System.Double", DoubleTypeCode, 0x20));
 		var accountWrapperReadOnly = Declare(
 			"Client.Model.Gameplay.Account",
 			"AccountWrapperReadOnly",
@@ -84,8 +93,11 @@ public sealed partial class SyntheticGameClient
 			[.. resourceData.Resources.Select(resource => ((ulong)resource.Key, BitConverter.DoubleToUInt64Bits(resource.Value)))]);
 		var resourcesObject = _runtime.Object(resources, 0x18);
 		_heap.Pointer(resourcesObject + 0x10, _resources);
-		var userAccountObject = _runtime.Object(userAccount, 0x18);
+		var userAccountObject = _runtime.Object(userAccount, 0x28);
 		_heap.Pointer(userAccountObject + 0x10, resourcesObject);
+		_heap.Int32(userAccountObject + 0x18, accountData.Level);
+		_heap.Int32(userAccountObject + 0x1C, accountData.Experience);
+		_heap.Int64(userAccountObject + 0x20, BitConverter.DoubleToInt64Bits(accountData.TotalPower));
 		var accountWrapperObject = _runtime.Object(accountWrapper, 0x18);
 		_heap.Pointer(accountWrapperObject + 0x10, userAccountObject);
 		Slot("Client.Model.Guard.UserWrapper.Account", userWrapperObject + 0x30, accountWrapperObject);

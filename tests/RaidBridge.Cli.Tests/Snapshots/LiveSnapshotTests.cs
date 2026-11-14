@@ -27,6 +27,21 @@ public sealed class LiveSnapshotTests : IDisposable
 	}
 
 	/// <summary>
+	/// The Account's level is 1 or more, and its power above 0: the check runs only with the maintainer's own Accounts,
+	/// each of which has Champions, so it can't pass by reading zeros (https://github.com/ANicholasson/raid-bridge/issues/27).
+	/// </summary>
+	[Fact]
+	public void Reads_the_account_level_and_power()
+	{
+		using var json = Snapshot();
+
+		var account = json.RootElement.GetProperty("account");
+		Assert.InRange(account.GetProperty("level").GetInt32(), 1, int.MaxValue);
+		Assert.InRange(account.GetProperty("experience").GetInt32(), 0, int.MaxValue);
+		Assert.True(account.GetProperty("power").GetDouble() > 0);
+	}
+
+	/// <summary>
 	/// Every Champion has its Artifacts filed by slot, and the secondary Account's Champions wear at least one, so the
 	/// check can't pass by reading none (#26).
 	/// </summary>

@@ -4,6 +4,7 @@ using RaidBridge.Domain.Snapshots;
 using RaidBridge.Game.Memory;
 using RaidBridge.Game.Metadata;
 using RaidBridge.Game.Snapshots;
+using RaidBridge.Game.Testing.Accounts;
 using RaidBridge.Game.Testing.Arena;
 using RaidBridge.Game.Testing.Artifacts;
 using RaidBridge.Game.Testing.Champions;
@@ -66,6 +67,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticArtifactData artifactData,
 		SyntheticRelicData relicData,
 		SyntheticResourceData resourceData,
+		SyntheticAccountData accountData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
 		SyntheticArenaData arenaData,
@@ -78,7 +80,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		_heap = new SyntheticHeap(Memory, 0x2_0000_0000, 0x40000);
 		_runtime = new SyntheticRuntime(_heap);
 		_metadata = new SyntheticMetadata(new GameVersions(39, unityVersion));
-		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, relicData, resourceData, greatHallData, guardianData, arenaData, missionData);
+		LayOutTheAccount(userId, userIdOnUser, heroData, artifactData, relicData, resourceData, accountData, greatHallData, guardianData, arenaData, missionData);
 	}
 
 	/// <summary>The install folder, holding GameAssembly.dll and the other files the reader looks for.</summary>
@@ -99,6 +101,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticArtifactData? artifactData = null,
 		SyntheticRelicData? relicData = null,
 		SyntheticResourceData? resourceData = null,
+		SyntheticAccountData? accountData = null,
 		SyntheticGreatHallData? greatHallData = null,
 		SyntheticGuardianData? guardianData = null,
 		SyntheticArenaData? arenaData = null,
@@ -111,6 +114,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			artifactData ?? SyntheticArtifactData.Default,
 			relicData ?? SyntheticRelicData.Default,
 			resourceData ?? SyntheticResourceData.Default,
+			accountData ?? SyntheticAccountData.Default,
 			greatHallData ?? SyntheticGreatHallData.Default,
 			guardianData ?? SyntheticGuardianData.Default,
 			arenaData ?? SyntheticArenaData.Default,
@@ -283,6 +287,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		SyntheticArtifactData artifactData,
 		SyntheticRelicData relicData,
 		SyntheticResourceData resourceData,
+		SyntheticAccountData accountData,
 		SyntheticGreatHallData greatHallData,
 		SyntheticGuardianData guardianData,
 		SyntheticArenaData arenaData,
@@ -360,7 +365,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 		Slot("Client.Model.AppModel.<StaticDataManager>k__BackingField", appModelObject + 0x50, LayOutTheStaticData(heroData, artifactData, missionData));
 		Slot("Client.Model.Guard.UserWrapper.Heroes", userWrapperObject + 0x20, LayOutTheHeroes(heroData));
 		Slot("Client.Model.Guard.UserWrapper.Artifacts", userWrapperObject + 0x28, LayOutTheArtifacts(artifactData));
-		LayOutTheResources(userWrapperObject, resourceData);
+		LayOutTheResources(userWrapperObject, resourceData, accountData);
 		LayOutTheGreatHall(userWrapperObject, greatHallData);
 		LayOutTheFactionGuardians(userWrapperObject, guardianData, heroData);
 		LayOutTheArena(userWrapperObject, arenaData);
