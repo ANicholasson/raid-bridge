@@ -58,6 +58,7 @@ internal static class SavedTeamReader
 		var where = $"the {purpose} Saved team at 0x{preset.Address:X}";
 		// A list the game has emptied out can be null before it removes the team (RemoveHeroFromAiPreset, RVA 0x2F44CD0).
 		var setups = preset.ListOrNull("SkillPrioritiesSetups", $"System.Collections.Generic.List`1<{Setup}>")?.ObjectsOrNull(Setup) ?? [];
+		var seen = new HashSet<int>();
 		var team = new List<int>();
 		foreach (var heroId in setups.OfType<ManagedObject>().Select(setup => setup.Int32("HeroId")))
 		{
@@ -66,7 +67,7 @@ internal static class SavedTeamReader
 				throw new GameDataException($"{heroId}, in {where}, but HeroById holds no Champion {heroId.Value}.");
 			}
 
-			if (team.Contains(heroId.Value))
+			if (!seen.Add(heroId.Value))
 			{
 				throw new GameDataException($"{heroId}, in {where}, but Champion {heroId.Value} is already in it.");
 			}
