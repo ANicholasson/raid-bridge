@@ -6,6 +6,7 @@ using RaidBridge.Game.FactionGuardians;
 using RaidBridge.Game.GreatHall;
 using RaidBridge.Game.Il2Cpp;
 using RaidBridge.Game.Localization;
+using RaidBridge.Game.Metadata;
 using RaidBridge.Game.Missions;
 using RaidBridge.Game.Relics;
 using RaidBridge.Game.Resources;
@@ -18,7 +19,8 @@ namespace RaidBridge.Game.Accounts;
 /// then its level, experience and power in <c>_userWrapper.Account.AccountData</c>, then the Champions, the Artifacts and the room for them, and the Relics, named from the static data in
 /// <c>AppModel.StaticDataManager.StaticData</c>, the Resources, Shards and Items, the Great Hall and its Area Bonuses,
 /// the Faction Guardians, the Classic, Tag and Live Arena, and the Missions, each Guardian and each Champion in an Arena defence team one
-/// of those Champions.
+/// of those Champions. The Area Bonuses, the Live Arena and the Missions are optional sections: one the game's data
+/// refuses is null, with a Problem naming the refusal, and the rest is read as ever (ADR-0006).
 /// It never goes near <c>_userWrapper.Social</c>: its UserSocialData holds emails, real names and birth dates.
 /// </summary>
 internal static class AccountReader
@@ -49,9 +51,31 @@ internal static class AccountReader
 		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy, accountBonuses);
 		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
-		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
-		var missions = MissionReader.Read(userWrapper, staticData, names);
-		return new(id, level, experience, power, artifacts.Capacity, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+		var arena = ArenaReader.Read(classicArena, userWrapper, champions);
+		// The optional sections come last, each on its own, so a failure in one costs only that section (ADR-0006).
+		var problems = new List<Problem>();
+		var areaBonuses = Optional(OptionalSection.AreaBonuses, () => GreatHallReader.AreaBonuses(userWrapper, staticData), problems);
+		var liveArena = Optional(OptionalSection.LiveArena, () => ArenaReader.Live(userWrapper, staticData), problems);
+		var missions = Optional(OptionalSection.Missions, () => MissionReader.Read(userWrapper, staticData, names), problems);
+		return new(id, level, experience, power, artifacts.Capacity, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, areaBonuses, factionGuardians, arena.Classic, arena.Tag, liveArena, missions, problems);
+	}
+
+	/// <summary>
+	/// An optional section, or null with a Problem when the game's data or files refuse it
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47). The refusal is the same check with the same message; only
+	/// the rest of the Snapshot is kept. Anything else, such as a bug in raid-bridge, still fails the run.
+	/// </summary>
+	private static T? Optional<T>(OptionalSection section, Func<T> read, List<Problem> problems)
+	{
+		try
+		{
+			return read();
+		}
+		catch (Exception exception) when (exception is GameDataException or GameMetadataException)
+		{
+			problems.Add(new(section, exception.Message));
+			return default;
+		}
 	}
 
 	/// <summary>

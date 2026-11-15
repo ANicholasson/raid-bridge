@@ -1,3 +1,5 @@
+using RaidBridge.Domain.Accounts;
+using RaidBridge.Domain.GreatHall;
 using RaidBridge.Game.Testing;
 using RaidBridge.Game.Testing.GreatHall;
 
@@ -29,7 +31,7 @@ public sealed class AreaBonusReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(greatHallData: SyntheticGreatHallData.None);
 
-		Assert.Empty(game.Source().Read().AreaBonuses);
+		Assert.Empty(AreaBonuses(game.Source().Read()));
 	}
 
 	/// <summary>The static data is needed only to check a level, so Area Bonuses with none read without the tiers.</summary>
@@ -39,7 +41,7 @@ public sealed class AreaBonusReadingTests : IDisposable
 		using var game = SyntheticGameClient.Create(greatHallData: SyntheticGreatHallData.None);
 		game.PointField("SharedModel.Meta.ClientStaticData", "VillageData", SyntheticGameClient.Unmapped);
 
-		Assert.Empty(game.Source().Read().AreaBonuses);
+		Assert.Empty(AreaBonuses(game.Source().Read()));
 	}
 
 	/// <summary>The Great Hall and its Area Bonuses are read apart: levels in one don't put levels in the other.</summary>
@@ -62,7 +64,7 @@ public sealed class AreaBonusReadingTests : IDisposable
 
 		var account = game.Source().Read();
 
-		Assert.Empty(account.AreaBonuses);
+		Assert.Empty(AreaBonuses(account));
 		Assert.NotEmpty(account.GreatHall);
 	}
 
@@ -207,11 +209,33 @@ public sealed class AreaBonusReadingTests : IDisposable
 	public void Dispose() => _game.Dispose();
 
 	private static IEnumerable<(string Area, string Stat, int Level)> Levels(SyntheticGameClient game) =>
-		game.Source().Read().AreaBonuses.SelectMany(area => area.Levels.Select(level => (area.Area, level.Stat, level.Level)));
+		AreaBonuses(game.Source().Read()).SelectMany(area => area.Levels.Select(level => (area.Area, level.Stat, level.Level)));
+
+	/// <summary>
+	/// Area Bonuses the game's data refuses are null, with a Problem naming the refusal, and the rest of the Account is still read
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
+	/// <summary>The Area Bonuses, read with no Problem.</summary>
+	private static IReadOnlyList<AreaBonus> AreaBonuses(Account account)
+	{
+		Assert.Empty(account.Problems);
+		Assert.NotNull(account.AreaBonuses);
+		return account.AreaBonuses;
+	}
 
 	private static void Refuses(SyntheticGameClient game, string message) =>
-		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Equal(message, Problem(game));
 
 	private static void RefusesMatching(SyntheticGameClient game, string pattern) =>
-		Assert.Matches(pattern, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Matches(pattern, Problem(game));
+
+	private static string Problem(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Null(account.AreaBonuses);
+		Assert.NotEmpty(account.Champions);
+		var problem = Assert.Single(account.Problems);
+		Assert.Equal(OptionalSection.AreaBonuses, problem.Section);
+		return problem.Message;
+	}
 }

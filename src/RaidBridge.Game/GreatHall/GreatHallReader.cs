@@ -36,10 +36,7 @@ internal static class GreatHallReader
 	public static AccountGreatHall Read(ManagedObject userWrapper, ManagedObject staticData)
 	{
 		var table = new Lazy<Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>>(() => Table(staticData));
-		var village = userWrapper
-			.Object("Village", "Client.Model.Gameplay.Village.VillageWrapper")
-			.Object("VillageData", "Client.Model.Gameplay.Village.Data.UpdatableVillageData");
-		var affinities = village
+		var affinities = Village(userWrapper)
 			.Dictionary("CapitolBonusLevelByStatByElement", $"System.Collections.Generic.Dictionary`2<{Element}, {Levels}>")
 			.ByEnumKey(Element)
 			.OrderBy(affinity => affinity.Key.Value)
@@ -48,7 +45,6 @@ internal static class GreatHallReader
 			.ToList();
 		return new(
 			[.. affinities.Select(affinity => new GreatHallAffinity(affinity.Name, [.. affinity.Levels.Select(level => level.Level)]))],
-			AreaBonuses(village, staticData),
 			affinities.ToDictionary(affinity => affinity.Name, affinity => (IReadOnlyList<StatBonus>)[.. affinity.Levels.SelectMany(level => level.Bonuses)], StringComparer.Ordinal));
 	}
 
@@ -56,12 +52,13 @@ internal static class GreatHallReader
 	/// The Area Bonuses, each area with levels in the order of the game's enum, its stats likewise. An area the game holds
 	/// null for has no levels, the same as one it holds an empty dictionary for, and is left out. Each level is from 1 to
 	/// the number of bonuses its area's tier lists for the stat, as the Great Hall's are. The tiers are read only once a
-	/// level needs checking.
+	/// level needs checking. They are read apart from the Great Hall, since no Champion's stats count them, so a failure
+	/// here costs only the Area Bonuses (https://github.com/ANicholasson/raid-bridge/issues/47).
 	/// </summary>
-	private static IReadOnlyList<AreaBonus> AreaBonuses(ManagedObject village, ManagedObject staticData)
+	public static IReadOnlyList<AreaBonus> AreaBonuses(ManagedObject userWrapper, ManagedObject staticData)
 	{
 		var tiers = new Lazy<Dictionary<GameEnumMember, Dictionary<GameEnumMember, IReadOnlyList<ManagedObject>>>>(() => Tiers(staticData));
-		return [.. village
+		return [.. Village(userWrapper)
 			.Dictionary("ObservatoryBonusLevelByStatByLocation", $"System.Collections.Generic.Dictionary`2<{Location}, {Levels}>")
 			.ByEnumKey(Location)
 			.OrderBy(area => area.Key.Value)
@@ -89,6 +86,11 @@ internal static class GreatHallReader
 					: []))
 			.Where(area => area.Levels.Count > 0)];
 	}
+
+	private static ManagedObject Village(ManagedObject userWrapper) =>
+		userWrapper
+			.Object("Village", "Client.Model.Gameplay.Village.VillageWrapper")
+			.Object("VillageData", "Client.Model.Gameplay.Village.Data.UpdatableVillageData");
 
 	/// <summary>
 	/// An Affinity the game holds null for has no levels, the same as one it holds an empty dictionary for. A level is
@@ -163,8 +165,7 @@ internal static class GreatHallReader
 	}
 }
 
-/// <summary>The Account's Great Hall, its Area Bonuses, and the bonuses the Great Hall gives a Champion of each Affinity, by the Affinity's name.</summary>
+/// <summary>The Account's Great Hall, and the bonuses it gives a Champion of each Affinity, by the Affinity's name.</summary>
 internal sealed record AccountGreatHall(
 	IReadOnlyList<GreatHallAffinity> Affinities,
-	IReadOnlyList<AreaBonus> AreaBonuses,
 	IReadOnlyDictionary<string, IReadOnlyList<StatBonus>> BonusesByAffinity);

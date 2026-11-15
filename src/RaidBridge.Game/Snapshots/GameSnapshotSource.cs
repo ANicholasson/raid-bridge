@@ -42,7 +42,16 @@ public sealed class GameSnapshotSource : ISnapshotSource
 		var metadata = _loadMetadata(files);
 		// Again, so an update between the check and the parse can't slip through (code review, #38).
 		RefuseFilesOfAnotherBuild(files);
-		return AccountReader.Read(new Il2CppRuntime(_memory, metadata));
+		var account = AccountReader.Read(new Il2CppRuntime(_memory, metadata));
+		// A Problem is the game's data refusing a section, never the Game client gone: the runtime reports a failed read as
+		// bad data, so the Game client is read once more, and one that has exited fails the run (ADR-0006; code review,
+		// https://github.com/ANicholasson/raid-bridge/pull/58).
+		if (account.Problems.Count > 0)
+		{
+			_memory.Read(_memory.GameAssembly.ImageBase, stackalloc byte[2]);
+		}
+
+		return account;
 	}
 
 	private static string LoadedFrom(GameModule module) =>

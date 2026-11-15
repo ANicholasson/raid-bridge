@@ -14,7 +14,7 @@ namespace RaidBridge.Domain.Snapshots;
 /// Everything raid-bridge read from one Account at one moment. The Account id is in it only as its hash, the
 /// Champions, the Unworn Artifacts, the Unworn Relics and the Relic stones in no socket are sorted by id, and the
 /// Resources, Shards, Items, the Great Hall, its Area Bonuses, the Faction Guardians and the Missions keep the game's order, so two Snapshots diff
-/// cleanly.
+/// cleanly. A part raid-bridge couldn't read is null, and its Problem says why (ADR-0006).
 /// </summary>
 public sealed record Snapshot(
 	DateTimeOffset CapturedAt,
@@ -31,9 +31,10 @@ public sealed record Snapshot(
 	IReadOnlyList<Shard> Shards,
 	IReadOnlyList<Item> Items,
 	IReadOnlyList<GreatHallAffinity> GreatHall,
-	IReadOnlyList<AreaBonus> AreaBonuses,
+	IReadOnlyList<AreaBonus>? AreaBonuses,
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,
 	LiveArena? LiveArena,
-	MissionGroups Missions);
+	MissionGroups? Missions,
+	IReadOnlyList<Problem> Problems);

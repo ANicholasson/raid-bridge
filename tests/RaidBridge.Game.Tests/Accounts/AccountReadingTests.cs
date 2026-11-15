@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using RaidBridge.Domain.Accounts;
+using RaidBridge.Game.Memory;
 using RaidBridge.Game.Testing;
+using RaidBridge.Game.Testing.Arena;
 
 namespace RaidBridge.Game.Tests.Accounts;
 
@@ -62,6 +64,42 @@ public sealed class AccountReadingTests : IDisposable
 			$@"^SharedModel\.Meta\.Account\.UserAccount\.{field} at 0x[0-9A-F]+ is {Regex.Escape(value)}, where raid-bridge expects {expectation}\.$",
 			error.Message);
 	}
+
+	/// <summary>
+	/// Each optional section is read on its own, so one the game's data refuses costs only itself: the others and the rest
+	/// of the Account are read as ever (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
+	[Fact]
+	public void Reads_the_other_optional_sections_when_one_is_refused()
+	{
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = new(Points: -1, Wins: 0, Losses: 0) });
+
+		var account = game.Source().Read();
+
+		Assert.Equal([OptionalSection.LiveArena], account.Problems.Select(problem => problem.Section));
+		Assert.Null(account.LiveArena);
+		Assert.NotNull(account.AreaBonuses);
+		Assert.NotEmpty(account.AreaBonuses);
+		Assert.NotNull(account.Missions);
+		Assert.NotEmpty(account.Missions.Open);
+		Assert.Equal("SilverIII", account.ClassicArena.League);
+	}
+
+	/// <summary>
+	/// The Game client exiting while an optional section is read fails the run: the runtime reports the failed read as
+	/// bad data, but the Game client gone is no refusal of its data (code review, https://github.com/ANicholasson/raid-bridge/pull/58).
+	/// </summary>
+	[Fact]
+	public void Fails_when_the_game_client_exits_while_an_optional_section_is_read()
+	{
+		_game.ExitWhenFieldRead("Client.Model.Guard.UserWrapper", "Quests");
+
+		Assert.Equal("The Game client has exited.", Assert.Throws<GameMemoryException>(() => _game.Source().Read()).Message);
+	}
+
+	[Fact]
+	public void Reads_an_account_with_no_problems() =>
+		Assert.Empty(_game.Source().Read().Problems);
 
 	[Theory]
 	[InlineData(0)]
