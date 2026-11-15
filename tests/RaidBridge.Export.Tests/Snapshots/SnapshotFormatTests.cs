@@ -141,7 +141,8 @@ public partial class SnapshotFormatTests
 					new(9101, "Heroes", "Completed", "Upgrade 2 Champions to Level 30", null, 2),
 					new(9102, "Dungeons", "InProgress", "Clear Stage 10 of a Synthetic Keep 10 times", 4, 10),
 					new(9103, "Clan", "New", "Deal 2,000,000 damage to the Synthetic Boss", 0, 2_000_000),
-				])]));
+				])]),
+			[]);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -151,7 +152,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_the_capture_time_in_utc()
 	{
-		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -162,7 +163,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_empty_resources_shards_items_great_hall_area_bonuses_and_faction_guardians_as_empty_objects()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -176,7 +177,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_an_arena_and_missions_with_nothing_set_up()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -219,18 +220,55 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_no_live_arena_as_null()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions, []);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
 		Assert.Contains("\"defenceTeams\": []\n  },\n  \"liveArena\": null,\n  \"missions\": {", written, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// A section raid-bridge couldn't read is written as null, never left out, and each Problem names its section by its
+	/// key, in the order of the keys (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
+	[Fact]
+	public void Writes_the_sections_it_could_not_read_as_null_and_names_them_in_problems()
+	{
+		Problem[] problems = [new(OptionalSection.AreaBonuses, "The areas moved."), new(OptionalSection.LiveArena, "The leagues moved."), new(OptionalSection.Missions, "Mission 9102 has no text.")];
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, null, null, problems);
+
+		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
+
+		Assert.Contains(
+			"""
+			  "capturedAt": "1970-01-01T00:00:00Z",
+			  "problems": [
+			    {
+			      "section": "areaBonuses",
+			      "message": "The areas moved."
+			    },
+			    {
+			      "section": "liveArena",
+			      "message": "The leagues moved."
+			    },
+			    {
+			      "section": "missions",
+			      "message": "Mission 9102 has no text."
+			    }
+			  ],
+			  "account": {
+			""".ReplaceLineEndings("\n"),
+			written,
+			StringComparison.Ordinal);
+		Assert.Contains("\"greatHall\": {},\n  \"areaBonuses\": null,\n  \"factionGuardians\": {}", written, StringComparison.Ordinal);
+		Assert.EndsWith("\"liveArena\": null,\n  \"missions\": null\n}\n", written, StringComparison.Ordinal);
+	}
+
 	/// <summary>An amount the game holds as a fraction is written as held, never rounded.</summary>
 	[Fact]
 	public void Writes_a_resource_amount_exactly_as_the_game_holds_it()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 

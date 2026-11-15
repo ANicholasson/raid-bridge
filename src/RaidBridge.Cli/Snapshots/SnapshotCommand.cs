@@ -8,11 +8,16 @@ namespace RaidBridge.Cli.Snapshots;
 
 /// <summary>
 /// <c>raid-bridge snapshot [--out PATH] [--game-dir DIR]</c>: takes one Snapshot, writes it to a new file and prints
-/// the file's path. A failure is one line naming the cause, with exit code 1, or 2 for a bad command line.
+/// the file's path. A failure is one line naming the cause, with exit code 1, or 2 for a bad command line. A Snapshot
+/// written with a section it couldn't read prints its path all the same, then one line per Problem, with exit code 3,
+/// so a script can tell it from both (https://github.com/ANicholasson/raid-bridge/issues/47).
 /// </summary>
 internal static class SnapshotCommand
 {
 	public const string Usage = "usage: raid-bridge snapshot [--out PATH] [--game-dir DIR]";
+
+	/// <summary>The Snapshot was written, but with a section it couldn't read written as null.</summary>
+	public const int WrittenWithProblems = 3;
 
 	private static readonly Generator Generator = new(
 		"raid-bridge",
@@ -48,7 +53,12 @@ internal static class SnapshotCommand
 			var snapshot = new TakeSnapshot(openGame(gameDirectory), salts, clock).Run();
 			var path = Path.GetFullPath(options.Out ?? SnapshotFile.DefaultName(snapshot.CapturedAt), workingDirectory);
 			output.WriteLine(SnapshotFile.Write(snapshot, Generator, path));
-			return 0;
+			foreach (var (section, message) in snapshot.Problems)
+			{
+				error.WriteLine($"raid-bridge: wrote {SnapshotSections.Key(section)} as null: {message.ReplaceLineEndings(" ")}");
+			}
+
+			return snapshot.Problems.Count == 0 ? 0 : WrittenWithProblems;
 		}
 		catch (Exception exception) when (exception is GameClientException or IOException or UnauthorizedAccessException or InvalidDataException)
 		{

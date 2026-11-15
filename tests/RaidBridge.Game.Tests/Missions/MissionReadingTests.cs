@@ -1,3 +1,4 @@
+using RaidBridge.Domain.Accounts;
 using RaidBridge.Domain.Missions;
 using RaidBridge.Game.Testing;
 using RaidBridge.Game.Testing.Missions;
@@ -22,7 +23,7 @@ public sealed class MissionReadingTests : IDisposable
 	[Fact]
 	public void Reads_the_open_group_in_the_game_order()
 	{
-		var missions = _game.Source().Read().Missions;
+		var missions = Missions(_game);
 
 		Assert.Equal(["Group1"], missions.Completed);
 		var group = Assert.Single(missions.Open);
@@ -66,7 +67,7 @@ public sealed class MissionReadingTests : IDisposable
 			Localization = new Dictionary<string, string>(Default.Localization) { ["l10n:quest/name?id=9501#static"] = "Mix 10 Synthetic Potions" },
 		});
 
-		var open = game.Source().Read().Missions.Open;
+		var open = Missions(game).Open;
 
 		Assert.Equal([("Group5", "RamantuSection", 1), ("Group2", "ArbiterSection", 3)], open.Select(group => (group.Group, group.Section, group.Missions.Count)));
 	}
@@ -76,7 +77,7 @@ public sealed class MissionReadingTests : IDisposable
 	{
 		using var game = Create(None);
 
-		var missions = game.Source().Read().Missions;
+		var missions = Missions(game);
 
 		Assert.Empty(missions.Completed);
 		Assert.Empty(missions.Open);
@@ -89,7 +90,7 @@ public sealed class MissionReadingTests : IDisposable
 		using var game = Create(None);
 		game.PointField("SharedModel.Meta.StaticData", "QuestData", SyntheticGameClient.Unmapped);
 
-		Assert.Empty(game.Source().Read().Missions.Open);
+		Assert.Empty(Missions(game).Open);
 	}
 
 	/// <summary>A Mission's default text is a developer's note, not the screen's text, so it never stands in.</summary>
@@ -357,16 +358,39 @@ public sealed class MissionReadingTests : IDisposable
 
 	private static SyntheticGameClient Create(SyntheticMissionData missionData) => SyntheticGameClient.Create(missionData: missionData);
 
+	/// <summary>The Missions, read with no Problem.</summary>
+	private static MissionGroups Missions(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Empty(account.Problems);
+		Assert.NotNull(account.Missions);
+		return account.Missions;
+	}
+
 	private static (long? Collected, long Required) Progress(SyntheticGameClient game, int prototypeId)
 	{
-		var mission = game.Source().Read().Missions.Open.SelectMany(group => group.Missions).Single(mission => mission.PrototypeId == prototypeId);
+		var mission = Missions(game).Open.SelectMany(group => group.Missions).Single(mission => mission.PrototypeId == prototypeId);
 		return (mission.Collected, mission.Required);
 	}
 
+	/// <summary>
+	/// Missions the game's data refuses are null, with a Problem naming the refusal, and the rest of the Account is still read
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
 	private static void Refuses(SyntheticGameClient game, string message) =>
-		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Equal(message, Problem(game));
 
 	private static void RefusesMatching(SyntheticGameClient game, string pattern) =>
-		Assert.Matches(pattern, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Matches(pattern, Problem(game));
+
+	private static string Problem(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Null(account.Missions);
+		Assert.NotEmpty(account.Champions);
+		var problem = Assert.Single(account.Problems);
+		Assert.Equal(OptionalSection.Missions, problem.Section);
+		return problem.Message;
+	}
 
 }

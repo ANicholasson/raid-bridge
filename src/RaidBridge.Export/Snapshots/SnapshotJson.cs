@@ -35,6 +35,17 @@ internal static class SnapshotJson
 
 			json.WriteString("capturedAt", snapshot.CapturedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
 
+			json.WriteStartArray("problems");
+			foreach (var problem in snapshot.Problems)
+			{
+				json.WriteStartObject();
+				json.WriteString("section", SnapshotSections.Key(problem.Section));
+				json.WriteString("message", problem.Message);
+				json.WriteEndObject();
+			}
+
+			json.WriteEndArray();
+
 			json.WriteStartObject("account");
 			json.WriteString("idHash", snapshot.AccountIdHash.Value);
 			json.WriteNumber("level", snapshot.Level);
@@ -111,13 +122,20 @@ internal static class SnapshotJson
 
 			json.WriteEndObject();
 
-			json.WriteStartObject("areaBonuses");
-			foreach (var area in snapshot.AreaBonuses)
+			if (snapshot.AreaBonuses is { } areaBonuses)
 			{
-				WriteGreatHallLevels(json, area.Area, area.Levels);
-			}
+				json.WriteStartObject("areaBonuses");
+				foreach (var area in areaBonuses)
+				{
+					WriteGreatHallLevels(json, area.Area, area.Levels);
+				}
 
-			json.WriteEndObject();
+				json.WriteEndObject();
+			}
+			else
+			{
+				json.WriteNull("areaBonuses");
+			}
 
 			json.WriteStartObject("factionGuardians");
 			foreach (var faction in snapshot.FactionGuardians)
@@ -178,7 +196,14 @@ internal static class SnapshotJson
 				json.WriteNull("liveArena");
 			}
 
-			WriteMissions(json, snapshot.Missions);
+			if (snapshot.Missions is { } missions)
+			{
+				WriteMissions(json, missions);
+			}
+			else
+			{
+				json.WriteNull("missions");
+			}
 
 			json.WriteEndObject();
 		}
