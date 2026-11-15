@@ -204,6 +204,7 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Heroes.SkillPrioritiesSetup", "HeroId", "System.Int32", false },
 		{ "SharedModel.Meta.Heroes.StaticHeroData", "PresetInfoByType", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroesAiPresetType, SharedModel.Meta.Heroes.HeroesAiPresetInfo>", false },
 		{ "SharedModel.Meta.Heroes.HeroesAiPresetInfo", "MaxHeroesCount", "System.Int32", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPresetInfo", "MaxPresetsCount", "System.Int32", false },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
 		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
 		// Relics are a list of ids by Champion id, not a field of Hero.

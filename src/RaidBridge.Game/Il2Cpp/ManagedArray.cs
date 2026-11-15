@@ -35,15 +35,14 @@ internal sealed class ManagedArray
 	/// <summary>The object the reference at <paramref name="index"/> refers to, which must be of <paramref name="expectedClass"/>.</summary>
 	public ManagedObject Object(int index, string expectedClass)
 	{
-		var (where, address) = Element(index, sizeof(ulong), elementClass: null);
-		return _array.Runtime.Object(_array.Runtime.Pointer(address, () => where), where, address, expectedClass);
+		var (where, address, pointer) = Reference(index);
+		return _array.Runtime.Object(pointer, where, address, expectedClass);
 	}
 
 	/// <summary>The object the reference at <paramref name="index"/> refers to, as <see cref="Object"/>, or null when it refers to none.</summary>
 	public ManagedObject? ObjectOrNull(int index, string expectedClass)
 	{
-		var (where, address) = Element(index, sizeof(ulong), elementClass: null);
-		var pointer = _array.Runtime.Pointer(address, () => where);
+		var (where, address, pointer) = Reference(index);
 		return pointer == 0 ? null : _array.Runtime.Object(pointer, where, address, expectedClass);
 	}
 
@@ -66,6 +65,13 @@ internal sealed class ManagedArray
 	{
 		var (where, address) = Element(index, size: null, className);
 		return _array.Runtime.Value(address, _elementClass, className, where);
+	}
+
+	/// <summary>The reference at <paramref name="index"/>: where it is, its address, and the address it holds.</summary>
+	private (string Where, ulong Address, ulong Pointer) Reference(int index)
+	{
+		var (where, address) = Element(index, sizeof(ulong), elementClass: null);
+		return (where, address, _array.Runtime.Pointer(address, () => where));
 	}
 
 	/// <summary>An element's address, once the array is checked to hold elements of this size, unless null, and this class, unless null.</summary>

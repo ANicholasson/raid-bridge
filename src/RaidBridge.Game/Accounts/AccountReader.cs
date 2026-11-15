@@ -20,7 +20,7 @@ namespace RaidBridge.Game.Accounts;
 /// then its level, experience and power in <c>_userWrapper.Account.AccountData</c>, then the Champions, the Artifacts and the room for them, and the Relics, named from the static data in
 /// <c>AppModel.StaticDataManager.StaticData</c>, the Resources, Shards and Items, the Great Hall and its Area Bonuses,
 /// the Faction Guardians, the Classic, Tag and Live Arena, the Missions and the Saved teams, each Guardian and each Champion in an Arena defence team
-/// or a Saved team one of those Champions. The Area Bonuses, the Live Arena and the Missions are optional sections: one the game's data
+/// or a Saved team one of those Champions. The Area Bonuses, the Live Arena, the Saved teams and the Missions are optional sections: one the game's data
 /// refuses is null, with a Problem naming the refusal, and the rest is read as ever (ADR-0006).
 /// It never goes near <c>_userWrapper.Social</c>: its UserSocialData holds emails, real names and birth dates.
 /// </summary>
@@ -53,12 +53,12 @@ internal static class AccountReader
 		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
-		var savedTeams = SavedTeamReader.Read(userWrapper, staticData, champions);
 
 		// The optional sections come last, each on its own, so a failure in one costs only that section (ADR-0006).
 		var problems = new List<Problem>();
 		var areaBonuses = Optional(OptionalSection.AreaBonuses, () => GreatHallReader.AreaBonuses(userWrapper, staticData), problems);
 		var liveArena = Optional(OptionalSection.LiveArena, () => ArenaReader.Live(userWrapper, staticData), problems);
+		var savedTeams = Optional(OptionalSection.SavedTeams, () => SavedTeamReader.Read(userWrapper, staticData, champions), problems);
 		var missions = Optional(OptionalSection.Missions, () => MissionReader.Read(userWrapper, staticData, names), problems);
 		return new(id, level, experience, power, artifacts.Capacity, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, areaBonuses, factionGuardians, arena.Classic, arena.Tag, liveArena, missions, savedTeams, problems);
 	}

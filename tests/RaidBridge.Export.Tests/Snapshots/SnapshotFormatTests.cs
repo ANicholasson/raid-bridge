@@ -237,8 +237,8 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_the_sections_it_could_not_read_as_null_and_names_them_in_problems()
 	{
-		Problem[] problems = [new(OptionalSection.AreaBonuses, "The areas moved."), new(OptionalSection.LiveArena, "The leagues moved."), new(OptionalSection.Missions, "Mission 9102 has no text.")];
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, null, null, [], problems);
+		Problem[] problems = [new(OptionalSection.AreaBonuses, "The areas moved."), new(OptionalSection.LiveArena, "The leagues moved."), new(OptionalSection.SavedTeams, "The teams moved."), new(OptionalSection.Missions, "Mission 9102 has no text.")];
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, null, null, null, problems);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -255,6 +255,10 @@ public partial class SnapshotFormatTests
 			      "message": "The leagues moved."
 			    },
 			    {
+			      "section": "savedTeams",
+			      "message": "The teams moved."
+			    },
+			    {
 			      "section": "missions",
 			      "message": "Mission 9102 has no text."
 			    }
@@ -264,7 +268,7 @@ public partial class SnapshotFormatTests
 			written,
 			StringComparison.Ordinal);
 		Assert.Contains("\"greatHall\": {},\n  \"areaBonuses\": null,\n  \"factionGuardians\": {}", written, StringComparison.Ordinal);
-		Assert.EndsWith("\"liveArena\": null,\n  \"savedTeams\": [],\n  \"missions\": null\n}\n", written, StringComparison.Ordinal);
+		Assert.EndsWith("\"liveArena\": null,\n  \"savedTeams\": null,\n  \"missions\": null\n}\n", written, StringComparison.Ordinal);
 	}
 
 	/// <summary>An amount the game holds as a fraction is written as held, never rounded.</summary>

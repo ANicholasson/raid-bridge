@@ -111,12 +111,13 @@ public class TakeSnapshotTests
 	{
 		Problem missions = new(OptionalSection.Missions, "Mission 9102 has no text.");
 		Problem areaBonuses = new(OptionalSection.AreaBonuses, "The areas moved.");
-		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, NewLiveArena, null, [], [missions, areaBonuses]);
+		Problem savedTeams = new(OptionalSection.SavedTeams, "The teams moved.");
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, NewLiveArena, null, null, [missions, savedTeams, areaBonuses]);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
-		Assert.Equal((null, NewLiveArena, null), (snapshot.AreaBonuses, snapshot.LiveArena, snapshot.Missions));
-		Assert.Equal([areaBonuses, missions], snapshot.Problems);
+		Assert.Equal((null, NewLiveArena, null, null), (snapshot.AreaBonuses, snapshot.LiveArena, snapshot.SavedTeams, snapshot.Missions));
+		Assert.Equal([areaBonuses, savedTeams, missions], snapshot.Problems);
 	}
 
 	/// <summary>A Live Arena the game holds none of is null with no Problem.</summary>
@@ -143,6 +144,16 @@ public class TakeSnapshotTests
 		var exception = Assert.Throws<InvalidOperationException>(() => new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run());
 
 		Assert.Equal(message, exception.Message);
+	}
+
+	[Fact]
+	public void Refuses_a_source_that_gives_the_saved_teams_as_null_with_no_problem()
+	{
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, null, []);
+
+		var exception = Assert.Throws<InvalidOperationException>(() => new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run());
+
+		Assert.Equal("The Account's source gave SavedTeams as null with no Problem.", exception.Message);
 	}
 
 	[Fact]

@@ -1,3 +1,4 @@
+using RaidBridge.Domain.Accounts;
 using RaidBridge.Domain.SavedTeams;
 using RaidBridge.Game.Testing;
 using RaidBridge.Game.Testing.Champions;
@@ -20,7 +21,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		Assert.Equivalent(
 			new SavedTeam[] { new("GeneralPve", false, [7]), new("Hydra", true, [12, 3]) },
-			_game.Source().Read().SavedTeams,
+			SavedTeams(_game),
 			strict: true);
 	}
 
@@ -29,7 +30,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams(null);
 
-		Assert.Empty(game.Source().Read().SavedTeams);
+		Assert.Empty(SavedTeams(game));
 	}
 
 	[Fact]
@@ -37,7 +38,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([]);
 
-		Assert.Empty(game.Source().Read().SavedTeams);
+		Assert.Empty(SavedTeams(game));
 	}
 
 	/// <summary>A team with no Champion is still a team, whether its list is empty, all null, or not there.</summary>
@@ -47,7 +48,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([new(Id: 3, Position: 1, NameIsNotDefault: false, heroIds)]);
 
-		Assert.Equivalent(new SavedTeam[] { new("GeneralPve", false, []) }, game.Source().Read().SavedTeams, strict: true);
+		Assert.Equivalent(new SavedTeam[] { new("GeneralPve", false, []) }, SavedTeams(game), strict: true);
 	}
 
 	public static TheoryData<int?[]?> TeamsWithNoChampion() => new() { { [] }, { [null, null] }, { (int?[]?)null } };
@@ -75,7 +76,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([new(id, Position: 1, NameIsNotDefault: false, [7])]);
 
-		Assert.Equal(purpose, Assert.Single(game.Source().Read().SavedTeams).Purpose);
+		Assert.Equal(purpose, Assert.Single(SavedTeams(game)).Purpose);
 	}
 
 	/// <summary>
@@ -85,9 +86,9 @@ public sealed class SavedTeamReadingTests : IDisposable
 	[Fact]
 	public void Reads_the_purposes_before_the_game_fills_its_ranges()
 	{
-		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with { PresetTypeRanges = null });
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with { TypeRanges = null });
 
-		Assert.Equal(["GeneralPve", "Hydra"], game.Source().Read().SavedTeams.Select(team => team.Purpose));
+		Assert.Equal(["GeneralPve", "Hydra"], SavedTeams(game).Select(team => team.Purpose));
 	}
 
 	/// <summary>Where the game has filled TypeRanges, a purpose it gives otherwise than raid-bridge's pairing is refused.</summary>
@@ -96,7 +97,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
 		{
-			PresetTypeRanges = [(1501, 13), (1401, 12), (1301, 11), (1201, 10), (1101, 9), (1001, 8), (901, 7), (801, 3), (701, 6), (401, 5), (201, 4), (101, 2), (0, 1)],
+			TypeRanges = [(1501, 13), (1401, 12), (1301, 11), (1201, 10), (1101, 9), (1001, 8), (901, 7), (801, 3), (701, 6), (401, 5), (201, 4), (101, 2), (0, 1)],
 		});
 
 		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Id at 0x[0-9A-F]+ is 701, in HeroesAiPresets, is Chimera by the game's SharedModel\.Meta\.Heroes\.HeroesAiPreset\.TypeRanges, but Hydra by its SharedModel\.Meta\.Heroes\.HeroesAiPresetIds, which raid-bridge pairs as the game's code did at metadata v39\.$");
@@ -155,7 +156,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([new(1, Position: 1, NameIsNotDefault: false, [7, 3]), new(2, Position: 2, NameIsNotDefault: false, [3])]);
 
-		Assert.Equal([[7, 3], [3]], game.Source().Read().SavedTeams.Select(team => team.ChampionIds));
+		Assert.Equal([[7, 3], [3]], SavedTeams(game).Select(team => team.ChampionIds));
 	}
 
 	[Fact]
@@ -197,7 +198,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([Team(1501, 1, 7), Team(701, 1, 3), Team(101, 3, 12), Team(2, 2, 12)]);
 
-		Assert.Equal(["GeneralPve", "Pvp", "Hydra", "ArtifactDungeons"], game.Source().Read().SavedTeams.Select(team => team.Purpose));
+		Assert.Equal(["GeneralPve", "Pvp", "Hydra", "ArtifactDungeons"], SavedTeams(game).Select(team => team.Purpose));
 	}
 
 	/// <summary>Within a purpose, each team takes the slot its position names, which the player can drag away from its id's.</summary>
@@ -206,7 +207,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([Team(1, 3, 7), Team(2, 1, 3), Team(4, 2, 12)]);
 
-		Assert.Equal([[3], [12], [7]], game.Source().Read().SavedTeams.Select(team => team.ChampionIds));
+		Assert.Equal([[3], [12], [7]], SavedTeams(game).Select(team => team.ChampionIds));
 	}
 
 	/// <summary>A team at position 0 sends the game's screen back to id order for that purpose, and only that purpose.</summary>
@@ -215,7 +216,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([Team(3, 1, 7), Team(2, 0, 3), Team(1, 2, 12), Team(702, 1, 7), Team(701, 2, 3)]);
 
-		Assert.Equal([[12], [3], [7], [7], [3]], game.Source().Read().SavedTeams.Select(team => team.ChampionIds));
+		Assert.Equal([[12], [3], [7], [7], [3]], SavedTeams(game).Select(team => team.ChampionIds));
 	}
 
 	/// <summary>Positions are counted within a purpose, so two purposes can each have a team at position 1.</summary>
@@ -224,7 +225,7 @@ public sealed class SavedTeamReadingTests : IDisposable
 	{
 		using var game = WithTeams([Team(701, 1, 3), Team(1, 1, 7)]);
 
-		Assert.Equal(["GeneralPve", "Hydra"], game.Source().Read().SavedTeams.Select(team => team.Purpose));
+		Assert.Equal(["GeneralPve", "Hydra"], SavedTeams(game).Select(team => team.Purpose));
 	}
 
 	/// <summary>Two teams of a purpose at one position leave their order unknown.</summary>
@@ -236,12 +237,56 @@ public sealed class SavedTeamReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is 1, but another GeneralPve Saved team in HeroesAiPresets is at that position too, so raid-bridge can't tell their order\.$");
 	}
 
-	[Fact]
-	public void Refuses_a_negative_position()
+	/// <summary>The game saves a team only at a position from 0 to its purpose's slot count.</summary>
+	[Theory]
+	[InlineData(-1)]
+	[InlineData(11)]
+	public void Refuses_a_position_outside_the_purposes_slots(int position)
 	{
-		using var game = WithTeams([Team(1, -1, 7)]);
+		using var game = WithTeams([Team(1, position, 7)]);
 
-		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is -1, where raid-bridge expects a position of 0 or more\.$");
+		RefusesMatching(game, $@"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is {position}, where raid-bridge expects a position from 0 to 10, the number of GeneralPve Saved teams the static data's HeroesAiPresetInfo\.MaxPresetsCount allows\.$");
+	}
+
+	[Fact]
+	public void Reads_a_team_at_the_last_slot()
+	{
+		using var game = WithTeams([Team(1, 10, 7)]);
+
+		Assert.Equal([[7]], SavedTeams(game).Select(team => team.ChampionIds));
+	}
+
+	[Fact]
+	public void Refuses_a_purpose_that_keeps_no_team()
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			MaxTeamsByPresetType = new Dictionary<int, int>(SyntheticHeroData.Default.MaxTeamsByPresetType) { [3] = 0 },
+		});
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPresetInfo\.MaxPresetsCount at 0x[0-9A-F]+ is 0, where raid-bridge expects 1 or more\.$");
+	}
+
+	/// <summary>A purpose raid-bridge pairs with the game's constants that the game's enum no longer has is refused too.</summary>
+	[Fact]
+	public void Refuses_a_purpose_the_game_no_longer_has()
+	{
+		_game.RemoveEnumMember("SharedModel.Meta.Heroes.HeroesAiPresetType", "Chimera");
+
+		Refuses(_game, "The game's SharedModel.Meta.Heroes.HeroesAiPresetType has no Chimera, a purpose raid-bridge pairs with one of its SharedModel.Meta.Heroes.HeroesAiPresetIds.");
+	}
+
+	/// <summary>A refused Saved team costs only the Saved teams: the rest of the Snapshot, the Arena teams included, is still read.</summary>
+	[Fact]
+	public void Writes_the_saved_teams_as_null_when_the_game_refuses_one()
+	{
+		using var game = WithTeams([Team(1, 1, 99)]);
+
+		var account = game.Source().Read();
+
+		Assert.Null(account.SavedTeams);
+		Assert.Equal(OptionalSection.SavedTeams, Assert.Single(account.Problems).Section);
+		Assert.NotNull(account.ClassicArena.LastAttackTeam);
 	}
 
 	/// <summary>The game keys a team by its id, and the screens fall back to id order, so two teams with one id are refused.</summary>
@@ -260,9 +305,32 @@ public sealed class SavedTeamReadingTests : IDisposable
 	private static SyntheticGameClient WithTeams(IReadOnlyList<SyntheticSavedTeam>? teams) =>
 		SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with { SavedTeams = teams });
 
+	/// <summary>The Saved teams, read with no Problem.</summary>
+	private static IReadOnlyList<SavedTeam> SavedTeams(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Empty(account.Problems);
+		Assert.NotNull(account.SavedTeams);
+		return account.SavedTeams;
+	}
+
+	/// <summary>
+	/// Saved teams the game's data refuses are null, with a Problem naming the refusal, and the rest of the Account is
+	/// still read (ADR-0006).
+	/// </summary>
 	private static void Refuses(SyntheticGameClient game, string message) =>
-		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Equal(message, Problem(game));
 
 	private static void RefusesMatching(SyntheticGameClient game, string pattern) =>
-		Assert.Matches(pattern, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Matches(pattern, Problem(game));
+
+	private static string Problem(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Null(account.SavedTeams);
+		Assert.NotEmpty(account.Champions);
+		var problem = Assert.Single(account.Problems);
+		Assert.Equal(OptionalSection.SavedTeams, problem.Section);
+		return problem.Message;
+	}
 }

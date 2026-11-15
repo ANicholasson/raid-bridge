@@ -105,7 +105,7 @@ public sealed record SyntheticHeroData(
 	/// <c>HeroesAiPreset.TypeRanges</c>, static: each purpose's first id, and the purpose's number, in the game's order at
 	/// metadata v39, the largest first. Null leaves the static field null.
 	/// </summary>
-	public IReadOnlyList<(int Start, int Type)>? PresetTypeRanges { get; init; } =
+	public IReadOnlyList<(int Start, int Type)>? TypeRanges { get; init; } =
 		[(1501, 13), (1401, 12), (1301, 11), (1201, 10), (1101, 9), (1001, 8), (901, 7), (801, 6), (701, 3), (401, 5), (201, 4), (101, 2), (0, 1)];
 
 	/// <summary>The static data's <c>HeroData.PresetInfoByType</c>: each purpose's <c>MaxHeroesCount</c>, by its number, as the game's data holds it.</summary>
@@ -125,6 +125,9 @@ public sealed record SyntheticHeroData(
 		[12] = 5,
 		[13] = 5,
 	};
+
+	/// <summary>The static data's <c>HeroData.PresetInfoByType</c>: how many Saved teams of each purpose the Account can keep, its <c>MaxPresetsCount</c>, by the purpose's number.</summary>
+	public IReadOnlyDictionary<int, int> MaxTeamsByPresetType { get; init; } = Enumerable.Range(1, 13).ToDictionary(type => type, _ => 10);
 
 	/// <summary>
 	/// <c>BattleStats.Multipliers</c>: for each rank from Stars1, the start and the growth Health, Attack and Defence

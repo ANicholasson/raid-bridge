@@ -59,7 +59,7 @@ public sealed partial class SyntheticGameClient
 
 		var statics = _heap.Allocate(8);
 		_heap.Pointer(preset + ClassStaticFields, statics);
-		if (heroData.PresetTypeRanges is { } ranges)
+		if (heroData.TypeRanges is { } ranges)
 		{
 			var range = _runtime.Class(
 				"System",
@@ -109,7 +109,7 @@ public sealed partial class SyntheticGameClient
 		})]);
 	}
 
-	/// <summary>The static data's HeroData.PresetInfoByType: each purpose's HeroesAiPresetInfo, with its MaxHeroesCount.</summary>
+	/// <summary>The static data's HeroData.PresetInfoByType: each purpose's HeroesAiPresetInfo, with its MaxHeroesCount and MaxPresetsCount.</summary>
 	private ulong PresetInfoByType(SyntheticHeroData heroData)
 	{
 		var info = Declare(
@@ -117,11 +117,13 @@ public sealed partial class SyntheticGameClient
 			"HeroesAiPresetInfo",
 			_runtime.SystemObject,
 			"System.Object",
-			("MaxHeroesCount", "System.Int32", Int32TypeCode, 0x10));
+			("MaxHeroesCount", "System.Int32", Int32TypeCode, 0x10),
+			("MaxPresetsCount", "System.Int32", Int32TypeCode, 0x14));
 		return _runtime.Dictionary(_runtime.DictionaryType(ValueTypeTypeCode, ClassTypeCode), [.. heroData.MaxHeroesByPresetType.Select(max =>
 		{
 			var infoObject = _runtime.Object(info, 0x18);
 			_heap.Int32(infoObject + 0x10, max.Value);
+			_heap.Int32(infoObject + 0x14, heroData.MaxTeamsByPresetType[max.Key]);
 			return ((ulong)max.Key, infoObject);
 		})]);
 	}

@@ -206,18 +206,25 @@ internal static class SnapshotJson
 				json.WriteNull("liveArena");
 			}
 
-			json.WriteStartArray("savedTeams");
-			foreach (var team in snapshot.SavedTeams)
+			if (snapshot.SavedTeams is { } savedTeams)
 			{
-				json.WriteStartObject();
-				json.WriteString("purpose", team.Purpose);
-				json.WriteBoolean("named", team.Named);
-				json.WritePropertyName("championIds");
-				WriteChampionIds(json, team.ChampionIds);
-				json.WriteEndObject();
-			}
+				json.WriteStartArray("savedTeams");
+				foreach (var team in savedTeams)
+				{
+					json.WriteStartObject();
+					json.WriteString("purpose", team.Purpose);
+					json.WriteBoolean("named", team.Named);
+					json.WritePropertyName("championIds");
+					WriteChampionIds(json, team.ChampionIds);
+					json.WriteEndObject();
+				}
 
-			json.WriteEndArray();
+				json.WriteEndArray();
+			}
+			else
+			{
+				json.WriteNull("savedTeams");
+			}
 
 			if (snapshot.Missions is { } missions)
 			{
