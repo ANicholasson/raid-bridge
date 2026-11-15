@@ -732,7 +732,7 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `points`: the Account's Live Arena points.
   - `wins` and `losses`: the game's counts of the Account's Live Arena wins and losses, each 0 or more.
 
-- `savedTeams`: the Account's Saved teams, the teams the player saved on the team screen, in the order the player sorted them there, or `[]` when there are none. Each has:
+- `savedTeams`: the Account's Saved teams, the teams the player saved on the team screen, or `[]` when there are none. The game shows each purpose's teams on a screen of their own, so they come purpose by purpose, in the order of the game's own list of purposes, and each purpose's teams in the order that screen shows them, as the player sorted them there. Each has:
   - `purpose`: what the team is for, such as `"GeneralPve"` for the campaign and dungeons, `"Pvp"` for Arena attack, `"Fractions"` for Faction Wars, `"DoomTower"` or `"Hydra"`. The game holds no purpose for a team: it works it out from the team's id each time, and so does raid-bridge, from the game's own numbers.
   - `named`: whether the player gave the team a name of their own. The name itself is never written: it is text the player typed, and a Snapshot may be passed to other services.
   - `championIds`: the `id`s of the Champions in the team, in the order of its positions, each a Champion in `champions`, once. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`. A Champion may be in several Saved teams, and in an Arena defence team as well. The game takes a Champion that leaves the Account out of every Saved team.

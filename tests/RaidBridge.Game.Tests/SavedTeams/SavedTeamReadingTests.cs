@@ -14,9 +14,9 @@ public sealed class SavedTeamReadingTests : IDisposable
 {
 	private readonly SyntheticGameClient _game = SyntheticGameClient.Create();
 
-	/// <summary>The teams come in the player's order, by Position, not the game's, and the empty position is left out.</summary>
+	/// <summary>The teams come in the screens' order, purpose by purpose, not the game's, and the empty position is left out.</summary>
 	[Fact]
-	public void Reads_the_saved_teams_in_the_players_order()
+	public void Reads_the_saved_teams_in_the_screens_order()
 	{
 		Assert.Equivalent(
 			new SavedTeam[] { new("GeneralPve", false, [7]), new("Hydra", true, [12, 3]) },
@@ -191,16 +191,71 @@ public sealed class SavedTeamReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Id at 0x[0-9A-F]+ is 701, a Hydra Saved team, but the static data's StaticHeroData\.PresetInfoByType holds no Hydra, so raid-bridge can't tell how many Champions it takes\.$");
 	}
 
-	/// <summary>Two teams at one position leave their order unknown.</summary>
+	/// <summary>The purposes come in the order of the game's HeroesAiPresetType, whatever their teams' positions.</summary>
 	[Fact]
-	public void Refuses_two_saved_teams_at_one_position()
+	public void Puts_the_purposes_in_the_games_order()
 	{
-		using var game = WithTeams([new(1, Position: 1, NameIsNotDefault: false, [7]), new(2, Position: 1, NameIsNotDefault: false, [3])]);
+		using var game = WithTeams([Team(1501, 1, 7), Team(701, 1, 3), Team(101, 3, 12), Team(2, 2, 12)]);
 
-		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is 1, but another Saved team in HeroesAiPresets is at that position too, so raid-bridge can't tell their order\.$");
+		Assert.Equal(["GeneralPve", "Pvp", "Hydra", "ArtifactDungeons"], game.Source().Read().SavedTeams.Select(team => team.Purpose));
+	}
+
+	/// <summary>Within a purpose, each team takes the slot its position names, which the player can drag away from its id's.</summary>
+	[Fact]
+	public void Orders_a_purposes_teams_by_position()
+	{
+		using var game = WithTeams([Team(1, 3, 7), Team(2, 1, 3), Team(4, 2, 12)]);
+
+		Assert.Equal([[3], [12], [7]], game.Source().Read().SavedTeams.Select(team => team.ChampionIds));
+	}
+
+	/// <summary>A team at position 0 sends the game's screen back to id order for that purpose, and only that purpose.</summary>
+	[Fact]
+	public void Orders_a_purposes_teams_by_id_when_one_is_at_position_0()
+	{
+		using var game = WithTeams([Team(3, 1, 7), Team(2, 0, 3), Team(1, 2, 12), Team(702, 1, 7), Team(701, 2, 3)]);
+
+		Assert.Equal([[12], [3], [7], [7], [3]], game.Source().Read().SavedTeams.Select(team => team.ChampionIds));
+	}
+
+	/// <summary>Positions are counted within a purpose, so two purposes can each have a team at position 1.</summary>
+	[Fact]
+	public void Reads_two_purposes_with_a_team_at_one_position()
+	{
+		using var game = WithTeams([Team(701, 1, 3), Team(1, 1, 7)]);
+
+		Assert.Equal(["GeneralPve", "Hydra"], game.Source().Read().SavedTeams.Select(team => team.Purpose));
+	}
+
+	/// <summary>Two teams of a purpose at one position leave their order unknown.</summary>
+	[Fact]
+	public void Refuses_two_teams_of_a_purpose_at_one_position()
+	{
+		using var game = WithTeams([Team(1, 1, 7), Team(2, 1, 3)]);
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is 1, but another GeneralPve Saved team in HeroesAiPresets is at that position too, so raid-bridge can't tell their order\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_negative_position()
+	{
+		using var game = WithTeams([Team(1, -1, 7)]);
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Position at 0x[0-9A-F]+ is -1, where raid-bridge expects a position of 0 or more\.$");
+	}
+
+	/// <summary>The game keys a team by its id, and the screens fall back to id order, so two teams with one id are refused.</summary>
+	[Fact]
+	public void Refuses_two_teams_with_one_id()
+	{
+		using var game = WithTeams([Team(1, 1, 7), Team(1, 2, 3)]);
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.HeroesAiPreset\.Id at 0x[0-9A-F]+ is 1, but another Saved team in HeroesAiPresets has that id too\.$");
 	}
 
 	public void Dispose() => _game.Dispose();
+
+	private static SyntheticSavedTeam Team(int id, int position, int championId) => new(id, position, NameIsNotDefault: false, [championId]);
 
 	private static SyntheticGameClient WithTeams(IReadOnlyList<SyntheticSavedTeam>? teams) =>
 		SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with { SavedTeams = teams });

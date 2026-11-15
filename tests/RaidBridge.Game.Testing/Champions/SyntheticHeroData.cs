@@ -90,13 +90,14 @@ public sealed record SyntheticHeroData(
 	};
 
 	/// <summary>
-	/// <c>UserHeroData.HeroesAiPresets</c>, the Saved teams, in the game's order, which isn't the player's: a Hydra team
-	/// the player put second and named, holding Champion 12, an empty position and Champion 3; and an unnamed general PvE
-	/// team the player put first, holding Champion 7. Null holds no list.
+	/// <c>UserHeroData.HeroesAiPresets</c>, the Saved teams, in the game's order, which isn't the screens': a Hydra team
+	/// the player named, holding Champion 12, an empty position and Champion 3; and an unnamed general PvE team holding
+	/// Champion 7. Each is first among its purpose's teams, since the game counts positions within a purpose. Null holds
+	/// no list.
 	/// </summary>
 	public IReadOnlyList<SyntheticSavedTeam>? SavedTeams { get; init; } =
 	[
-		new(Id: 701, Position: 2, NameIsNotDefault: true, HeroIds: [12, null, 3]),
+		new(Id: 701, Position: 1, NameIsNotDefault: true, HeroIds: [12, null, 3]),
 		new(Id: 1, Position: 1, NameIsNotDefault: false, HeroIds: [7]),
 	];
 
