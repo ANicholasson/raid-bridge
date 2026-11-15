@@ -44,7 +44,8 @@ public sealed class GameSnapshotSource : ISnapshotSource
 		RefuseFilesOfAnotherBuild(files);
 		var account = AccountReader.Read(new Il2CppRuntime(_memory, metadata));
 		// A Problem is the game's data refusing a section, never the Game client gone: the runtime reports a failed read as
-		// bad data, so the Game client is read once more, and one that has exited fails the run (ADR-0006).
+		// bad data, so the Game client is read once more, and one that has exited fails the run (ADR-0006; code review,
+		// https://github.com/ANicholasson/raid-bridge/pull/58).
 		if (account.Problems.Count > 0)
 		{
 			_memory.Read(_memory.GameAssembly.ImageBase, stackalloc byte[2]);

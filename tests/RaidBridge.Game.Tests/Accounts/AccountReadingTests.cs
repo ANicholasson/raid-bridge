@@ -87,7 +87,7 @@ public sealed class AccountReadingTests : IDisposable
 
 	/// <summary>
 	/// The Game client exiting while an optional section is read fails the run: the runtime reports the failed read as
-	/// bad data, but the Game client gone is no refusal of its data (code review).
+	/// bad data, but the Game client gone is no refusal of its data (code review, https://github.com/ANicholasson/raid-bridge/pull/58).
 	/// </summary>
 	[Fact]
 	public void Fails_when_the_game_client_exits_while_an_optional_section_is_read()

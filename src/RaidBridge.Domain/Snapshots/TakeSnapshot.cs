@@ -43,7 +43,7 @@ public sealed class TakeSnapshot(ISnapshotSource source, ISaltStore salts, TimeP
 	/// The source's Problems by section, once they agree with its sections: each Problem names a section it returned as
 	/// null, no section has two, and the Area Bonuses and the Missions are null only with one. The Live Arena may be null
 	/// without one, since the game holds none for some Accounts. A source that breaks this has a bug, and a Snapshot that
-	/// said a section was empty when it failed, or failed when it was read, would hide it (code review).
+	/// said a section was empty when it failed, or failed when it was read, would hide it (code review, https://github.com/ANicholasson/raid-bridge/pull/58).
 	/// </summary>
 	private static List<Problem> Problems(Account account)
 	{
