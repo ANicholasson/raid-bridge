@@ -131,7 +131,7 @@ public sealed partial class SyntheticGameClient
 		var arena3x3WrapperObject = _runtime.Object(arena3x3Wrapper, 0x18);
 		_heap.Pointer(arena3x3WrapperObject + 0x10, tagData);
 		Slot("Client.Model.Guard.UserWrapper.Arena3x3", userWrapperObject + 0x60, arena3x3WrapperObject);
-		LayOutTheLeagues(arenaData.LeagueBonuses);
+		LayOutTheLeagues(arenaData.LeagueBonuses, arenaData.HeroSlotsCount);
 		LayOutTheLiveArena(userWrapperObject, arenaData.Live, arenaData.LiveLeagues);
 	}
 
@@ -194,8 +194,11 @@ public sealed partial class SyntheticGameClient
 		Slot("SharedModel.Meta.StaticData.LiveArenaData", _clientStaticData + 0x70, staticObject);
 	}
 
-	/// <summary>The static data's ArenaData, whose LeagueInfos hold each league's Id and BattleBonuses, a BattleStats.</summary>
-	private void LayOutTheLeagues(IReadOnlyDictionary<int, SyntheticBattleStats> leagueBonuses)
+	/// <summary>
+	/// The static data's ArenaData, whose base class StaticArenaData declares the Champions a Classic Arena team takes,
+	/// and whose LeagueInfos hold each league's Id and BattleBonuses, a BattleStats.
+	/// </summary>
+	private void LayOutTheLeagues(IReadOnlyDictionary<int, SyntheticBattleStats> leagueBonuses, int heroSlotsCount)
 	{
 		var leagueInfo = Declare(
 			"SharedModel.Meta.Battle.Arena",
@@ -204,15 +207,22 @@ public sealed partial class SyntheticGameClient
 			"System.Object",
 			("Id", "SharedModel.Meta.Battle.Arena.ArenaLeagueId", ValueTypeTypeCode, 0x10),
 			("BattleBonuses", "SharedModel.Meta.Heroes.BattleStats", ClassTypeCode, 0x18));
+		var staticArenaData = Declare(
+			"SharedModel.Meta.Battle.Arena",
+			"StaticArenaData",
+			_runtime.SystemObject,
+			"System.Object",
+			("HeroSlotsCount", "System.Int32", Int32TypeCode, 0x10));
 		var arenaData = Declare(
 			"SharedModel.Meta.Battle.Arena",
 			"StaticStandardArenaData",
-			_runtime.SystemObject,
-			"System.Object",
-			("LeagueInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Battle.Arena.ArenaLeagueInfo>", GenericInstanceTypeCode, 0x10));
+			staticArenaData,
+			"SharedModel.Meta.Battle.Arena.StaticArenaData",
+			("LeagueInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Battle.Arena.ArenaLeagueInfo>", GenericInstanceTypeCode, 0x18));
 
-		var arenaDataObject = _runtime.Object(arenaData, 0x18);
-		_heap.Pointer(arenaDataObject + 0x10, _runtime.List(_runtime.ListType(leagueInfo, "ArenaLeagueInfo", sizeof(ulong)), [.. leagueBonuses.Select(league =>
+		var arenaDataObject = _runtime.Object(arenaData, 0x20);
+		_heap.Int32(arenaDataObject + 0x10, heroSlotsCount);
+		_heap.Pointer(arenaDataObject + 0x18, _runtime.List(_runtime.ListType(leagueInfo, "ArenaLeagueInfo", sizeof(ulong)), [.. leagueBonuses.Select(league =>
 		{
 			var infoObject = _runtime.Object(leagueInfo, 0x20);
 			_heap.Int32(infoObject + 0x10, league.Key);

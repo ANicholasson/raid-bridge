@@ -151,6 +151,10 @@ _Avoid_: 3v3, arena3x3
 The Arena where two players pick Champions in turn and fight each other in real time.
 _Avoid_: PvP (for Live Arena alone), live arena (in code names other than the game's own)
 
+**Last attack team**:
+The team the game remembers the player last attacked with in an Arena, which its team screen offers again. The game's code keeps one such team for each place, as a battle preset. It doesn't say which Champion leads.
+_Avoid_: attack preset, battle preset
+
 **Mission**:
 A task on the game's Missions screen, such as Arbiter's, with a reward for finishing it. Missions come in groups the Account works through one after another, and each group is in a section of the screen, such as Arbiter's. The game's code calls a Mission a recommended quest; its other quests, such as daily quests, aren't Missions.
 _Avoid_: recommended quest, quest (for a Mission)

@@ -12,13 +12,19 @@ namespace RaidBridge.Game.Tests.Arena;
 /// </summary>
 public sealed class ArenaReadingTests : IDisposable
 {
+	/// <summary>The default heroes, with a team remembered for the Clan Boss's key, 4015, but none for the Classic Arena's.</summary>
+	private static readonly SyntheticHeroData NeverAttacked = SyntheticHeroData.Default with
+	{
+		BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [4015] = [12, 3] },
+	};
+
 	private readonly SyntheticGameClient _game = SyntheticGameClient.Create();
 
 	/// <summary>The empty second position of the defence team is left out, and the others keep the game's order.</summary>
 	[Fact]
 	public void Reads_the_classic_arena()
 	{
-		Assert.Equivalent(new ClassicArena("SilverIII", 1450, 12, 8, 3, new([12, 3, 7])), _game.Source().Read().ClassicArena, strict: true);
+		Assert.Equivalent(new ClassicArena("SilverIII", 1450, 12, 8, 3, new([12, 3, 7]), new([7, 3, 12])), _game.Source().Read().ClassicArena, strict: true);
 	}
 
 	/// <summary>The empty positions of the first team are left out, and so is every position of the third, which stays in its place.</summary>
@@ -28,15 +34,18 @@ public sealed class ArenaReadingTests : IDisposable
 		Assert.Equivalent(new TagArena("BronzeIV", 820, 6, 2, 4, [new([3]), new([7, 12]), new([])]), _game.Source().Read().TagArena, strict: true);
 	}
 
-	/// <summary>An Account with no Arena set up holds no defence team in either Arena, so neither has a league.</summary>
+	/// <summary>
+	/// An Account with no Arena set up holds no defence team in either Arena, so neither has a league, and the game
+	/// remembers no Classic Arena team, though it remembers one for the Clan Boss.
+	/// </summary>
 	[Fact]
 	public void Reads_an_account_with_no_arena_set_up()
 	{
-		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.None);
+		using var game = SyntheticGameClient.Create(heroData: NeverAttacked, arenaData: SyntheticArenaData.None);
 
 		var account = game.Source().Read();
 
-		Assert.Equivalent(new ClassicArena(null, 1000, 0, 0, 0, new([])), account.ClassicArena, strict: true);
+		Assert.Equivalent(new ClassicArena(null, 1000, 0, 0, 0, new([]), null), account.ClassicArena, strict: true);
 		Assert.Equivalent(new TagArena(null, 0, 0, 0, 0, []), account.TagArena, strict: true);
 	}
 
@@ -93,7 +102,7 @@ public sealed class ArenaReadingTests : IDisposable
 
 		var account = game.Source().Read();
 
-		Assert.Equivalent(new ClassicArena("GoldII", 1450, 12, 8, 3, new([20, 12, 7, 3])), account.ClassicArena, strict: true);
+		Assert.Equivalent(new ClassicArena("GoldII", 1450, 12, 8, 3, new([20, 12, 7, 3]), new([7, 3, 12])), account.ClassicArena, strict: true);
 		Assert.Equivalent(new ArenaTeam[] { new([3, 7, 12, 20]), new([21, 22, 23, 24]), new([25, 26, 27, 28]) }, account.TagArena.DefenceTeams, strict: true);
 	}
 
@@ -110,6 +119,95 @@ public sealed class ArenaReadingTests : IDisposable
 		var account = game.Source().Read();
 
 		Assert.Equal((null, null), (account.ClassicArena.League, account.TagArena.League));
+	}
+
+	/// <summary>
+	/// The Last attack team is under the key the static data's team size makes: with five Champions to a Classic Arena
+	/// team, 3015, not 3014 (https://github.com/ANicholasson/raid-bridge/issues/56).
+	/// </summary>
+	[Fact]
+	public void Reads_the_last_attack_team_under_the_key_the_team_size_makes()
+	{
+		using var game = SyntheticGameClient.Create(
+			heroData: SyntheticHeroData.Default with
+			{
+				BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [7], [3015] = [12, 7, 3] },
+			},
+			arenaData: SyntheticArenaData.Default with { HeroSlotsCount = 5 });
+
+		Assert.Equivalent(new ArenaTeam([12, 7, 3]), game.Source().Read().ClassicArena.LastAttackTeam, strict: true);
+	}
+
+	/// <summary>A remembered team with no Champion in it is a team, written empty, not a team the game doesn't remember.</summary>
+	[Fact]
+	public void Reads_a_last_attack_team_with_no_champion()
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [] },
+		});
+
+		Assert.Equivalent(new ArenaTeam([]), game.Source().Read().ClassicArena.LastAttackTeam, strict: true);
+	}
+
+	/// <summary>
+	/// The game keeps the id of a Champion that has left the Account until the next attack, and its team screen leaves
+	/// that position empty, so the Last attack team leaves it out (https://github.com/ANicholasson/raid-bridge/issues/56).
+	/// </summary>
+	[Fact]
+	public void Leaves_a_champion_no_longer_on_the_account_out_of_the_last_attack_team()
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [7, 99, 12] },
+		});
+
+		Assert.Equivalent(new ArenaTeam([7, 12]), game.Source().Read().ClassicArena.LastAttackTeam, strict: true);
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	public void Refuses_a_last_attack_team_id_that_is_not_a_champion_id(int heroId)
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [7, heroId] },
+		});
+
+		RefusesMatching(game, $@"^SharedModel\.Meta\.Heroes\.UserHeroData\.BattlePresets\[3014\]\[1\] at 0x[0-9A-F]+ is {heroId}, in the Classic Arena's Last attack team, where raid-bridge expects a Champion's id, which is positive\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_champion_twice_in_the_last_attack_team()
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [7, 3, 7] },
+		});
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.UserHeroData\.BattlePresets\[3014\]\[2\] at 0x[0-9A-F]+ is 7, in the Classic Arena's Last attack team, but Champion 7 is already in it\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_last_attack_team_larger_than_a_classic_arena_team()
+	{
+		using var game = SyntheticGameClient.Create(heroData: SyntheticHeroData.Default with
+		{
+			BattlePresets = new Dictionary<int, IReadOnlyList<int>> { [3014] = [7, 3, 12, 7, 3] },
+		});
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.UserHeroData\.BattlePresets\[3014\] at 0x[0-9A-F]+ holds 5 Champions, in the Classic Arena's Last attack team, where a Classic Arena team takes at most 4\.$");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(10)]
+	public void Refuses_a_classic_arena_team_size_the_key_cannot_hold(int heroSlotsCount)
+	{
+		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { HeroSlotsCount = heroSlotsCount });
+
+		RefusesMatching(game, $@"^SharedModel\.Meta\.Battle\.Arena\.StaticArenaData\.HeroSlotsCount at 0x[0-9A-F]+ is {heroSlotsCount}, where raid-bridge expects a Classic Arena team of 1 to 9 Champions, which the key keeps in one digit\.$");
 	}
 
 	[Fact]

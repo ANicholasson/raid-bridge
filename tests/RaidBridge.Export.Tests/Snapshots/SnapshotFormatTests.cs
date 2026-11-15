@@ -19,7 +19,7 @@ namespace RaidBridge.Export.Tests.Snapshots;
 /// </summary>
 public partial class SnapshotFormatTests
 {
-	private static readonly ClassicArena NoClassicArena = new(null, 0, 0, 0, 0, new([]));
+	private static readonly ClassicArena NoClassicArena = new(null, 0, 0, 0, 0, new([]), null);
 	private static readonly TagArena NoTagArena = new(null, 0, 0, 0, 0, []);
 	private static readonly LiveArena NewLiveArena = new("BronzeI", 900, 0, 0);
 	private static readonly MissionGroups NoMissions = new([], []);
@@ -132,7 +132,7 @@ public partial class SnapshotFormatTests
 			[new("Magic", [new("Health", 3), new("Attack", 2)]), new("Void", [new("CriticalDamage", 10)])],
 			[new("IceGolemCave", [new("Speed", 2), new("Accuracy", 1)]), new("AllianceBoss", [new("Attack", 4)])],
 			[new("BannerLords", [new("Rare", [new([7, 12])])]), new("DarkElves", [new("Legendary", [new([3])])])],
-			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7])),
+			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7]), new([7, 3, 12])),
 			new("BronzeIV", 820, 6, 2, 4, [new([3]), new([7, 12]), new([])]),
 			new("SilverII", 1520, 14, 9),
 			new(
@@ -170,8 +170,8 @@ public partial class SnapshotFormatTests
 	}
 
 	/// <summary>
-	/// An Arena with no league and no defence team is written with a null league and empty teams, never left out, and so
-	/// are Missions with no group open or finished.
+	/// An Arena with no league and no defence team is written with a null league and empty teams, and no Last attack
+	/// team as null, never left out, and so are Missions with no group open or finished.
 	/// </summary>
 	[Fact]
 	public void Writes_an_arena_and_missions_with_nothing_set_up()
@@ -188,7 +188,8 @@ public partial class SnapshotFormatTests
 			    "battles": 0,
 			    "wins": 0,
 			    "losses": 0,
-			    "defenceTeam": []
+			    "defenceTeam": [],
+			    "lastAttackTeam": null
 			  },
 			  "tagArena": {
 			    "league": null,

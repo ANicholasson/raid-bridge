@@ -6,7 +6,7 @@ A Snapshot holds the Account, its level, experience and power, the room it has f
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, at level 54 with a made-up power, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts, boots and a cloak, and a Relic are worn by nobody, against a made-up Artifact capacity of 1500, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities and Area Bonuses in two areas, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty, and is in SilverII in the Live Arena. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, at level 54 with a made-up power, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts, boots and a cloak, and a Relic are worn by nobody, against a made-up Artifact capacity of 1500, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities and Area Bonuses in two areas, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team and last attacked there with the same three in another order, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty, and is in SilverII in the Live Arena. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
 
 ```json
 {
@@ -544,6 +544,11 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
       12,
       3,
       7
+    ],
+    "lastAttackTeam": [
+      7,
+      3,
+      12
     ]
   },
   "tagArena": {
@@ -700,6 +705,8 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `battles`, `wins` and `losses`: this week's counts, as of `capturedAt`: the game starts them again every week. Each is 0 or more. `battles` is the battles the player started, and `wins` and `losses` are the game's own counts of wins and losses, which can add up to more than `battles`: they seem to count battles fought on defence too.
 
   `classicArena`'s `defenceTeam` is the `id`s of the Champions in its defence team, in the game's order of positions, and `tagArena`'s `defenceTeams` is its defence teams, as many as the game holds, in the game's order, each a list of `id`s the same way. Each `id` is a Champion in `champions`, defending only once in that Arena. An empty position is left out, so a Champion's place in the list isn't the number of its position, and a team with no Champion in it is `[]`, kept in its place among the teams while another team has a Champion. Both are always written: with no defence team set, `defenceTeam` is `[]` and `defenceTeams` is `[]`. `defenceTeams` is `[]` too when the game holds teams with no Champion in any of them, as it can for an Account that has set no Tag Arena defence.
+
+  `classicArena`'s `lastAttackTeam` is the Classic Arena's Last attack team: the `id`s of the Champions the game remembers the player last attacked with there, which its team screen offers again, or `null` when it remembers none, as for an Account that has never attacked there. The `id`s are in the order the game keeps them, which isn't the order of positions and doesn't say which Champion leads: the leader has come first in one team the game remembered and second in another. Each `id` is a Champion in `champions`, once. A Champion no longer on the Account is left out: the game keeps its id until the next attack there, and its team screen leaves that position empty, so the team can hold fewer Champions than were in the battle.
 
 - `liveArena`: the Account's Live Arena, or `null` when the game holds no Live Arena data for the Account, as it may before the Account reaches the level that opens the Live Arena. It has:
   - `league`: the league the Account is in, such as `"SilverII"`. The game holds no league for the Live Arena: it works the league out from the points each time, as the highest whose points the Account has reached, and `"BronzeI"` below them all, and so does raid-bridge, from the game's own table. An Account that has never fought there is in `"BronzeI"`, with the 900 points it starts with.

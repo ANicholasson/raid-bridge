@@ -21,6 +21,12 @@ public sealed record SyntheticArenaData(SyntheticClassicArena Classic, Synthetic
 		[22] = Percent(0.16) with { Speed = 0.05, Resistance = 0.05, Accuracy = 0.05 },
 	};
 
+	/// <summary>
+	/// The static data's ArenaData.HeroSlotsCount: the Champions a Classic Arena team takes, 4 as in the game's data, which
+	/// makes the Classic Arena's key in BattlePresets 3014.
+	/// </summary>
+	public int HeroSlotsCount { get; init; } = 4;
+
 	/// <summary>The Live Arena: 1520 points, which reach SilverII in <see cref="LiveLeagues"/>, 14 wins and 9 losses. Null holds no LiveArenaData.</summary>
 	public SyntheticLiveArena? Live { get; init; } = new(Points: 1520, Wins: 14, Losses: 9);
 

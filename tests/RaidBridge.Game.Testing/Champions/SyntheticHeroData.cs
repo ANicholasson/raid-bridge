@@ -78,6 +78,17 @@ public sealed record SyntheticHeroData(
 		});
 
 	/// <summary>
+	/// <c>UserHeroData.BattlePresets</c>: the team the game remembers for each place, by the game's key for it. The
+	/// Classic Arena's key, 3014, holds Champions 7, 3 and 12, in another order than its defence team; the Clan Boss's,
+	/// 4015, holds a team the reader doesn't read (https://github.com/ANicholasson/raid-bridge/issues/56).
+	/// </summary>
+	public IReadOnlyDictionary<int, IReadOnlyList<int>> BattlePresets { get; init; } = new Dictionary<int, IReadOnlyList<int>>
+	{
+		[4015] = [12, 3],
+		[3014] = [7, 3, 12],
+	};
+
+	/// <summary>
 	/// <c>BattleStats.Multipliers</c>: for each rank from Stars1, the start and the growth Health, Attack and Defence
 	/// scale by. The game holds it as a <c>double[,]</c>; null leaves the static field null.
 	/// </summary>

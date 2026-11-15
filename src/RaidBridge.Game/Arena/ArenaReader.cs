@@ -53,7 +53,7 @@ internal static class ArenaReader
 	public static (ClassicArena Classic, TagArena Tag, LiveArena? Live) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
 	{
 		var championIds = champions.Select(champion => champion.Id).ToHashSet();
-		return (Classic(classic, new(championIds)), Tag(userWrapper, new(championIds)), Live(userWrapper, staticData));
+		return (Classic(classic, new(championIds), LastAttackTeam(userWrapper, staticData, championIds)), Tag(userWrapper, new(championIds)), Live(userWrapper, staticData));
 	}
 
 	/// <summary>
@@ -95,15 +95,87 @@ internal static class ArenaReader
 			.Where(bonus => bonus.Value != 0)];
 	}
 
+	/// <summary>
+	/// The Classic Arena's key in <c>BattlePresets</c> and the Champions a team there takes, as the Classic Arena's team
+	/// screen works them out at metadata v39 (<c>HeroesSquadSelectionDialogContext`2.HeroIdsPreset</c>, RVA 0x71E9A0):
+	/// <c>RegionTypeId.Arena</c> times ten plus the static data's <c>ArenaData.HeroSlotsCount</c>, 3014 today.
+	/// </summary>
+	private static (int Key, int Slots) ClassicArenaPresetKey(ManagedObject staticData)
+	{
+		const string RegionTypeId = "SharedModel.Meta.Stages.RegionTypeId";
+		var arena = staticData.Runtime.Metadata.Enum(RegionTypeId).Members.SingleOrDefault(member => member.Name == "Arena")
+			?? throw new GameDataException($"The game's {RegionTypeId} has no member Arena, where raid-bridge expects one.");
+		var slots = staticData
+			.Object("ArenaData", "SharedModel.Meta.Battle.Arena.StaticStandardArenaData")
+			.Int32("HeroSlotsCount")
+			.Where(count => count is >= 1 and <= 9, "a Classic Arena team of 1 to 9 Champions, which the key keeps in one digit");
+		return (checked((int)((arena.Value * 10) + slots)), slots);
+	}
+
 	/// <summary>An Account that has set no defence team holds no <c>ArenaDefenseTeamSetup</c>, and so no league either.</summary>
-	private static ClassicArena Classic(ClassicArenaState classic, Defenders defenders) =>
+	private static ClassicArena Classic(ClassicArenaState classic, Defenders defenders, ArenaTeam? lastAttackTeam) =>
 		new(
 			classic.League is { } league ? LeagueName(league.Value.Name) : null,
 			classic.Points,
 			classic.Week.Battles,
 			classic.Week.Wins,
 			classic.Week.Losses,
-			classic.DefencePositions is { } positions ? Team(positions, "the Classic Arena's defence team", defenders) : new([]));
+			classic.DefencePositions is { } positions ? Team(positions, "the Classic Arena's defence team", defenders) : new([]),
+			lastAttackTeam);
+
+	/// <summary>
+	/// The Classic Arena's Last attack team (https://github.com/ANicholasson/raid-bridge/issues/56): the team the game
+	/// remembers for it in <c>_userWrapper.Heroes.HeroData.BattlePresets</c>, an <c>int[]</c> of Champion ids by a key
+	/// for each place, or null when it remembers none. The array holds only the Champions chosen, in the order the game
+	/// keeps, which doesn't say which Champion leads. A Champion no longer on the Account is left out, each other
+	/// Champion is in it once, and there can be no more of them than a Classic Arena team takes.
+	/// </summary>
+	private static ArenaTeam? LastAttackTeam(ManagedObject userWrapper, ManagedObject staticData, HashSet<int> championIds)
+	{
+		const string Team = "the Classic Arena's Last attack team";
+		var (key, slots) = ClassicArenaPresetKey(staticData);
+		if (!userWrapper
+			.Object("Heroes", "Client.Model.Gameplay.Heroes.HeroesWrapper")
+			.Object("HeroData", "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData")
+			.Dictionary("BattlePresets", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32[]>")
+			.ByInt32Key()
+			.TryGetValue(key, out var preset))
+		{
+			return null;
+		}
+
+		var heroIds = preset.Array();
+		if (heroIds.Length > slots)
+		{
+			throw new GameDataException($"{heroIds.Where} at 0x{heroIds.Address:X} holds {heroIds.Length} Champions, in {Team}, where a Classic Arena team takes at most {slots}.");
+		}
+
+		var team = new List<int>();
+		foreach (var heroId in Enumerable.Range(0, heroIds.Length).Select(heroIds.Int32))
+		{
+			if (heroId.Value <= 0)
+			{
+				throw new GameDataException($"{heroId}, in {Team}, where raid-bridge expects a Champion's id, which is positive.");
+			}
+
+			// The game keeps a Champion's id here after it leaves the Account, until the next attack, and its team screen
+			// leaves that position empty (HeroesSelectionDialogContext`1.Hero, RVA 0x710150 at metadata v39), so it is left
+			// out here too (https://github.com/ANicholasson/raid-bridge/issues/56).
+			if (!championIds.Contains(heroId.Value))
+			{
+				continue;
+			}
+
+			if (team.Contains(heroId.Value))
+			{
+				throw new GameDataException($"{heroId}, in {Team}, but Champion {heroId.Value} is already in it.");
+			}
+
+			team.Add(heroId.Value);
+		}
+
+		return new(team);
+	}
 
 	/// <summary>
 	/// Teams that hold no Champion between them are written as no defence teams, as no <c>Arena3X3DefenseTeamSetup</c>

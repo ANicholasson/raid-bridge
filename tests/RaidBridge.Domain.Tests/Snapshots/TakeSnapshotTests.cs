@@ -13,7 +13,7 @@ public class TakeSnapshotTests
 {
 	private static readonly DateTimeOffset Now = new(2026, 10, 31, 21, 40, 0, TimeSpan.Zero);
 	private static readonly ArtifactCapacity Capacity = new(1500, 2, 1);
-	private static readonly ClassicArena NoClassicArena = new(null, 0, 0, 0, 0, new([]));
+	private static readonly ClassicArena NoClassicArena = new(null, 0, 0, 0, 0, new([]), null);
 	private static readonly TagArena NoTagArena = new(null, 0, 0, 0, 0, []);
 	private static readonly LiveArena NewLiveArena = new("BronzeI", 900, 0, 0);
 	private static readonly MissionGroups NoMissions = new([], []);
@@ -80,7 +80,7 @@ public class TakeSnapshotTests
 			[new("Magic", [new("Defence", 4), new("Attack", 2)]), new("Force", [new("Health", 1)])],
 			[new("AllianceBoss", [new("Speed", 2), new("Health", 1)]), new("IceGolemCave", [new("Attack", 3)])],
 			[new("DarkElves", [new("Legendary", [new([12, 3])])]), new("BannerLords", [new("Rare", [new([7])])])],
-			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7])),
+			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7]), new([7, 3, 12])),
 			new("BronzeIV", 820, 6, 2, 4, [new([12]), new([7, 3])]),
 			new("SilverII", 1520, 14, 9),
 			new(["Group1"], [new("Group2", "ArbiterSection", [new(9102, "Dungeons", "InProgress", "Clear a stage", 4, 10), new(9101, "Heroes", "Completed", "Upgrade a Champion", null, 2)])]));
