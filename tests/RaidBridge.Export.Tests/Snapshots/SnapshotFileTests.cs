@@ -24,7 +24,7 @@ public sealed class SnapshotFileTests : IDisposable
 		[],
 		[],
 		[],
-		new(null, 0, 0, 0, 0, new([])),
+		new(null, 0, 0, 0, 0, new([]), null),
 		new(null, 0, 0, 0, 0, []),
 		new("BronzeI", 900, 0, 0),
 		new([], []),

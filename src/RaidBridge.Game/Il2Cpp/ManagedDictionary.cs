@@ -90,6 +90,9 @@ internal sealed class ManagedDictionary
 		public ManagedDictionary? DictionaryOrNull() =>
 			Named(() => entry.ObjectOrNull("value", "TValue", "System.Collections.Generic.Dictionary`2")) is { } dictionary ? new(dictionary, where) : null;
 
+		/// <summary>The one-dimensional array the value refers to, its elements named after this entry, such as <c>BattlePresets[3014][0]</c>.</summary>
+		public ManagedArray Array() => new(Named(() => entry.Object("value", "TValue", "System.Array")), where);
+
 		/// <summary>The List&lt;T&gt; the value refers to, named after this entry when it is malformed.</summary>
 		public ManagedList List() => new(Named(() => entry.Object("value", "TValue", "System.Collections.Generic.List`1")), where);
 

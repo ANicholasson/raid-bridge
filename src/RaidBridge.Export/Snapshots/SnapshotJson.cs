@@ -168,6 +168,16 @@ internal static class SnapshotJson
 			WriteArenaStanding(json, classic.League, classic.Points, classic.Battles, classic.Wins, classic.Losses);
 			json.WritePropertyName("defenceTeam");
 			WriteArenaTeam(json, classic.DefenceTeam);
+			json.WritePropertyName("lastAttackTeam");
+			if (classic.LastAttackTeam is { } lastAttackTeam)
+			{
+				WriteArenaTeam(json, lastAttackTeam);
+			}
+			else
+			{
+				json.WriteNullValue();
+			}
+
 			json.WriteEndObject();
 
 			var tag = snapshot.TagArena;

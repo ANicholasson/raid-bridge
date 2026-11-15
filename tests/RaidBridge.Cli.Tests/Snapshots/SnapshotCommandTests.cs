@@ -6,6 +6,7 @@ using RaidBridge.Game.Memory;
 using RaidBridge.Game.Testing;
 using RaidBridge.Game.Testing.Arena;
 using RaidBridge.Game.Testing.Artifacts;
+using RaidBridge.Game.Testing.Champions;
 using RaidBridge.Game.Testing.FactionGuardians;
 using RaidBridge.Game.Testing.GreatHall;
 using RaidBridge.Game.Testing.Missions;
@@ -200,7 +201,7 @@ public sealed class SnapshotCommandTests : IDisposable
 		Assert.Empty(Directory.EnumerateFileSystemEntries(_workingDirectory));
 	}
 
-	/// <summary>The Classic and Tag Arena reach the file with the game's league names, leaving out each empty position.</summary>
+	/// <summary>The Classic and Tag Arena reach the file with the game's league names, leaving out each empty position, and the Classic Arena's Last attack team in the game's order.</summary>
 	[Fact]
 	public void Writes_the_classic_and_tag_arena()
 	{
@@ -208,21 +209,23 @@ public sealed class SnapshotCommandTests : IDisposable
 
 		using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(_workingDirectory, "snapshot-20261031T214005Z.json")));
 		Assert.Equal(
-			("""{"league":"SilverIII","points":1450,"battles":12,"wins":8,"losses":3,"defenceTeam":[12,3,7]}""", """{"league":"BronzeIV","points":820,"battles":6,"wins":2,"losses":4,"defenceTeams":[[3],[7,12],[]]}"""),
+			("""{"league":"SilverIII","points":1450,"battles":12,"wins":8,"losses":3,"defenceTeam":[12,3,7],"lastAttackTeam":[7,3,12]}""", """{"league":"BronzeIV","points":820,"battles":6,"wins":2,"losses":4,"defenceTeams":[[3],[7,12],[]]}"""),
 			(JsonSerializer.Serialize(json.RootElement.GetProperty("classicArena")), JsonSerializer.Serialize(json.RootElement.GetProperty("tagArena"))));
 	}
 
-	/// <summary>Both Arenas are written even when the player has set up neither, so "none" reads apart from "not yet read".</summary>
+	/// <summary>Both Arenas are written even when the player has set up neither and never attacked, so "none" reads apart from "not yet read".</summary>
 	[Fact]
 	public void Writes_both_arenas_when_neither_is_set_up()
 	{
-		using var game = SyntheticGameClient.Create(arenaData: SyntheticArenaData.None);
+		using var game = SyntheticGameClient.Create(
+			heroData: SyntheticHeroData.Default with { BattlePresets = new Dictionary<int, IReadOnlyList<int>>() },
+			arenaData: SyntheticArenaData.None);
 
 		Assert.Equal(0, Run(game, "snapshot"));
 
 		using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(_workingDirectory, "snapshot-20261031T214005Z.json")));
 		Assert.Equal(
-			("""{"league":null,"points":1000,"battles":0,"wins":0,"losses":0,"defenceTeam":[]}""", """{"league":null,"points":0,"battles":0,"wins":0,"losses":0,"defenceTeams":[]}"""),
+			("""{"league":null,"points":1000,"battles":0,"wins":0,"losses":0,"defenceTeam":[],"lastAttackTeam":null}""", """{"league":null,"points":0,"battles":0,"wins":0,"losses":0,"defenceTeams":[]}"""),
 			(JsonSerializer.Serialize(json.RootElement.GetProperty("classicArena")), JsonSerializer.Serialize(json.RootElement.GetProperty("tagArena"))));
 	}
 

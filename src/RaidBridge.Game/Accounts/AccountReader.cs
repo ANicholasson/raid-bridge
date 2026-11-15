@@ -51,7 +51,7 @@ internal static class AccountReader
 		var champions = ChampionReader.Read(userWrapper, staticData, names, artifacts.WornBy, artifacts.Sets, relics.WornBy, accountBonuses);
 		var resources = ResourceReader.Read(userWrapper);
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
-		var arena = ArenaReader.Read(classicArena, userWrapper, champions);
+		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
 		// The optional sections come last, each on its own, so a failure in one costs only that section (ADR-0006).
 		var problems = new List<Problem>();
 		var areaBonuses = Optional(OptionalSection.AreaBonuses, () => GreatHallReader.AreaBonuses(userWrapper, staticData), problems);

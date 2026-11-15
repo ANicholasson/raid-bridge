@@ -185,6 +185,11 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.ClientStaticData", "LiveArenaData", "SharedModel.Meta.LiveArena.StaticLiveArenaData", false },
 		{ "SharedModel.Meta.LiveArena.StaticLiveArenaData", "LeagueInfoById", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.LiveArena.LiveArenaLeagueId, SharedModel.Meta.LiveArena.LiveArenaLeagueInfo>", false },
 		{ "SharedModel.Meta.LiveArena.LiveArenaLeagueInfo", "MinPoints", "System.Int32", false },
+		// The Classic Arena's Last attack team (https://github.com/ANicholasson/raid-bridge/issues/56): BattlePresets is
+		// declared on UpdatableHeroData's base class UserHeroData, and HeroSlotsCount on StaticStandardArenaData's base
+		// class StaticArenaData; the team screen keys the Classic Arena by RegionTypeId.Arena times ten plus it.
+		{ "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData", "BattlePresets", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32[]>", false },
+		{ "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", "HeroSlotsCount", "System.Int32", false },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
 		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
 		// Relics are a list of ids by Champion id, not a field of Hero.
@@ -435,6 +440,8 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", "Stars1", 1 },
 		{ "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", "Necromancy", 1101 },
 		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Weapon", 5 },
+		// The Classic Arena's region, which makes its key in BattlePresets (https://github.com/ANicholasson/raid-bridge/issues/56).
+		{ "SharedModel.Meta.Stages.RegionTypeId", "Arena", 301 },
 		// The accessories' slots, which count against the Artifact capacity apart from the rest
 		// (https://github.com/ANicholasson/raid-bridge/issues/27).
 		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Ring", 7 },
