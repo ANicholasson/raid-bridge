@@ -7,13 +7,14 @@ using RaidBridge.Domain.GreatHall;
 using RaidBridge.Domain.Missions;
 using RaidBridge.Domain.Relics;
 using RaidBridge.Domain.Resources;
+using RaidBridge.Domain.SavedTeams;
 
 namespace RaidBridge.Domain.Snapshots;
 
 /// <summary>
 /// Everything raid-bridge read from one Account at one moment. The Account id is in it only as its hash, the
 /// Champions, the Unworn Artifacts, the Unworn Relics and the Relic stones in no socket are sorted by id, and the
-/// Resources, Shards, Items, the Great Hall, its Area Bonuses, the Faction Guardians and the Missions keep the game's order, so two Snapshots diff
+/// Resources, Shards, Items, the Great Hall, its Area Bonuses, the Faction Guardians and the Missions keep the game's order, and the Saved teams the player's, so two Snapshots diff
 /// cleanly. A part raid-bridge couldn't read is null, and its Problem says why (ADR-0006).
 /// </summary>
 public sealed record Snapshot(
@@ -37,4 +38,5 @@ public sealed record Snapshot(
 	TagArena TagArena,
 	LiveArena? LiveArena,
 	MissionGroups? Missions,
+	IReadOnlyList<SavedTeam> SavedTeams,
 	IReadOnlyList<Problem> Problems);

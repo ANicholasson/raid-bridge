@@ -22,6 +22,10 @@ internal sealed class ManagedList
 	public IReadOnlyList<ManagedObject> Objects(string expectedClass) =>
 		[.. Enumerable.Range(0, Count).Select(index => _items.Object(index, expectedClass))];
 
+	/// <summary>Each element, a reference to an object of <paramref name="expectedClass"/>, or null where it refers to none.</summary>
+	public IReadOnlyList<ManagedObject?> ObjectsOrNull(string expectedClass) =>
+		[.. Enumerable.Range(0, Count).Select(index => _items.ObjectOrNull(index, expectedClass))];
+
 	/// <summary>Each element, a value of the game's <paramref name="enumType"/>, as the member it stands for.</summary>
 	public IReadOnlyList<FieldValue<GameEnumMember>> EnumMembers(string enumType) =>
 		[.. Enumerable.Range(0, Count).Select(index => _items.EnumMember(index, enumType))];

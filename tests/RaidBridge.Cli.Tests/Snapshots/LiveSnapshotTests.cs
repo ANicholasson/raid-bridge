@@ -236,6 +236,28 @@ public sealed class LiveSnapshotTests : IDisposable
 	}
 
 	/// <summary>
+	/// Saved teams are written with a purpose the game names, whether each is named, and Champions in
+	/// <c>champions</c>, each once in its team (https://github.com/ANicholasson/raid-bridge/issues/57). Not yet proven
+	/// against the running Game client.
+	/// </summary>
+	[Fact]
+	public void Reads_the_saved_teams()
+	{
+		using var json = Snapshot();
+
+		var champions = json.RootElement.GetProperty("champions").EnumerateArray().Select(champion => champion.GetProperty("id").GetInt32()).ToHashSet();
+		Assert.All(json.RootElement.GetProperty("savedTeams").EnumerateArray(), team =>
+		{
+			Assert.False(string.IsNullOrEmpty(team.GetProperty("purpose").GetString()));
+			Assert.Contains(team.GetProperty("named").ValueKind, new[] { JsonValueKind.True, JsonValueKind.False });
+			var ids = team.GetProperty("championIds").EnumerateArray().Select(id => id.GetInt32()).ToList();
+			Assert.InRange(ids.Count, 0, 6);
+			Assert.Equal(ids.Count, ids.Distinct().Count());
+			Assert.All(ids, id => Assert.Contains(id, champions));
+		});
+	}
+
+	/// <summary>
 	/// The Live Arena is written with a league, which the game always works out, and points and counts of 0 or more, or
 	/// as null when the game holds no Live Arena data, as an Account below its unlock level may
 	/// (https://github.com/ANicholasson/raid-bridge/issues/32; PR #44). On the main Account, which had never fought in it

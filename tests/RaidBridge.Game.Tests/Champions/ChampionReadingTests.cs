@@ -49,7 +49,7 @@ public sealed class ChampionReadingTests : IDisposable
 	public void Reads_an_account_without_champions()
 	{
 		using var game = SyntheticGameClient.Create(
-			heroData: Heroes with { Heroes = [] },
+			heroData: Heroes with { Heroes = [], SavedTeams = [] },
 			artifactData: SyntheticArtifactData.Default with { SlotsByHeroId = new Dictionary<int, IReadOnlyDictionary<int, int>>() },
 			relicData: SyntheticRelicData.Default with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() },
 			guardianData: SyntheticGuardianData.None,

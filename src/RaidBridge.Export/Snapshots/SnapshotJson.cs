@@ -206,6 +206,19 @@ internal static class SnapshotJson
 				json.WriteNull("liveArena");
 			}
 
+			json.WriteStartArray("savedTeams");
+			foreach (var team in snapshot.SavedTeams)
+			{
+				json.WriteStartObject();
+				json.WriteString("purpose", team.Purpose);
+				json.WriteBoolean("named", team.Named);
+				json.WritePropertyName("championIds");
+				WriteChampionIds(json, team.ChampionIds);
+				json.WriteEndObject();
+			}
+
+			json.WriteEndArray();
+
 			if (snapshot.Missions is { } missions)
 			{
 				WriteMissions(json, missions);
@@ -289,10 +302,12 @@ internal static class SnapshotJson
 		json.WriteNumber("losses", losses);
 	}
 
-	private static void WriteArenaTeam(Utf8JsonWriter json, ArenaTeam team)
+	private static void WriteArenaTeam(Utf8JsonWriter json, ArenaTeam team) => WriteChampionIds(json, team.ChampionIds);
+
+	private static void WriteChampionIds(Utf8JsonWriter json, IReadOnlyList<int> championIds)
 	{
 		json.WriteStartArray();
-		foreach (var championId in team.ChampionIds)
+		foreach (var championId in championIds)
 		{
 			json.WriteNumberValue(championId);
 		}

@@ -39,6 +39,14 @@ internal sealed class ManagedArray
 		return _array.Runtime.Object(_array.Runtime.Pointer(address, () => where), where, address, expectedClass);
 	}
 
+	/// <summary>The object the reference at <paramref name="index"/> refers to, as <see cref="Object"/>, or null when it refers to none.</summary>
+	public ManagedObject? ObjectOrNull(int index, string expectedClass)
+	{
+		var (where, address) = Element(index, sizeof(ulong), elementClass: null);
+		var pointer = _array.Runtime.Pointer(address, () => where);
+		return pointer == 0 ? null : _array.Runtime.Object(pointer, where, address, expectedClass);
+	}
+
 	/// <summary>The int at <paramref name="index"/>.</summary>
 	public FieldValue<int> Int32(int index)
 	{

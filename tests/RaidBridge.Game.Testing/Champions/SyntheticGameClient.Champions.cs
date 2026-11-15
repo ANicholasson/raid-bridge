@@ -322,7 +322,8 @@ public sealed partial class SyntheticGameClient
 			systemObject,
 			"System.Object",
 			("HeroById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Heroes.Hero>", GenericInstanceTypeCode, 0x10),
-			("BattlePresets", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32[]>", GenericInstanceTypeCode, 0x18));
+			("BattlePresets", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32[]>", GenericInstanceTypeCode, 0x18),
+			("HeroesAiPresets", "System.Collections.Generic.List`1<SharedModel.Meta.Heroes.HeroesAiPreset>", GenericInstanceTypeCode, 0x20));
 		var updatableHeroData = Declare("Client.Model.Gameplay.Heroes.Data", "UpdatableHeroData", userHeroData, "SharedModel.Meta.Heroes.UserHeroData");
 		var heroesWrapperReadOnly = Declare(
 			"Client.Model.Gameplay.Heroes",
@@ -380,8 +381,9 @@ public sealed partial class SyntheticGameClient
 		});
 		_heroById = _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, ClassTypeCode), [.. heroes], freedSlot: true);
 
-		var updatableHeroDataObject = _runtime.Object(updatableHeroData, 0x20);
+		var updatableHeroDataObject = _runtime.Object(updatableHeroData, 0x28);
 		_heap.Pointer(updatableHeroDataObject + 0x10, _heroById);
+		_heap.Pointer(updatableHeroDataObject + 0x20, LayOutTheSavedTeams(heroData));
 		var intArrays = _runtime.ArrayClass(_runtime.SystemInt32, "Int32", sizeof(int));
 		_heap.Pointer(updatableHeroDataObject + 0x18, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, SingleDimensionArrayTypeCode), [.. heroData.BattlePresets.Select(preset =>
 		{
