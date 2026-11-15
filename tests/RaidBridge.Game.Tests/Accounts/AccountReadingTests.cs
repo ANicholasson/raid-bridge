@@ -22,7 +22,7 @@ public sealed class AccountReadingTests : IDisposable
 	/// <summary>The power is a double the game holds, read as held, not rounded to a whole number (https://github.com/ANicholasson/raid-bridge/issues/27).</summary>
 	[Fact]
 	public void Reads_the_account_level_experience_and_power() =>
-		Assert.Equal((54, 31_250, 1_234_567.891), LevelAndPower(_game.Source().Read()));
+		Assert.Equal((54, 31_250L, 1_234_567.891), LevelAndPower(_game.Source().Read()));
 
 	/// <summary>A new Account: level 1, no experience and no power yet.</summary>
 	[Fact]
@@ -30,17 +30,29 @@ public sealed class AccountReadingTests : IDisposable
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(Level: 1, Experience: 0, TotalPower: 0));
 
-		Assert.Equal((1, 0, 0d), LevelAndPower(game.Source().Read()));
+		Assert.Equal((1, 0L, 0d), LevelAndPower(game.Source().Read()));
+	}
+
+	/// <summary>
+	/// The game holds the experience as a long, which the installed game's files showed on the maintainer's Linux install
+	/// (https://github.com/ANicholasson/raid-bridge/pull/53), so experience past an int's range is read whole.
+	/// </summary>
+	[Fact]
+	public void Reads_experience_past_the_range_of_an_int()
+	{
+		using var game = SyntheticGameClient.Create(accountData: new(Level: 90, Experience: 5_000_000_000, TotalPower: 1));
+
+		Assert.Equal(5_000_000_000, game.Source().Read().Experience);
 	}
 
 	[Theory]
-	[InlineData(0, 0, 0, "Level", "0", "a level of 1 or more")]
-	[InlineData(1, -1, 0, "Experience", "-1", "experience of 0 or more")]
-	[InlineData(1, 0, -0.5, "TotalPower", "-0.5", "a power of 0 or more")]
-	[InlineData(1, 0, -0.0, "TotalPower", "-0", "a power of 0 or more")]
-	[InlineData(1, 0, double.NaN, "TotalPower", "NaN", "a power of 0 or more")]
-	[InlineData(1, 0, double.PositiveInfinity, "TotalPower", "Infinity", "a power of 0 or more")]
-	public void Refuses_a_level_or_power_out_of_range(int level, int experience, double power, string field, string value, string expectation)
+	[InlineData(0, 0L, 0, "Level", "0", "a level of 1 or more")]
+	[InlineData(1, -1L, 0, "Experience", "-1", "experience of 0 or more")]
+	[InlineData(1, 0L, -0.5, "TotalPower", "-0.5", "a power of 0 or more")]
+	[InlineData(1, 0L, -0.0, "TotalPower", "-0", "a power of 0 or more")]
+	[InlineData(1, 0L, double.NaN, "TotalPower", "NaN", "a power of 0 or more")]
+	[InlineData(1, 0L, double.PositiveInfinity, "TotalPower", "Infinity", "a power of 0 or more")]
+	public void Refuses_a_level_or_power_out_of_range(int level, long experience, double power, string field, string value, string expectation)
 	{
 		using var game = SyntheticGameClient.Create(accountData: new(level, experience, power));
 
@@ -325,7 +337,7 @@ public sealed class AccountReadingTests : IDisposable
 		RefusesMatching(_game, @"^Client\.App\.SingleInstance`1<Client\.Model\.AppModel>'s generic class record at 0x180001000 leads to a runtime class Client\.Model\.AppModel at 0x[0-9A-F]+ whose record is 0x0: the IL2CPP layout for Unity 6000\.3\.18f1 doesn't fit this Game client\.$");
 	}
 
-	private static (int Level, int Experience, double Power) LevelAndPower(Account account) => (account.Level, account.Experience, account.Power);
+	private static (int Level, long Experience, double Power) LevelAndPower(Account account) => (account.Level, account.Experience, account.Power);
 
 	public void Dispose() => _game.Dispose();
 

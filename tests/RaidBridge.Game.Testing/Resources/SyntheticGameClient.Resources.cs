@@ -42,8 +42,8 @@ public sealed partial class SyntheticGameClient
 			"System.Object",
 			("Resources", "SharedModel.Meta.Account.Resources", ClassTypeCode, 0x10),
 			("Level", "System.Int32", Int32TypeCode, 0x18),
-			("Experience", "System.Int32", Int32TypeCode, 0x1C),
-			("TotalPower", "System.Double", DoubleTypeCode, 0x20));
+			("Experience", "System.Int64", Int64TypeCode, 0x20),
+			("TotalPower", "System.Double", DoubleTypeCode, 0x28));
 		var accountWrapperReadOnly = Declare(
 			"Client.Model.Gameplay.Account",
 			"AccountWrapperReadOnly",
@@ -93,11 +93,11 @@ public sealed partial class SyntheticGameClient
 			[.. resourceData.Resources.Select(resource => ((ulong)resource.Key, BitConverter.DoubleToUInt64Bits(resource.Value)))]);
 		var resourcesObject = _runtime.Object(resources, 0x18);
 		_heap.Pointer(resourcesObject + 0x10, _resources);
-		var userAccountObject = _runtime.Object(userAccount, 0x28);
+		var userAccountObject = _runtime.Object(userAccount, 0x30);
 		_heap.Pointer(userAccountObject + 0x10, resourcesObject);
 		_heap.Int32(userAccountObject + 0x18, accountData.Level);
-		_heap.Int32(userAccountObject + 0x1C, accountData.Experience);
-		_heap.Int64(userAccountObject + 0x20, BitConverter.DoubleToInt64Bits(accountData.TotalPower));
+		_heap.Int64(userAccountObject + 0x20, accountData.Experience);
+		_heap.Int64(userAccountObject + 0x28, BitConverter.DoubleToInt64Bits(accountData.TotalPower));
 		var accountWrapperObject = _runtime.Object(accountWrapper, 0x18);
 		_heap.Pointer(accountWrapperObject + 0x10, userAccountObject);
 		Slot("Client.Model.Guard.UserWrapper.Account", userWrapperObject + 0x30, accountWrapperObject);

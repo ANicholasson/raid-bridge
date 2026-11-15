@@ -22,7 +22,7 @@ namespace RaidBridge.Domain.Accounts;
 public sealed record Account(
 	AccountId Id,
 	int Level,
-	int Experience,
+	long Experience,
 	double Power,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,

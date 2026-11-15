@@ -60,14 +60,14 @@ internal static class AccountReader
 	/// infinite or not a number, and never negative zero, as a Resource's amount isn't
 	/// (https://github.com/ANicholasson/raid-bridge/issues/27).
 	/// </summary>
-	private static (int Level, int Experience, double Power) LevelAndPower(ManagedObject userWrapper)
+	private static (int Level, long Experience, double Power) LevelAndPower(ManagedObject userWrapper)
 	{
 		var account = userWrapper
 			.Object("Account", "Client.Model.Gameplay.Account.AccountWrapper")
 			.Object("AccountData", "SharedModel.Meta.Account.UserAccount");
 		return new(
 			account.Int32("Level").Where(level => level >= 1, "a level of 1 or more"),
-			account.Int32("Experience").Where(experience => experience >= 0, "experience of 0 or more"),
+			account.Int64("Experience").Where(experience => experience >= 0, "experience of 0 or more"),
 			account.Double("TotalPower").Where(power => double.IsFinite(power) && !double.IsNegative(power), "a power of 0 or more"));
 	}
 

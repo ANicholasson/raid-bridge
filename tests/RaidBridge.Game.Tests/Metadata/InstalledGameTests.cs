@@ -110,7 +110,7 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Account.UserAccount", "Resources", "SharedModel.Meta.Account.Resources", false },
 		// The Account's level, experience and power (https://github.com/ANicholasson/raid-bridge/issues/27).
 		{ "SharedModel.Meta.Account.UserAccount", "Level", "System.Int32", false },
-		{ "SharedModel.Meta.Account.UserAccount", "Experience", "System.Int32", false },
+		{ "SharedModel.Meta.Account.UserAccount", "Experience", "System.Int64", false },
 		{ "SharedModel.Meta.Account.UserAccount", "TotalPower", "System.Double", false },
 		{ "SharedModel.Meta.Account.Resources", "RawValues", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Account.ResourceTypeId, System.Double>", false },
 		{ "Client.Model.Guard.UserWrapper", "Shards", "Client.Model.Gameplay.Shards.ShardWrapper", false },

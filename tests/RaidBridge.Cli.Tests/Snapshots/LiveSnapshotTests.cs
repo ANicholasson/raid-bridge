@@ -37,7 +37,7 @@ public sealed class LiveSnapshotTests : IDisposable
 
 		var account = json.RootElement.GetProperty("account");
 		Assert.InRange(account.GetProperty("level").GetInt32(), 1, int.MaxValue);
-		Assert.InRange(account.GetProperty("experience").GetInt32(), 0, int.MaxValue);
+		Assert.InRange(account.GetProperty("experience").GetInt64(), 0, long.MaxValue);
 		Assert.True(account.GetProperty("power").GetDouble() > 0);
 	}
 

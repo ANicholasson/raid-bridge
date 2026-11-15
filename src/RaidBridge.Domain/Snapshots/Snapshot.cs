@@ -20,7 +20,7 @@ public sealed record Snapshot(
 	DateTimeOffset CapturedAt,
 	AccountIdHash AccountIdHash,
 	int Level,
-	int Experience,
+	long Experience,
 	double Power,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,
