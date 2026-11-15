@@ -150,6 +150,9 @@ internal static class ArenaReader
 			throw new GameDataException($"{heroIds.Where} at 0x{heroIds.Address:X} holds {heroIds.Length} Champions, in {Team}, where a Classic Arena team takes at most {slots}.");
 		}
 
+		// Every id is checked once over, kept or not, so a Champion that has left can't hide one in it twice (code review,
+		// https://github.com/ANicholasson/raid-bridge/issues/56).
+		var seen = new HashSet<int>();
 		var team = new List<int>();
 		foreach (var heroId in Enumerable.Range(0, heroIds.Length).Select(heroIds.Int32))
 		{
@@ -158,20 +161,18 @@ internal static class ArenaReader
 				throw new GameDataException($"{heroId}, in {Team}, where raid-bridge expects a Champion's id, which is positive.");
 			}
 
-			// The game keeps a Champion's id here after it leaves the Account, until the next attack, and its team screen
-			// leaves that position empty (HeroesSelectionDialogContext`1.Hero, RVA 0x710150 at metadata v39), so it is left
-			// out here too (https://github.com/ANicholasson/raid-bridge/issues/56).
-			if (!championIds.Contains(heroId.Value))
-			{
-				continue;
-			}
-
-			if (team.Contains(heroId.Value))
+			if (!seen.Add(heroId.Value))
 			{
 				throw new GameDataException($"{heroId}, in {Team}, but Champion {heroId.Value} is already in it.");
 			}
 
-			team.Add(heroId.Value);
+			// The game keeps a Champion's id here after it leaves the Account, until the next attack, and its team screen
+			// leaves that Champion's position empty when it offers the team again (HeroesSelectionDialogContext`1.Hero,
+			// RVA 0x710150 at metadata v39), so it is left out here, and the Champions after it move up a place.
+			if (championIds.Contains(heroId.Value))
+			{
+				team.Add(heroId.Value);
+			}
 		}
 
 		return new(team);
