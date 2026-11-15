@@ -9,7 +9,8 @@ namespace RaidBridge.Game.SavedTeams;
 /// <c>_userWrapper.Heroes.HeroData.HeroesAiPresets</c>, a list of <c>HeroesAiPreset</c>s, as the research in
 /// <c>docs/research/2026-11-saved-teams.md</c> found them at metadata v39. Each team's Champions are its
 /// <c>SkillPrioritiesSetups</c>' <c>HeroId</c>s, in the order of its positions; a null entry is an empty position, which
-/// the game can hold. The game removes a Champion that leaves the Account from every Saved team
+/// the game can hold. The team screen shows entry i in position i and marks position 0 as the leader's
+/// (<c>BattlePresetItemContext.HeroSlotDatas</c>, RVA 0x3868DE0). The game removes a Champion that leaves the Account from every Saved team
 /// (<c>HeroesAiPresetExtensions.RemoveHeroFromAiPresets</c>, RVA 0x2F45150), so each must be a Champion on the Account.
 /// What a team is for comes from its id, as <c>HeroesAiPreset.get_Type</c> (RVA 0x2F471F0) works it out.
 /// </summary>

@@ -237,8 +237,11 @@ public sealed class LiveSnapshotTests : IDisposable
 
 	/// <summary>
 	/// Saved teams are written with a purpose the game names, whether each is named, and Champions in
-	/// <c>champions</c>, each once in its team (https://github.com/ANicholasson/raid-bridge/issues/57). Not yet proven
-	/// against the running Game client.
+	/// <c>champions</c>, each once in its team (https://github.com/ANicholasson/raid-bridge/issues/57). On the main
+	/// Account (2026-11-15) it read two unnamed GeneralPve teams, of two Champions and of one, as the player's Saved Team
+	/// Presets screen showed them, both after hours of play and 45 seconds after a fresh start, when nothing had yet
+	/// asked a team's type. A purpose other than GeneralPve, a named team and a purpose ordered by position are proven
+	/// only by the synthetic Game client so far.
 	/// </summary>
 	[Fact]
 	public void Reads_the_saved_teams()
