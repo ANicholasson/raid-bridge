@@ -16,5 +16,6 @@ public enum OptionalSection
 {
 	AreaBonuses,
 	LiveArena,
+	SavedTeams,
 	Missions,
 }

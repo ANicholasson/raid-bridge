@@ -30,7 +30,7 @@ The route starts from the Account's root, `Client.Model.AppModel._userWrapper`, 
 | --- | --- | --- |
 | `Id` | `int` | Also says what the team is for (below) |
 | `Name` | `string` | The name shown. Live, every team still had the game's default name |
-| `Position` | `int` | Its place in the list the player sorts; 1-based for the saved teams read live |
+| `Position` | `int` | Its place among its purpose's teams, which the player sorts; 1-based for the saved teams read live, and 0 sends that purpose's screen back to id order (2026-11-15) |
 | `NameIsNotDefault` | `bool` | Whether the player named it |
 | `SkillPrioritiesSetups` | `List<SkillPrioritiesSetup>` | One per position. **An empty position can be a null entry** (live) |
 | `TypeRanges` | static `(int, HeroesAiPresetType)[]` | The id ranges, not data of the team |

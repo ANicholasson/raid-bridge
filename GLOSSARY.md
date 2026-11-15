@@ -155,6 +155,10 @@ _Avoid_: 3v3, arena3x3
 The Arena where two players pick Champions in turn and fight each other in real time.
 _Avoid_: PvP (for Live Arena alone), live arena (in code names other than the game's own)
 
+**Saved team**:
+A team the player saved on the team screen, for one purpose such as the campaign and dungeons, Faction Wars or the Hydra. The player sorts each purpose's teams apart from the others'. Its purpose is written as the game's own name for it, such as GeneralPve. The game's code calls it a heroes AI preset.
+_Avoid_: preset, AI preset, squad
+
 **Last attack team**:
 The team the game remembers the player last attacked with in an Arena, which its team screen offers again. The game's code keeps one such team for each place, as a battle preset. It doesn't say which Champion leads.
 _Avoid_: attack preset, battle preset

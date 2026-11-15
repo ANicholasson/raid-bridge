@@ -1,4 +1,5 @@
 using RaidBridge.Game.Testing.Artifacts;
+using RaidBridge.Game.Testing.SavedTeams;
 
 namespace RaidBridge.Game.Testing.Champions;
 
@@ -87,6 +88,46 @@ public sealed record SyntheticHeroData(
 		[4015] = [12, 3],
 		[3014] = [7, 3, 12],
 	};
+
+	/// <summary>
+	/// <c>UserHeroData.HeroesAiPresets</c>, the Saved teams, in the game's order, which isn't the screens': a Hydra team
+	/// the player named, holding Champion 12, an empty position and Champion 3; and an unnamed general PvE team holding
+	/// Champion 7. Each is first among its purpose's teams, since the game counts positions within a purpose. Null holds
+	/// no list.
+	/// </summary>
+	public IReadOnlyList<SyntheticSavedTeam>? SavedTeams { get; init; } =
+	[
+		new(Id: 701, Position: 1, NameIsNotDefault: true, HeroIds: [12, null, 3]),
+		new(Id: 1, Position: 1, NameIsNotDefault: false, HeroIds: [7]),
+	];
+
+	/// <summary>
+	/// <c>HeroesAiPreset.TypeRanges</c>, static: each purpose's first id, and the purpose's number, in the game's order at
+	/// metadata v39, the largest first. Null leaves the static field null.
+	/// </summary>
+	public IReadOnlyList<(int Start, int Type)>? TypeRanges { get; init; } =
+		[(1501, 13), (1401, 12), (1301, 11), (1201, 10), (1101, 9), (1001, 8), (901, 7), (801, 6), (701, 3), (401, 5), (201, 4), (101, 2), (0, 1)];
+
+	/// <summary>The static data's <c>HeroData.PresetInfoByType</c>: each purpose's <c>MaxHeroesCount</c>, by its number, as the game's data holds it.</summary>
+	public IReadOnlyDictionary<int, int> MaxHeroesByPresetType { get; init; } = new Dictionary<int, int>
+	{
+		[1] = 5,
+		[2] = 4,
+		[3] = 6,
+		[4] = 5,
+		[5] = 5,
+		[6] = 5,
+		[7] = 5,
+		[8] = 4,
+		[9] = 5,
+		[10] = 5,
+		[11] = 5,
+		[12] = 5,
+		[13] = 5,
+	};
+
+	/// <summary>The static data's <c>HeroData.PresetInfoByType</c>: how many Saved teams of each purpose the Account can keep, its <c>MaxPresetsCount</c>, by the purpose's number.</summary>
+	public IReadOnlyDictionary<int, int> MaxTeamsByPresetType { get; init; } = Enumerable.Range(1, 13).ToDictionary(type => type, _ => 10);
 
 	/// <summary>
 	/// <c>BattleStats.Multipliers</c>: for each rank from Stars1, the start and the growth Health, Attack and Defence

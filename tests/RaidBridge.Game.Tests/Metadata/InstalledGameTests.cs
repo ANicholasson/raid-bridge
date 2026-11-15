@@ -190,6 +190,21 @@ public class InstalledGameTests
 		// class StaticArenaData; the team screen keys the Classic Arena by RegionTypeId.Arena times ten plus it.
 		{ "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData", "BattlePresets", "System.Collections.Generic.Dictionary`2<System.Int32, System.Int32[]>", false },
 		{ "SharedModel.Meta.Battle.Arena.StaticStandardArenaData", "HeroSlotsCount", "System.Int32", false },
+		// The Saved teams (https://github.com/ANicholasson/raid-bridge/issues/57): HeroesAiPresets is declared on
+		// UpdatableHeroData's base class UserHeroData. A team's purpose comes from its id and HeroesAiPresetIds' constants,
+		// checked against HeroesAiPreset's static TypeRanges once the game fills it.
+		{ "Client.Model.Gameplay.Heroes.Data.UpdatableHeroData", "HeroesAiPresets", "System.Collections.Generic.List`1<SharedModel.Meta.Heroes.HeroesAiPreset>", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPreset", "Id", "System.Int32", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPreset", "Position", "System.Int32", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPreset", "NameIsNotDefault", "System.Boolean", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPreset", "SkillPrioritiesSetups", "System.Collections.Generic.List`1<SharedModel.Meta.Heroes.SkillPrioritiesSetup>", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPreset", "TypeRanges", "System.ValueTuple`2<System.Int32, SharedModel.Meta.Heroes.HeroesAiPresetType>[]", true },
+		{ "System.ValueTuple`2", "Item1", "T1", false },
+		{ "System.ValueTuple`2", "Item2", "T2", false },
+		{ "SharedModel.Meta.Heroes.SkillPrioritiesSetup", "HeroId", "System.Int32", false },
+		{ "SharedModel.Meta.Heroes.StaticHeroData", "PresetInfoByType", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroesAiPresetType, SharedModel.Meta.Heroes.HeroesAiPresetInfo>", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPresetInfo", "MaxHeroesCount", "System.Int32", false },
+		{ "SharedModel.Meta.Heroes.HeroesAiPresetInfo", "MaxPresetsCount", "System.Int32", false },
 		// Relics (https://github.com/ANicholasson/raid-bridge/issues/7, docs/research/2026-11-relics.md). RelicsData is
 		// declared on RelicsWrapperReadonly, and the data on UpdatableUserRelicData's base class, UserRelicData. A Champion's
 		// Relics are a list of ids by Champion id, not a field of Hero.
@@ -545,6 +560,7 @@ public class InstalledGameTests
 		"SharedModel.Meta.Artifacts.ArtifactStorage.ArtifactStorageResolver",
 		"Plarium.Common.Numerics.Fixed",
 		"SharedModel.Meta.Heroes.BattleStats",
+		"SharedModel.Meta.Heroes.HeroesAiPreset",
 	};
 
 	/// <summary>Classes the path reaches through a base class or an interface-typed field, not a field of their own type.</summary>
@@ -634,6 +650,29 @@ public class InstalledGameTests
 	[Fact]
 	public void Reads_the_scale_of_the_fixed_point_numbers() =>
 		Assert.Equal(1L << 32, InstalledMetadata().Constant("Plarium.Common.Numerics.Fixed", "ONE"));
+
+	/// <summary>
+	/// The constants that start each Saved team purpose's ids, and those of the Arena defence teams, as
+	/// <c>HeroesAiPreset</c>'s static constructor and <c>HeroesAiPresetIds.IsArenaDefencePreset</c> use them at metadata
+	/// v39; and every purpose, so a new one fails here first (https://github.com/ANicholasson/raid-bridge/issues/57).
+	/// </summary>
+	[Fact]
+	public void Reads_the_ids_each_saved_team_purpose_starts_at()
+	{
+		var metadata = InstalledMetadata();
+		var ids = new (string Constant, long Id)[]
+		{
+			("GeneralPveIdMin", 1), ("PvpIdMin", 101), ("FractionsIdMin", 201), ("ArenaDefence", 301), ("DoomTowerIdMin", 401),
+			("Arena3x3DefenceMin", 601), ("Arena3x3DefenceMax", 603), ("AllianceHydraIdMin", 701), ("AllianceChimeraIdMin", 801),
+			("CooperationEventWorldBossIdMin", 901), ("SiegeIdMin", 1001), ("IronTwinsIdMin", 1101), ("PotionKeepsIdMin", 1201),
+			("ArtifactAscendAndMasteriesIdMin", 1301), ("EventDungeonIdMin", 1401), ("ArtifactDungeonsIdMin", 1501),
+		};
+
+		Assert.All(ids, id => Assert.Equal(id.Id, metadata.Constant("SharedModel.Meta.Heroes.HeroesAiPresetIds", id.Constant)));
+		Assert.Equal(
+			["GeneralPve", "Pvp", "Hydra", "Fractions", "DoomTower", "Chimera", "CooperationEventWorldBoss", "Siege", "IronTwins", "PotionKeeps", "ArtifactAscendAndMasteries", "EventDungeon", "ArtifactDungeons"],
+			metadata.Enum("SharedModel.Meta.Heroes.HeroesAiPresetType").Members.OrderBy(member => member.Value).Select(member => member.Name));
+	}
 
 	private static bool WritableSection(ulong rva)
 	{
