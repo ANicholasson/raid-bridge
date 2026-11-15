@@ -189,7 +189,7 @@ public sealed class ArenaReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Heroes\.UserHeroData\.BattlePresets\[3014\]\[2\] at 0x[0-9A-F]+ is 7, in the Classic Arena's Last attack team, but Champion 7 is already in it\.$");
 	}
 
-	/// <summary>A Champion that has left the Account is still checked to be in the team once (code review, https://github.com/ANicholasson/raid-bridge/issues/56).</summary>
+	/// <summary>A Champion that has left the Account is still checked to be in the team once (code review, https://github.com/ANicholasson/raid-bridge/pull/59).</summary>
 	[Fact]
 	public void Refuses_a_champion_no_longer_on_the_account_twice_in_the_last_attack_team()
 	{

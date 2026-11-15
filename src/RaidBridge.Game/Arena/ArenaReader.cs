@@ -151,7 +151,7 @@ internal static class ArenaReader
 		}
 
 		// Every id is checked once over, kept or not, so a Champion that has left can't hide one in it twice (code review,
-		// https://github.com/ANicholasson/raid-bridge/issues/56).
+		// https://github.com/ANicholasson/raid-bridge/pull/59).
 		var seen = new HashSet<int>();
 		var team = new List<int>();
 		foreach (var heroId in Enumerable.Range(0, heroIds.Length).Select(heroIds.Int32))
