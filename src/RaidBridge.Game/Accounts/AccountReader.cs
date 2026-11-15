@@ -15,7 +15,7 @@ namespace RaidBridge.Game.Accounts;
 /// <summary>
 /// Reads the Account from the game's model: <c>SingleInstance&lt;AppModel&gt;._instance</c>, then the id in
 /// <c>AppModel.&lt;UserId&gt;k__BackingField</c>, with <c>_userWrapper.User.Id</c> as the fallback (spec #20, #19),
-/// then its level, experience and power in <c>_userWrapper.Account.AccountData</c>, then the Champions, the Artifacts and the Relics, named from the static data in
+/// then its level, experience and power in <c>_userWrapper.Account.AccountData</c>, then the Champions, the Artifacts and the room for them, and the Relics, named from the static data in
 /// <c>AppModel.StaticDataManager.StaticData</c>, the Resources, Shards and Items, the Great Hall and its Area Bonuses,
 /// the Faction Guardians, the Classic, Tag and Live Arena, and the Missions, each Guardian and each Champion in an Arena defence team one
 /// of those Champions.
@@ -51,7 +51,7 @@ internal static class AccountReader
 		var factionGuardians = FactionGuardianReader.Read(guardianSlots, champions);
 		var arena = ArenaReader.Read(classicArena, userWrapper, staticData, champions);
 		var missions = MissionReader.Read(userWrapper, staticData, names);
-		return new(id, level, experience, power, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
+		return new(id, level, experience, power, artifacts.Capacity, champions, artifacts.Unworn, relics.Unworn, relics.Unsocketed, resources.Resources, resources.Shards, resources.Items, greatHall.Affinities, greatHall.AreaBonuses, factionGuardians, arena.Classic, arena.Tag, arena.Live, missions);
 	}
 
 	/// <summary>

@@ -83,6 +83,10 @@ _Avoid_: power-up
 An Artifact on the Account that no Champion wears.
 _Avoid_: vault Artifact (the Vault holds Champions), spare, inventory
 
+**Artifact capacity**:
+The room an Account has for its Unworn Artifacts, up to a limit the game sets the same for every Account. Accessories, the Artifacts for the Ring, Cloak and Banner slots, count against the limit apart from the other Artifacts. Artifacts a Champion wears take no room. The game's code calls the limit the max artifacts count. <!-- (https://github.com/ANicholasson/raid-bridge/issues/27) -->
+_Avoid_: inventory, storage (the game's code says so for where it keeps Artifacts), vault (the Vault holds Champions)
+
 **Relic**:
 A piece of equipment a Champion wears beside its Artifacts, with bonuses of its own. The materials it is crafted from are Resources, and so are the Starstones that level it up; the Basalt that raises its Relic rank is Items.
 _Avoid_: Artifact (a Relic isn't one), relic item

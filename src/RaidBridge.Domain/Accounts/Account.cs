@@ -11,7 +11,8 @@ namespace RaidBridge.Domain.Accounts;
 
 /// <summary>
 /// One player's Account, as the Game client holds it: its id; its level, 1 or more; its experience, 0 or more; its
-/// power, exactly as the game holds it, never rounded (https://github.com/ANicholasson/raid-bridge/issues/27); every
+/// power, exactly as the game holds it, never rounded, and the room it has for its Unworn Artifacts
+/// (https://github.com/ANicholasson/raid-bridge/issues/27); every
 /// Champion on it with the Artifacts and Relics each wears, the Unworn Artifacts and the Unworn Relics, the Relic stones in no socket, its Resources, Shards and
 /// Items, its Great Hall and its Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions by group. Each Artifact, Relic and Relic stone on
 /// the Account is in exactly one of those places, a stone in a socket being in that socket's Relic. Each Faction
@@ -24,6 +25,7 @@ public sealed record Account(
 	int Level,
 	long Experience,
 	double Power,
+	ArtifactCapacity ArtifactCapacity,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,
 	IReadOnlyList<Relic> UnwornRelics,

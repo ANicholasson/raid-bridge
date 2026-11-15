@@ -20,6 +20,7 @@ public sealed class TakeSnapshot(ISnapshotSource source, ISaltStore salts, TimeP
 			account.Level,
 			account.Experience,
 			account.Power,
+			account.ArtifactCapacity,
 			[.. account.Champions.OrderBy(champion => champion.Id)],
 			[.. account.UnwornArtifacts.OrderBy(artifact => artifact.Id)],
 			[.. account.UnwornRelics.OrderBy(relic => relic.Id)],

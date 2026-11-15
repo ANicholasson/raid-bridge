@@ -2,11 +2,11 @@
 
 A Snapshot is everything raid-bridge read from one Account at one moment, as one JSON document. `raid-bridge snapshot` writes one per run, to a new file, and the player uses that file however they choose. This page is the format's reference: a test checks the writer's output against the example below, so the two can't drift apart.
 
-A Snapshot holds the Account, its level, experience and power, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall and its Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions.
+A Snapshot holds the Account, its level, experience and power, the room it has for Artifacts, its Champions with their Base stats, the Artifacts and Relics each Champion wears, the Artifacts and Relics no Champion wears, the Relic stones in no socket, the Account's Resources, Shards and Items, its Great Hall and its Area Bonuses, its Faction Guardians, its Classic, Tag and Live Arena, and its Missions.
 
 ## Example
 
-A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, at level 54 with a made-up power, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts and a Relic are worn by nobody, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities and Area Bonuses in two areas, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty, and is in SilverII in the Live Arena. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
+A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â€¦ 1f`, captured at 21:40 UTC on 31 October 2026, at level 54 with a made-up power, with three made-up Champions, one each in the roster, the Vault and the Deep Vault, whose Base stats come from made-up base stats and rank multipliers. The first wears three made-up Artifacts and a made-up Relic with a Relic stone in one of its two sockets. Two more Artifacts, boots and a cloak, and a Relic are worn by nobody, against a made-up Artifact capacity of 1500, and another stone is in no socket. The Account holds three Resources, two types of Shard and two Items, has bought levels in the Great Hall of two Affinities and Area Bonuses in two areas, has placed both its Rare Champions in one guardian slot and its Legendary alone in another, and has set all three Champions in its Classic Arena defence team, its Legendary in its first Tag Arena team and its Rare Champions in its second, leaving its third empty, and is in SilverII in the Live Arena. It has finished the first group of Arbiter's Missions and is on the second, with one Mission finished, one under way and one not started.
 
 ```json
 {
@@ -20,7 +20,12 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
     "idHash": "hmac-sha256:a2fb4a2e5d7a21b17d1213d493a97fffd9c65f4f57dcd304c0b8bc58d310027f",
     "level": 54,
     "experience": 31250,
-    "power": 1234567.891
+    "power": 1234567.891,
+    "artifactCapacity": {
+      "limit": 1500,
+      "artifacts": 1,
+      "accessories": 1
+    }
   },
   "champions": [
     {
@@ -613,6 +618,10 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
 - `account.level`: the Account's level, 1 or more.
 - `account.experience`: the Account's experience as the game holds it, 0 or more.
 - `account.power`: the Account's total power, exactly as the game holds it, a number that need not be whole: round it to show it, never to store it.
+- `account.artifactCapacity`: the room the Account has for its Unworn Artifacts, as the game shows it on the Artifacts and Accessories tabs of a Champion's Artifact screen. Artifacts a Champion wears take no room.
+  - `limit`: the most Unworn Artifacts the Account can hold, 1 or more. The game sets it in its static data, the same for every Account, and nothing on the Account raises it. Accessories and the other Artifacts each count against it on their own, so the Account can hold `limit` of each.
+  - `artifacts`: how many Unworn Artifacts it holds that aren't accessories, the count on the Artifacts tab.
+  - `accessories`: how many Unworn accessories it holds, the Artifacts for the `"Ring"`, `"Cloak"` and `"Banner"` slots, the count on the Accessories tab.
 - `champions`: every Champion on the Account, sorted by `id`, wherever it is kept. Each has:
   - `id`: the Champion's id on the Account.
   - `typeId` and `name`: the Champion's type, and its name as the Game client shows it (below). Ascension isn't written, because the game holds it only as a rule applied to the type, not as a value.
