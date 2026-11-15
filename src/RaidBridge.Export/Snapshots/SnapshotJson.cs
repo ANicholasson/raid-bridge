@@ -322,6 +322,7 @@ internal static class SnapshotJson
 			json.WriteNumber("typeId", skill.TypeId);
 			json.WriteString("name", skill.Name);
 			json.WriteNumber("level", skill.Level);
+			json.WriteNumber("maxLevel", skill.MaxLevel);
 			json.WriteEndObject();
 		}
 
@@ -330,7 +331,18 @@ internal static class SnapshotJson
 		json.WriteStartArray("masteries");
 		foreach (var mastery in champion.Masteries)
 		{
-			json.WriteNumberValue(mastery);
+			json.WriteNumberValue(mastery.Id);
+		}
+
+		json.WriteEndArray();
+
+		json.WriteStartArray("masteryNames");
+		foreach (var mastery in champion.Masteries)
+		{
+			json.WriteStartObject();
+			json.WriteNumber("id", mastery.Id);
+			json.WriteString("name", mastery.Name);
+			json.WriteEndObject();
 		}
 
 		json.WriteEndArray();

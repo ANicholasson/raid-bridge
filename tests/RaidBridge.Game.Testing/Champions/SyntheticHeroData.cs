@@ -58,12 +58,17 @@ public sealed record SyntheticHeroData(
 		],
 		SkillTypes:
 		[
-			new(52401, new("l10n:skill-type/name?id=52401#static", null)),
-			new(52402, new("l10n:skill-type/name?id=52402#static", "Synthetic Guard")),
-			new(60101, new("l10n:skill-type/name?id=60101#static", null)),
+			new(52401, new("l10n:skill-type/name?id=52401#static", null)) { LevelBonuses = 4 },
+			new(52402, new("l10n:skill-type/name?id=52402#static", "Synthetic Guard")) { LevelBonuses = 2 },
+			new(60101, new("l10n:skill-type/name?id=60101#static", null)) { LevelBonuses = 1 },
 			// A passive the champion screen hides, with the placeholder text the game holds for such skills
 			// (https://github.com/ANicholasson/raid-bridge/issues/26).
-			new(60105, new("l10n:skill-type/name?id=60105#static", "Skill 60105 name")) { Visibility = 1 },
+			new(60105, new("l10n:skill-type/name?id=60105#static", "Skill 60105 name")) { Visibility = 1, LevelBonuses = 5 },
+			// The game names a mastery with the skill type of the same id, which the champion screen hides and which has
+			// no level bonuses (https://github.com/ANicholasson/raid-bridge/issues/28).
+			new(500111, new("l10n:skill-type/name?id=500111#static", null)) { Visibility = 1 },
+			new(500112, new("l10n:skill-type/name?id=500112#static", "Synthetic Lore")) { Visibility = 1 },
+			new(500113, new("l10n:skill-type/name?id=500113#static", null)) { Visibility = 1 },
 		],
 		StaticDataLocalization: new Dictionary<string, string>
 		{
@@ -71,6 +76,8 @@ public sealed record SyntheticHeroData(
 			["l10n:skill-type/name?id=52401#static"] = "Synthetic Strike",
 			["l10n:skill-type/name?id=60101#static"] = "Synthetic Volley",
 			["l10n:skill-type/name?id=60105#static"] = "Skill 60105 name",
+			["l10n:skill-type/name?id=500111#static"] = "Synthetic Might",
+			["l10n:skill-type/name?id=500113#static"] = "Synthetic Focus",
 		},
 		ClientLocalization: new Dictionary<string, string>
 		{
@@ -221,10 +228,18 @@ public sealed record SyntheticBattleStats(
 	public double IgnoreDefence { get; init; }
 }
 
+/// <summary>
+/// A SkillType: its name, its Visibility, how many level bonuses its <c>SkillLevelBonuses</c> holds, or null for no
+/// list, and the skill type whose level bonuses it takes instead, if any (<c>UseLevelOfSkillId</c>).
+/// </summary>
 public sealed record SyntheticSkillType(int Id, SyntheticText Name)
 {
 	/// <summary>SharedModel.Meta.Skills.Visibility: 0, Visible, unless set.</summary>
 	public int Visibility { get; init; }
+
+	public int? LevelBonuses { get; init; }
+
+	public int? UseLevelOfSkillId { get; init; }
 }
 
 /// <summary>A SharedLTextKey: the key the localization tables are looked up by, and the default text.</summary>

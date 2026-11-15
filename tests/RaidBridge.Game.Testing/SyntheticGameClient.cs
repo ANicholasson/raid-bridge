@@ -476,14 +476,30 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("Fraction", "SharedModel.Meta.Heroes.HeroFraction", ValueTypeTypeCode, 0x20),
 			("Rarity", "SharedModel.Meta.Heroes.HeroRarity", ValueTypeTypeCode, 0x24),
 			("Forms", "SharedModel.Meta.Heroes.HeroForm[]", SingleDimensionArrayTypeCode, 0x28));
-		var skillType = Declare(
+		var skillBonus = Declare("SharedModel.Meta.Skills", "SkillBonus", systemObject, "System.Object");
+		var nullableSkillId = _runtime.Class(
+			"System",
+			"Nullable`1",
+			_runtime.ValueType,
+			new SyntheticField("hasValue", BooleanTypeCode, ObjectHeaderSize),
+			new SyntheticField("value", Int32TypeCode, ObjectHeaderSize + 0x4));
+		var skillType = _runtime.Class(
 			"SharedModel.Meta.Skills",
 			"SkillType",
 			systemObject,
+			new SyntheticField("Id", Int32TypeCode, 0x10),
+			new SyntheticField("Name", ClassTypeCode, 0x18),
+			new SyntheticField("Visibility", ValueTypeTypeCode, 0x20),
+			new SyntheticField("SkillLevelBonuses", GenericInstanceTypeCode, 0x28),
+			new SyntheticField("UseLevelOfSkillId", GenericInstanceTypeCode, 0x30, GenericClass: _runtime.GenericClass(nullableSkillId)));
+		_metadata.Class(
+			"SharedModel.Meta.Skills.SkillType",
 			"System.Object",
-			("Id", "System.Int32", Int32TypeCode, 0x10),
-			("Name", "SharedModel.Common.Localization.SharedLTextKey", ClassTypeCode, 0x18),
-			("Visibility", "SharedModel.Meta.Skills.Visibility", ValueTypeTypeCode, 0x20));
+			("Id", "System.Int32", false),
+			("Name", "SharedModel.Common.Localization.SharedLTextKey", false),
+			("Visibility", "SharedModel.Meta.Skills.Visibility", false),
+			("SkillLevelBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Skills.SkillBonus>", false),
+			("UseLevelOfSkillId", "System.Nullable`1<System.Int32>", false));
 		var staticHeroData = Declare(
 			"SharedModel.Meta.Heroes",
 			"StaticHeroData",
@@ -548,13 +564,25 @@ public sealed partial class SyntheticGameClient : IDisposable
 		var staticHeroDataObject = _runtime.Object(staticHeroData, 0x18);
 		_heap.Pointer(staticHeroDataObject + 0x10, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, ClassTypeCode), [.. heroTypes]));
 
+		var skillBonuses = _runtime.ListType(skillBonus, "SkillBonus", sizeof(ulong));
 		var skillTypes = heroData.SkillTypes.Select(type =>
 		{
-			var skillTypeObject = _runtime.Object(skillType, 0x28);
+			var skillTypeObject = _runtime.Object(skillType, 0x38);
 			_heap.Int32(skillTypeObject + 0x10, type.Id);
 			_skillTypes[type.Id] = skillTypeObject;
 			_heap.Pointer(skillTypeObject + 0x18, Text(type.Name));
 			_heap.Int32(skillTypeObject + 0x20, type.Visibility);
+			if (type.LevelBonuses is { } count)
+			{
+				_heap.Pointer(skillTypeObject + 0x28, _runtime.List(skillBonuses, [.. Enumerable.Range(0, count).Select(_ => _runtime.Object(skillBonus, 0x20))]));
+			}
+
+			if (type.UseLevelOfSkillId is { } borrowed)
+			{
+				_heap.Bytes(skillTypeObject + 0x30, [1]);
+				_heap.Int32(skillTypeObject + 0x34, borrowed);
+			}
+
 			return ((ulong)type.Id, skillTypeObject);
 		});
 		var staticSkillDataObject = _runtime.Object(staticSkillData, 0x18);

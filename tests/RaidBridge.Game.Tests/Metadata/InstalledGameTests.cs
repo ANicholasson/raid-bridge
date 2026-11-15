@@ -101,6 +101,10 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Skills.SkillType", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
 		// Whether the champion screen shows the skill (https://github.com/ANicholasson/raid-bridge/issues/26).
 		{ "SharedModel.Meta.Skills.SkillType", "Visibility", "SharedModel.Meta.Skills.Visibility", false },
+		// A skill's highest level, and a mastery's name, which is the name of the skill type of its id
+		// (https://github.com/ANicholasson/raid-bridge/issues/28).
+		{ "SharedModel.Meta.Skills.SkillType", "SkillLevelBonuses", "System.Collections.Generic.List`1<SharedModel.Meta.Skills.SkillBonus>", false },
+		{ "SharedModel.Meta.Skills.SkillType", "UseLevelOfSkillId", "System.Nullable`1<System.Int32>", false },
 		{ "SharedModel.Meta.ClientStaticData", "StaticDataLocalization", "System.Collections.Generic.Dictionary`2<System.String, System.String>", false },
 		{ "SharedModel.Meta.ClientStaticData", "ClientLocalization", "System.Collections.Generic.Dictionary`2<System.String, System.String>", false },
 		{ "SharedModel.Common.Localization.SharedLTextKey", "Key", "System.String", false },

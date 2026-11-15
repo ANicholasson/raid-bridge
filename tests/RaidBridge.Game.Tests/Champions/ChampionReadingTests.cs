@@ -37,9 +37,9 @@ public sealed class ChampionReadingTests : IDisposable
 		Assert.Equivalent(
 			new Champion[]
 			{
-				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, [], [], NoStats),
-				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], NoStats),
-				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2)], [], false, "None", ChampionLocation.DeepVault, [], [], NoStats),
+				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4, 5), new(52402, "Synthetic Guard", 3, 3)], [new(500111, "Synthetic Might"), new(500112, "Synthetic Lore")], true, "Favorite", ChampionLocation.Roster, [], [], NoStats),
+				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1, 2)], [], false, "None", ChampionLocation.Vault, [], [], NoStats),
+				new(12, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars5", 50, "Stars1", null, 0, [new(60101, "Synthetic Volley", 2, 2)], [], false, "None", ChampionLocation.DeepVault, [], [], NoStats),
 			},
 			champions.OrderBy(champion => champion.Id).Select(champion => champion with { Artifacts = [], Relics = [], Stats = NoStats }),
 			strict: true);
@@ -130,6 +130,100 @@ public sealed class ChampionReadingTests : IDisposable
 		});
 
 		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.Skill\.Level at 0x[0-9A-F]+ is 0, where raid-bridge expects a positive level\.$");
+	}
+
+	/// <summary>A skill type with no list of level bonuses, or an empty one, can't be raised: its highest level is 1 (https://github.com/ANicholasson/raid-bridge/issues/28).</summary>
+	[Theory]
+	[InlineData(null)]
+	[InlineData(0)]
+	public void Reads_a_skill_without_level_bonuses_as_reaching_level_1(int? levelBonuses)
+	{
+		using var game = WithSkillTypes(
+			type => type.Id == 60101 ? type with { LevelBonuses = levelBonuses } : type,
+			heroes: Heroes.Heroes.Select(hero => hero.Id == 12 ? hero with { Skills = [new(Id: 41, TypeId: 60101, Level: 1)] } : hero));
+
+		Assert.All(
+			game.Source().Read().Champions.Where(champion => champion.TypeId == 6010),
+			archer => Assert.Equal(new Skill(60101, "Synthetic Volley", 1, 1), Assert.Single(archer.Skills)));
+	}
+
+	/// <summary>
+	/// A skill type whose UseLevelOfSkillId has a value takes that skill type's level bonuses instead of its own, even
+	/// an empty list of its own, as the game's SkillType.LevelBonuses does; and that skill type may take another's in
+	/// turn (https://github.com/ANicholasson/raid-bridge/issues/28).
+	/// </summary>
+	[Fact]
+	public void Takes_the_highest_level_of_the_skill_type_whose_levels_it_uses()
+	{
+		using var game = WithSkillTypes(
+			type => type.Id switch
+			{
+				52401 => type with { UseLevelOfSkillId = 52409 },
+				52402 => type with { LevelBonuses = 0, UseLevelOfSkillId = 60105 },
+				_ => type,
+			},
+			added: [new(52409, new("l10n:skill-type/name?id=52409#static", "Skill 52409 name")) { Visibility = 1, LevelBonuses = 7, UseLevelOfSkillId = 60105 }]);
+
+		Assert.Equal([(52401, 6), (52402, 6)], Knight(game).Skills.Select(skill => (skill.TypeId, skill.MaxLevel)));
+	}
+
+	[Fact]
+	public void Refuses_skill_types_that_take_each_others_levels()
+	{
+		using var game = WithSkillTypes(type => type.Id switch
+		{
+			52401 => type with { UseLevelOfSkillId = 52402 },
+			52402 => type with { UseLevelOfSkillId = 52401 },
+			_ => type,
+		});
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.SkillType\.UseLevelOfSkillId at 0x[0-9A-F]+ is 52401, which leads back to skill type 52401: skill types 52401, 52402 take each other's levels in a loop\.$");
+	}
+
+	[Fact]
+	public void Refuses_a_skill_type_that_uses_the_levels_of_one_the_game_does_not_hold()
+	{
+		using var game = WithSkillTypes(type => type.Id == 52402 ? type with { UseLevelOfSkillId = 59999 } : type);
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.SkillType\.UseLevelOfSkillId at 0x[0-9A-F]+ is 59999, which isn't a type in the game's StaticSkillData\._skillTypeById\.$");
+	}
+
+	/// <summary>A skill above the highest level its type can reach is corrupt data, not a level to write (https://github.com/ANicholasson/raid-bridge/issues/28).</summary>
+	[Fact]
+	public void Refuses_a_skill_above_its_highest_level()
+	{
+		using var game = WithSkillTypes(type => type.Id == 52402 ? type with { LevelBonuses = 1 } : type);
+
+		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.Skill\.Level at 0x[0-9A-F]+ is 3, where raid-bridge expects a level no higher than its skill type's highest, 2\.$");
+	}
+
+	/// <summary>
+	/// The game names a mastery with the skill type of the same id; with none it shows no name, which raid-bridge
+	/// refuses rather than writes (https://github.com/ANicholasson/raid-bridge/issues/28).
+	/// </summary>
+	[Fact]
+	public void Refuses_a_mastery_no_skill_type_names()
+	{
+		using var game = SyntheticGameClient.Create(heroData: Heroes with { SkillTypes = [.. Heroes.SkillTypes.Where(type => type.Id != 500112)] });
+
+		Refuses(game, "Champion 3 has mastery 500112, which has no skill type of the same id in the game's StaticSkillData._skillTypeById to name it.");
+	}
+
+	[Fact]
+	public void Refuses_a_mastery_whose_name_is_in_no_table_and_has_no_default_text()
+	{
+		using var game = SyntheticGameClient.Create(heroData: Heroes with { StaticDataLocalization = new Dictionary<string, string>(Heroes.StaticDataLocalization.Where(text => !text.Key.Contains("500111", StringComparison.Ordinal))) });
+
+		RefusesMatching(game, @"^Mastery 500111 has no name: its SharedModel\.Common\.Localization\.SharedLTextKey at 0x[0-9A-F]+ has the key ""l10n:skill-type/name\?id=500111#static"", ");
+	}
+
+	/// <summary>A corrupt entry or a torn read could key one skill type under another's id (PR #30).</summary>
+	[Fact]
+	public void Refuses_a_mastery_named_by_a_skill_type_kept_under_another_id()
+	{
+		_game.SetSkillTypeId(typeId: 500112, id: 500113);
+
+		RefusesMatching(_game, @"^SharedModel\.Meta\.Skills\.SkillType\.Id at 0x[0-9A-F]+ is 500113, where raid-bridge expects the id _skillTypeById keeps it under, 500112\.$");
 	}
 
 	[Fact]
@@ -250,6 +344,16 @@ public sealed class ChampionReadingTests : IDisposable
 	}
 
 	public void Dispose() => _game.Dispose();
+
+	/// <summary>The default Game client with each skill type changed by <paramref name="change"/>, and <paramref name="added"/> beside them.</summary>
+	private static SyntheticGameClient WithSkillTypes(Func<SyntheticSkillType, SyntheticSkillType> change, IReadOnlyList<SyntheticSkillType>? added = null, IEnumerable<SyntheticHero>? heroes = null) =>
+		SyntheticGameClient.Create(heroData: Heroes with
+		{
+			Heroes = [.. heroes ?? Heroes.Heroes],
+			SkillTypes = [.. Heroes.SkillTypes.Select(change), .. added ?? []],
+		});
+
+	private static Champion Knight(SyntheticGameClient game) => Assert.Single(game.Source().Read().Champions, champion => champion.Id == 3);
 
 	private static void Refuses(SyntheticGameClient game, string message) =>
 		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
