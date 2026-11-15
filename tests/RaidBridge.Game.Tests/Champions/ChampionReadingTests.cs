@@ -197,6 +197,21 @@ public sealed class ChampionReadingTests : IDisposable
 		RefusesMatching(game, @"^SharedModel\.Meta\.Skills\.Skill\.Level at 0x[0-9A-F]+ is 3, where raid-bridge expects a level no higher than its skill type's highest, 2\.$");
 	}
 
+	/// <summary>Champions that took the same mastery each get its name, though it is read once.</summary>
+	[Fact]
+	public void Names_a_mastery_for_every_champion_that_took_it()
+	{
+		using var game = SyntheticGameClient.Create(heroData: Heroes with
+		{
+			Heroes = [.. Heroes.Heroes.Select(hero => hero.Id == 12 ? hero with { Masteries = [500113, 500112] } : hero)],
+		});
+
+		var champions = game.Source().Read().Champions.ToDictionary(champion => champion.Id);
+
+		Assert.Equal([new(500111, "Synthetic Might"), new(500112, "Synthetic Lore")], champions[3].Masteries);
+		Assert.Equal([new(500113, "Synthetic Focus"), new(500112, "Synthetic Lore")], champions[12].Masteries);
+	}
+
 	/// <summary>
 	/// The game names a mastery with the skill type of the same id; with none it shows no name, which raid-bridge
 	/// refuses rather than writes (https://github.com/ANicholasson/raid-bridge/issues/28).

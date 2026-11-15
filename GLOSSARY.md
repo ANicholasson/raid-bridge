@@ -56,7 +56,7 @@ Further power a Champion gains, by level, 0 for none. The game's code calls it t
 _Avoid_: empower level
 
 **Mastery**:
-One of the bonuses a Champion learns from its mastery trees, each kept by its id.
+One of the bonuses a Champion learns from its mastery trees, each kept by its id. The game names it with the skill type of the same id.
 _Avoid_: talent, perk
 
 **Roster**:

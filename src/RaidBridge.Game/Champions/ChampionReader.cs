@@ -58,12 +58,15 @@ internal static class ChampionReader
 			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)),
 			new Lazy<AwakeningBonusReader>(() => AwakeningBonusReader.Read(staticData)),
 			new Lazy<EmpowermentBonusReader>(() => EmpowermentBonusReader.Read(staticData)));
+		// Each mastery is named once, not once per Champion that took it.
+		var namedMasteries = new Dictionary<int, Mastery>();
 		var champions = heroes.Select(hero => Champion(
 			hero.Key,
 			hero.Value.Object(Hero),
 			Worn(hero.Key, equipped.GetValueOrDefault(hero.Key, []), sets, relics.GetValueOrDefault(hero.Key, [])),
 			heroTypes,
 			skillTypes,
+			namedMasteries,
 			names,
 			statReaders,
 			accountBonuses)).ToList();
@@ -89,6 +92,7 @@ internal static class ChampionReader
 		Wearing worn,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
+		Dictionary<int, Mastery> namedMasteries,
 		LocalizedNames names,
 		StatReaders statReaders,
 		AccountStatBonuses accountBonuses)
@@ -131,7 +135,7 @@ internal static class ChampionReader
 			Blessing: blessing,
 			Empowerment: empowerment,
 			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names)).OfType<Skill>()],
-			Masteries: [.. masteryIds.Select(mastery => Mastery(id, mastery, skillTypes, names))],
+			Masteries: [.. masteryIds.Select(mastery => namedMasteries.TryGetValue(mastery, out var named) ? named : namedMasteries[mastery] = Mastery(id, mastery, skillTypes, names))],
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
@@ -219,7 +223,9 @@ internal static class ChampionReader
 	/// The highest level a skill of <paramref name="type"/> can reach, as the game's <c>SkillType.MaxLevel</c> gives it
 	/// at metadata v39: one more than the number of its level bonuses, so 1 when it has none. A skill type whose
 	/// <c>UseLevelOfSkillId</c> has a value takes the level bonuses of the skill type with that id instead of its own,
-	/// as <c>SkillType.LevelBonuses</c> does (https://github.com/ANicholasson/raid-bridge/issues/28).
+	/// and that one may take another's in turn, as <c>SkillType.get_LevelBonuses</c> (RVA 0x2C88840) calls itself on the
+	/// skill type it takes them from (https://github.com/ANicholasson/raid-bridge/issues/28). The game guards against
+	/// no loop; raid-bridge refuses one.
 	/// </summary>
 	private static int MaxLevel(ManagedObject type, int typeId, IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes)
 	{

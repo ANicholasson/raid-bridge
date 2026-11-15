@@ -305,8 +305,8 @@ public sealed class LiveSnapshotTests : IDisposable
 
 	/// <summary>
 	/// Every skill is written with a highest level of 1 or more and a level no higher, and every Champion's
-	/// <c>masteryNames</c> names the masteries <c>masteries</c> lists, in the same order, each with a name
-	/// (https://github.com/ANicholasson/raid-bridge/issues/28).
+	/// <c>masteryNames</c> names the masteries <c>masteries</c> lists, in the same order, each with a name that isn't the
+	/// game's placeholder text (https://github.com/ANicholasson/raid-bridge/issues/28).
 	/// </summary>
 	[Fact]
 	public void Reads_skill_max_levels_and_mastery_names()
@@ -324,7 +324,8 @@ public sealed class LiveSnapshotTests : IDisposable
 		{
 			var named = champion.GetProperty("masteryNames").EnumerateArray().ToList();
 			Assert.Equal(champion.GetProperty("masteries").EnumerateArray().Select(id => id.GetInt32()), named.Select(mastery => mastery.GetProperty("id").GetInt32()));
-			Assert.All(named, mastery => Assert.False(string.IsNullOrEmpty(mastery.GetProperty("name").GetString())));
+			// Mastery skill types are hidden ones, the kind the game holds placeholder text for (https://github.com/ANicholasson/raid-bridge/issues/26).
+			Assert.All(named, mastery => Assert.Matches(@"^(?!Skill \d+ name$).+$", mastery.GetProperty("name").GetString()));
 		});
 	}
 
