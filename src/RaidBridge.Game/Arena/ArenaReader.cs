@@ -50,10 +50,10 @@ internal static class ArenaReader
 			defenseHeroIds is not null && Enumerable.Range(0, defenseHeroIds.Length).Any(index => defenseHeroIds.Int32(index).Value != -1));
 	}
 
-	public static (ClassicArena Classic, TagArena Tag, LiveArena? Live) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
+	public static (ClassicArena Classic, TagArena Tag) Read(ClassicArenaState classic, ManagedObject userWrapper, ManagedObject staticData, IReadOnlyList<Champion> champions)
 	{
 		var championIds = champions.Select(champion => champion.Id).ToHashSet();
-		return (Classic(classic, new(championIds), LastAttackTeam(userWrapper, staticData, championIds)), Tag(userWrapper, new(championIds)), Live(userWrapper, staticData));
+		return (Classic(classic, new(championIds), LastAttackTeam(userWrapper, staticData, championIds)), Tag(userWrapper, new(championIds)));
 	}
 
 	/// <summary>
@@ -209,9 +209,11 @@ internal static class ArenaReader
 	/// (<c>GetLeagueIdByPoints</c>, RVA 0x2EFE070 at metadata v39), walking the static data's
 	/// <c>LiveArenaData.LeagueInfoById</c> in its order and taking each league whose <c>MinPoints</c> the points reach,
 	/// until one they don't. raid-bridge takes the last league the points reach, the same league as long as each
-	/// league needs more points than the one before it, which it checks rather than trusts.
+	/// league needs more points than the one before it, which it checks rather than trusts. It is read apart from the
+	/// other Arenas, since nothing else is worked out from it, so a failure here costs only the Live Arena
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47).
 	/// </summary>
-	private static LiveArena? Live(ManagedObject userWrapper, ManagedObject staticData)
+	public static LiveArena? Live(ManagedObject userWrapper, ManagedObject staticData)
 	{
 		const string Arena = "the Live Arena";
 		// An Account below the Live Arena's unlock level may hold no LiveArenaData, which is no Live Arena, not a

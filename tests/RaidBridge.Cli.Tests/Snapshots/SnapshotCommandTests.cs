@@ -9,6 +9,7 @@ using RaidBridge.Game.Testing.Artifacts;
 using RaidBridge.Game.Testing.Champions;
 using RaidBridge.Game.Testing.FactionGuardians;
 using RaidBridge.Game.Testing.GreatHall;
+using RaidBridge.Game.Testing.Missions;
 using RaidBridge.Game.Testing.Resources;
 
 namespace RaidBridge.Cli.Tests.Snapshots;
@@ -283,6 +284,35 @@ public sealed class SnapshotCommandTests : IDisposable
 
 		Assert.Equal((1, string.Empty, $"raid-bridge: {path} already exists, and raid-bridge never overwrites a file.\n"), (exitCode, _output.ToString(), _error.ToString()));
 		Assert.Equal("the player's own file", File.ReadAllText(path));
+	}
+
+	/// <summary>
+	/// A section nothing else is worked out from is written as null when the game's data refuses it, with a line for each
+	/// on stderr and in the file's problems, in the order of the keys, and exit code 3: neither success nor a failure
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
+	[Fact]
+	public void Writes_the_sections_it_could_not_read_as_null_and_exits_with_3()
+	{
+		using var game = SyntheticGameClient.Create(
+			arenaData: SyntheticArenaData.Default with { Live = new(Points: -1, Wins: 0, Losses: 0) },
+			missionData: SyntheticMissionData.Default with { Localization = SyntheticMissionData.Default.Localization.Where(text => !text.Key.Contains("9102", StringComparison.Ordinal)).ToDictionary() });
+
+		var exitCode = Run(game, "snapshot");
+
+		var path = Path.Combine(_workingDirectory, "snapshot-20261031T214005Z.json");
+		Assert.Equal((3, $"{path}\n"), (exitCode, _output.ToString()));
+		Assert.Matches(
+			@"^raid-bridge: wrote liveArena as null: SharedModel\.Meta\.LiveArena\.UserLiveArenaData\.Points at 0x[0-9A-F]+ is -1, in the Live Arena, where raid-bridge expects 0 or more\.\n"
+				+ @"raid-bridge: wrote missions as null: Mission 9102 has no text: .*\.\n$",
+			_error.ToString());
+		using var json = JsonDocument.Parse(File.ReadAllBytes(path));
+		var root = json.RootElement;
+		Assert.Equal(["liveArena", "missions"], root.GetProperty("problems").EnumerateArray().Select(problem => problem.GetProperty("section").GetString()));
+		Assert.StartsWith("Mission 9102 has no text: ", root.GetProperty("problems")[1].GetProperty("message").GetString(), StringComparison.Ordinal);
+		Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (root.GetProperty("liveArena").ValueKind, root.GetProperty("missions").ValueKind));
+		Assert.Equal(JsonValueKind.Object, root.GetProperty("areaBonuses").ValueKind);
+		Assert.Equal([3, 7, 12], root.GetProperty("champions").EnumerateArray().Select(champion => champion.GetProperty("id").GetInt32()));
 	}
 
 	[Fact]

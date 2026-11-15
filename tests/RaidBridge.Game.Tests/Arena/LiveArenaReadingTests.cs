@@ -1,3 +1,4 @@
+using RaidBridge.Domain.Accounts;
 using RaidBridge.Domain.Arena;
 using RaidBridge.Game.Testing;
 using RaidBridge.Game.Testing.Arena;
@@ -156,9 +157,23 @@ public sealed class LiveArenaReadingTests : IDisposable
 	private static SyntheticGameClient Live(long points) =>
 		SyntheticGameClient.Create(arenaData: SyntheticArenaData.Default with { Live = SyntheticArenaData.Default.Live! with { Points = points } });
 
+	/// <summary>
+	/// A Live Arena the game's data refuses is null, with a Problem naming the refusal, and the rest of the Account is still read
+	/// (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
 	private static void Refuses(SyntheticGameClient game, string message) =>
-		Assert.Equal(message, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Equal(message, Problem(game));
 
 	private static void RefusesMatching(SyntheticGameClient game, string pattern) =>
-		Assert.Matches(pattern, Assert.ThrowsAny<GameClientException>(() => game.Source().Read()).Message);
+		Assert.Matches(pattern, Problem(game));
+
+	private static string Problem(SyntheticGameClient game)
+	{
+		var account = game.Source().Read();
+		Assert.Null(account.LiveArena);
+		Assert.NotEmpty(account.Champions);
+		var problem = Assert.Single(account.Problems);
+		Assert.Equal(OptionalSection.LiveArena, problem.Section);
+		return problem.Message;
+	}
 }

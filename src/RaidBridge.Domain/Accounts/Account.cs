@@ -18,7 +18,9 @@ namespace RaidBridge.Domain.Accounts;
 /// the Account is in exactly one of those places, a stone in a socket being in that socket's Relic. Each Faction
 /// Guardian is one of its Champions, in one slot, and so is each Champion in an Arena defence team. The Resources,
 /// Shards, Items, the Great Hall, the Area Bonuses and the Faction Guardians come in the order of the numbers the game's enums give
-/// them, each name once.
+/// them, each name once. An Area Bonuses, Live Arena or Missions part raid-bridge couldn't read is null, with a Problem
+/// that says why; nothing else is ever left out (ADR-0006). The Live Arena is also null, with no Problem, when the game
+/// holds no Live Arena data for the Account.
 /// </summary>
 public sealed record Account(
 	AccountId Id,
@@ -34,9 +36,10 @@ public sealed record Account(
 	IReadOnlyList<Shard> Shards,
 	IReadOnlyList<Item> Items,
 	IReadOnlyList<GreatHallAffinity> GreatHall,
-	IReadOnlyList<AreaBonus> AreaBonuses,
+	IReadOnlyList<AreaBonus>? AreaBonuses,
 	IReadOnlyList<GuardianFaction> FactionGuardians,
 	ClassicArena ClassicArena,
 	TagArena TagArena,
 	LiveArena? LiveArena,
-	MissionGroups Missions);
+	MissionGroups? Missions,
+	IReadOnlyList<Problem> Problems);

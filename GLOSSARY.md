@@ -15,6 +15,10 @@ The Account's total power, the one number the game shows beside its level. The g
 Everything raid-bridge read from one Account at one moment, as one JSON document.
 _Avoid_: dump, export, sync
 
+**Problem**:
+A section of a Snapshot raid-bridge couldn't read, which the Snapshot writes as `null`, and the refusal that says why. Only a section nothing else in the Snapshot is worked out from can have one (ADR-0006). <!-- (https://github.com/ANicholasson/raid-bridge/issues/47) -->
+_Avoid_: warning, error (a Problem doesn't fail the run)
+
 **Champion**:
 A collectible fighter on an Account. The game's code calls it a hero; anything a player reads says Champion.
 _Avoid_: hero (outside game type names), unit

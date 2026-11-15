@@ -23,15 +23,15 @@ public class TakeSnapshotTests
 	{
 		var salt = new Salt(new byte[Salt.Length]);
 
-		var snapshot = new TakeSnapshot(new Source(new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions)), new Salts(salt), new Clock(Now)).Run();
+		var snapshot = new TakeSnapshot(new Source(new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, [])), new Salts(salt), new Clock(Now)).Run();
 
-		Assert.Equivalent(new Snapshot(Now, AccountIdHash.Of(new AccountId(7), salt), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions), snapshot, strict: true);
+		Assert.Equivalent(new Snapshot(Now, AccountIdHash.Of(new AccountId(7), salt), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []), snapshot, strict: true);
 	}
 
 	[Fact]
 	public void Sorts_the_champions_by_id()
 	{
-		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [Champion(12), Champion(3), Champion(7)], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [Champion(12), Champion(3), Champion(7)], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -41,7 +41,7 @@ public class TakeSnapshotTests
 	[Fact]
 	public void Sorts_the_unworn_artifacts_by_id()
 	{
-		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [Artifact(105), Artifact(101), Artifact(104)], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [Artifact(105), Artifact(101), Artifact(104)], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -52,7 +52,7 @@ public class TakeSnapshotTests
 	[Fact]
 	public void Sorts_the_unworn_relics_and_unsocketed_stones_by_id()
 	{
-		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [Relic(203), Relic(201)], [Stone(305), Stone(303)], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [Relic(203), Relic(201)], [Stone(305), Stone(303)], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -83,7 +83,8 @@ public class TakeSnapshotTests
 			new("SilverIII", 1450, 12, 8, 3, new([12, 3, 7]), new([7, 3, 12])),
 			new("BronzeIV", 820, 6, 2, 4, [new([12]), new([7, 3])]),
 			new("SilverII", 1520, 14, 9),
-			new(["Group1"], [new("Group2", "ArbiterSection", [new(9102, "Dungeons", "InProgress", "Clear a stage", 4, 10), new(9101, "Heroes", "Completed", "Upgrade a Champion", null, 2)])]));
+			new(["Group1"], [new("Group2", "ArbiterSection", [new(9102, "Dungeons", "InProgress", "Clear a stage", 4, 10), new(9101, "Heroes", "Completed", "Upgrade a Champion", null, 2)])]),
+			[]);
 
 		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
 
@@ -99,10 +100,53 @@ public class TakeSnapshotTests
 		Assert.Equal(account.Missions, snapshot.Missions);
 	}
 
+	/// <summary>
+	/// A section the source couldn't read stays null, and its Problems come in the order of the Snapshot's keys, whatever
+	/// order the source gave them in (https://github.com/ANicholasson/raid-bridge/issues/47).
+	/// </summary>
+	[Fact]
+	public void Passes_on_the_sections_the_source_could_not_read_with_their_problems_in_order()
+	{
+		Problem missions = new(OptionalSection.Missions, "Mission 9102 has no text.");
+		Problem areaBonuses = new(OptionalSection.AreaBonuses, "The areas moved.");
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], null, [], NoClassicArena, NoTagArena, NewLiveArena, null, [missions, areaBonuses]);
+
+		var snapshot = new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run();
+
+		Assert.Equal((null, NewLiveArena, null), (snapshot.AreaBonuses, snapshot.LiveArena, snapshot.Missions));
+		Assert.Equal([areaBonuses, missions], snapshot.Problems);
+	}
+
+	/// <summary>A Live Arena the game holds none of is null with no Problem.</summary>
+	[Fact]
+	public void Takes_a_null_live_arena_with_no_problem()
+	{
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions, []);
+
+		Assert.Empty(new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run().Problems);
+	}
+
+	/// <summary>A source whose Problems and sections disagree has a bug, which is never written as a Snapshot that hides it.</summary>
+	[Theory]
+	[InlineData(true, false, "The Account's source gave AreaBonuses as null with no Problem.")]
+	[InlineData(false, true, "The Account's source gave a Problem for Missions but read it too.")]
+	[InlineData(true, true, "The Account's source gave more than one Problem for a section: AreaBonuses, Missions, Missions.")]
+	public void Refuses_a_source_whose_problems_and_sections_disagree(bool areaBonusesNull, bool missionsProblem, string message)
+	{
+		List<Problem> problems = areaBonusesNull && missionsProblem
+			? [new(OptionalSection.AreaBonuses, "a"), new(OptionalSection.Missions, "b"), new(OptionalSection.Missions, "c")]
+			: missionsProblem ? [new(OptionalSection.Missions, "b")] : [];
+		var account = new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], areaBonusesNull ? null : [], [], NoClassicArena, NoTagArena, NewLiveArena, areaBonusesNull && missionsProblem ? null : NoMissions, problems);
+
+		var exception = Assert.Throws<InvalidOperationException>(() => new TakeSnapshot(new Source(account), new Salts(new Salt(new byte[Salt.Length])), new Clock(Now)).Run());
+
+		Assert.Equal(message, exception.Message);
+	}
+
 	[Fact]
 	public void Loads_the_salt_before_reading_the_game()
 	{
-		var source = new Source(new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions));
+		var source = new Source(new Account(new AccountId(7), 54, 31_250, 1_234_567.891, Capacity, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions, []));
 		var salts = new BrokenSalts();
 
 		Assert.Throws<InvalidDataException>(() => new TakeSnapshot(source, salts, new Clock(Now)).Run());

@@ -170,6 +170,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 	/// <summary>A reference field, or the static root, points somewhere else.</summary>
 	public void PointField(string className, string fieldName, ulong address) => _heap.Pointer(_slots[$"{className}.{fieldName}"], address);
 
+	/// <summary>The Game client exits when the reader reads a reference field, or the static root.</summary>
+	public void ExitWhenFieldRead(string className, string fieldName) => Memory.ExitWhenRead(_slots[$"{className}.{fieldName}"]);
+
 	/// <summary>The object a reference field, or the static root, points to.</summary>
 	public ulong Target(string className, string fieldName)
 	{

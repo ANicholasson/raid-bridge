@@ -61,7 +61,7 @@ Start the game, log in, then run as the user who plays it:
 raid-bridge snapshot
 ```
 
-It writes `snapshot-<UTC time as yyyyMMddTHHmmssZ>.json` into the current folder, never overwriting a file, and prints its path. `--out PATH` writes somewhere else; inside a git clone, only `snapshot-*.json` names are ignored, so keep other names outside it. <!-- (PR #56) --> raid-bridge finds the game's files from the running game; `--game-dir DIR` names the folder holding `Raid.exe` instead.
+It writes `snapshot-<UTC time as yyyyMMddTHHmmssZ>.json` into the current folder, never overwriting a file, and prints its path. `--out PATH` writes somewhere else; inside a git clone, only `snapshot-*.json` names are ignored, so keep other names outside it. <!-- (PR #56) --> raid-bridge finds the game's files from the running game; `--game-dir DIR` names the folder holding `Raid.exe` instead. If the game's data refuses a part of the Snapshot nothing else is worked out from (the Area Bonuses, the Live Arena or the missions), raid-bridge still writes the file, with that part `null` and the reason in `problems`, prints a line for it, and exits with 3 rather than 0.
 
 A Snapshot carries no account id, player name or clan name. The account is identified only by a keyed hash of its id (`account.idHash`), so whatever reads your Snapshots can tell your accounts apart without learning their ids. The key is a random salt made on the first run at `$XDG_CONFIG_HOME/raid-bridge/salt` (by default `~/.config/raid-bridge/salt`, which on Windows is `%USERPROFILE%\.config\raid-bridge\salt`). Keep it: a new salt gives the same account a new hash.
 
