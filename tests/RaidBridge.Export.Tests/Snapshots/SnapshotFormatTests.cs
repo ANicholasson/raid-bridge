@@ -117,6 +117,7 @@ public partial class SnapshotFormatTests
 			54,
 			31_250,
 			1_234_567.891,
+			new(1500, 1, 1),
 			[
 				new(3, 5240, "Synthetic Knight", "Legendary", "Void", "DarkElves", "Stars6", 60, "Stars2", "Necromancy", 1, [new(52401, "Synthetic Strike", 4), new(52402, "Synthetic Guard", 3)], [500111, 500112], true, "Favorite", ChampionLocation.Roster, KnightWears, [KnightRelic], StatsFormula.For(Base(12375, 660, 742, 101, 40, 10, 0.14999999990686774, 0.5), new ChampionBonuses(KnightBonuses, [KnightSetBonus], KnightMasteries, KnightGreatHall, [], KnightAwakening, KnightEmpowerment, KnightRelicBonuses, SilverIII))),
 				new(7, 6010, "Synthetic Archer", "Rare", "Force", "BannerLords", "Stars3", 30, null, null, 0, [new(60101, "Synthetic Volley", 1)], [], false, "None", ChampionLocation.Vault, [], [], StatsFormula.For(Base(3780, 396, 216, 98, 30, 0, 0.14999999990686774, 0.5700000000651926), ChampionBonuses.None with { FactionGuardians = ArcherGuardians, ArenaLeague = SilverIII })),
@@ -150,7 +151,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_the_capture_time_in_utc()
 	{
-		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(new DateTimeOffset(2026, 11, 1, 1, 40, 0, TimeSpan.FromHours(2)), AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -161,7 +162,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_empty_resources_shards_items_great_hall_area_bonuses_and_faction_guardians_as_empty_objects()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -175,7 +176,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_an_arena_and_missions_with_nothing_set_up()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -218,7 +219,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_no_live_arena_as_null()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [], [], [], [], [], [], NoClassicArena, NoTagArena, null, NoMissions);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 
@@ -229,7 +230,7 @@ public partial class SnapshotFormatTests
 	[Fact]
 	public void Writes_a_resource_amount_exactly_as_the_game_holds_it()
 	{
-		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, [], [], [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
+		var snapshot = new Snapshot(DateTimeOffset.UnixEpoch, AccountIdHash.Of(new AccountId(1), new Salt(new byte[Salt.Length])), 1, 0, 0, new(1, 0, 0), [], [], [], [], [new("Energy", 0.1 + 0.2)], [], [], [], [], [], NoClassicArena, NoTagArena, NewLiveArena, NoMissions);
 
 		var written = Encoding.UTF8.GetString(SnapshotJson.Write(snapshot, new Generator("raid-bridge", "0.1.0")));
 

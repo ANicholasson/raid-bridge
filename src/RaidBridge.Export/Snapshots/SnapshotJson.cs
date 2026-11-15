@@ -40,6 +40,11 @@ internal static class SnapshotJson
 			json.WriteNumber("level", snapshot.Level);
 			json.WriteNumber("experience", snapshot.Experience);
 			json.WriteNumber("power", snapshot.Power);
+			json.WriteStartObject("artifactCapacity");
+			json.WriteNumber("limit", snapshot.ArtifactCapacity.Limit);
+			json.WriteNumber("artifacts", snapshot.ArtifactCapacity.Artifacts);
+			json.WriteNumber("accessories", snapshot.ArtifactCapacity.Accessories);
+			json.WriteEndObject();
 			json.WriteEndObject();
 
 			json.WriteStartArray("champions");

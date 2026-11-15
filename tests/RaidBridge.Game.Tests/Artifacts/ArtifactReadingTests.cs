@@ -317,6 +317,66 @@ public sealed class ArtifactReadingTests : IDisposable
 			@"^SharedModel\.Meta\.Artifacts\.BonusValue\._value holds a Plarium\.Common\.Numerics\.Fixed whose Plarium\.Common\.Numerics\.Fixed\.m_rawValue at 0x[0-9A-F]+ is 1152921504606846976, which raid-bridge can't write exactly\.$");
 	}
 
+	/// <summary>
+	/// The limit is the static data's, and the counts are of the Unworn Artifacts only, accessories apart from the rest,
+	/// as the game counts them: the plain boots and the cloak nobody wears, not the knight's ring
+	/// (https://github.com/ANicholasson/raid-bridge/issues/27).
+	/// </summary>
+	[Theory]
+	[InlineData(SyntheticArtifactStorage.AccountList)]
+	[InlineData(SyntheticArtifactStorage.ExternalStorage)]
+	public void Reads_the_artifact_capacity_and_the_unworn_artifacts_against_it(SyntheticArtifactStorage storage)
+	{
+		using var game = SyntheticGameClient.Create(artifactData: Artifacts with { Storage = storage });
+
+		Assert.Equal(new ArtifactCapacity(Limit: 1500, Artifacts: 1, Accessories: 1), game.Source().Read().ArtifactCapacity);
+	}
+
+	/// <summary>Rings, Cloaks and Banners are accessories, and every other slot counts as an Artifact.</summary>
+	[Fact]
+	public void Counts_rings_cloaks_and_banners_as_accessories()
+	{
+		using var game = SyntheticGameClient.Create(artifactData: NoneWorn with
+		{
+			Artifacts = [.. Artifacts.Artifacts, new(Id: 106, Kind: 9), new(Id: 107, Kind: 6)],
+			MaxArtifactsCount = 2200,
+		});
+
+		Assert.Equal(new ArtifactCapacity(Limit: 2200, Artifacts: 4, Accessories: 3), game.Source().Read().ArtifactCapacity);
+	}
+
+	[Fact]
+	public void Reads_no_artifacts_against_the_limit_when_every_artifact_is_worn()
+	{
+		using var game = SyntheticGameClient.Create(artifactData: Artifacts with { Artifacts = [.. Artifacts.Artifacts.Where(artifact => artifact.Id < 104)] });
+
+		Assert.Equal(new ArtifactCapacity(Limit: 1500, Artifacts: 0, Accessories: 0), game.Source().Read().ArtifactCapacity);
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	public void Refuses_an_artifact_capacity_below_one(int limit)
+	{
+		using var game = SyntheticGameClient.Create(artifactData: Artifacts with { MaxArtifactsCount = limit });
+
+		RefusesMatching(
+			game,
+			$@"^SharedModel\.Meta\.Artifacts\.StaticArtifactData\.MaxArtifactsCount at 0x[0-9A-F]+ is {limit}, where raid-bridge expects a limit of 1 or more\.$");
+	}
+
+	/// <summary>A slot a game update adds would otherwise be counted on one side or the other without knowing which.</summary>
+	[Fact]
+	public void Refuses_an_unworn_artifact_for_a_slot_it_cannot_count()
+	{
+		using var game = SyntheticGameClient.Create(artifactData: Artifacts with { Artifacts = [.. Artifacts.Artifacts, new(Id: 106, Kind: 10)] });
+		game.AddEnumMember("SharedModel.Meta.Artifacts.ArtifactKindId", "Amulet", 10);
+
+		Refuses(
+			game,
+			"Artifact 106 is for the Amulet slot, which raid-bridge counts neither as an accessory nor as another Artifact against SharedModel.Meta.Artifacts.StaticArtifactData.MaxArtifactsCount.");
+	}
+
 	public void Dispose() => _game.Dispose();
 
 	/// <summary>The value a Fixed holds for <paramref name="value"/>.</summary>

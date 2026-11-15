@@ -23,13 +23,20 @@ internal static class ArtifactReader
 	private const string Resolver = "SharedModel.Meta.Artifacts.ArtifactStorage.ArtifactStorageResolver";
 	private const string ExternalStorage = "Client.Model.Gameplay.Artifacts.ExternalArtifactsStorage";
 
+	/// <summary>The slots of the accessories, which the game counts against the Artifact capacity apart from the other Artifacts.</summary>
+	private static readonly string[] AccessorySlots = ["Ring", "Cloak", "Banner"];
+
+	/// <summary>The slots of the other Artifacts.</summary>
+	private static readonly string[] OtherSlots = ["Helmet", "Chest", "Gloves", "Boots", "Weapon", "Shield"];
+
 	public static AccountArtifacts Read(ManagedObject userWrapper, ManagedObject staticData, LocalizedNames names)
 	{
 		var artifactData = userWrapper
 			.Object("Artifacts", "Client.Model.Gameplay.Artifacts.EquipmentWrapper")
 			.Object("ArtifactData", "SharedModel.Meta.Artifacts.UserArtifactData");
 		var stored = Stored(artifactData);
-		var sets = Sets(staticData);
+		var staticArtifactData = staticData.Object("ArtifactData", "SharedModel.Meta.Artifacts.StaticArtifactData");
+		var sets = Sets(staticArtifactData);
 
 		var wornBy = artifactData
 			.Dictionary("ArtifactDataByHeroId", $"System.Collections.Generic.Dictionary`2<System.Int32, {HeroArtifactData}>")
@@ -50,10 +57,29 @@ internal static class ArtifactReader
 			}
 		}
 
-		return new(
-			wornBy,
-			[.. stored.ById.Where(entry => !wearers.ContainsKey(entry.Key)).OrderBy(entry => entry.Key).Select(entry => Unworn(entry.Value, sets, names))],
-			new ArtifactSetBonuses(sets));
+		IReadOnlyList<Artifact> unworn = [.. stored.ById.Where(entry => !wearers.ContainsKey(entry.Key)).OrderBy(entry => entry.Key).Select(entry => Unworn(entry.Value, sets, names))];
+		return new(wornBy, unworn, Capacity(staticArtifactData, unworn), new ArtifactSetBonuses(sets));
+	}
+
+	/// <summary>
+	/// The room for the Unworn Artifacts, counted as the game's <c>ArtifactExtensions.GetFreeInventorySlotsCount</c> and
+	/// <c>GetFreeInventoryAccessorySlotsCount</c> count it: the limit is <c>StaticArtifactData.MaxArtifactsCount</c>,
+	/// which both read and nothing on the Account adds to, and each counts the Artifacts no Champion wears, one the
+	/// accessories in the Ring, Cloak and Banner slots and the other the rest
+	/// (https://github.com/ANicholasson/raid-bridge/issues/27). A slot that is neither is refused, so a slot a game
+	/// update adds can't be counted on the wrong side.
+	/// </summary>
+	private static ArtifactCapacity Capacity(ManagedObject staticArtifactData, IReadOnlyList<Artifact> unworn)
+	{
+		if (unworn.FirstOrDefault(artifact => !AccessorySlots.Contains(artifact.Slot) && !OtherSlots.Contains(artifact.Slot)) is { } unknown)
+		{
+			throw new GameDataException(
+				$"Artifact {unknown.Id} is for the {unknown.Slot} slot, which raid-bridge counts neither as an accessory nor as another Artifact against SharedModel.Meta.Artifacts.StaticArtifactData.MaxArtifactsCount.");
+		}
+
+		var limit = staticArtifactData.Int32("MaxArtifactsCount").Where(count => count >= 1, "a limit of 1 or more");
+		var accessories = unworn.Count(artifact => AccessorySlots.Contains(artifact.Slot));
+		return new(limit, unworn.Count - accessories, accessories);
 	}
 
 	/// <summary>
@@ -102,11 +128,10 @@ internal static class ArtifactReader
 	}
 
 	/// <summary>Each Artifact set the static data describes, by its set kind's name.</summary>
-	private static Dictionary<string, ManagedObject> Sets(ManagedObject staticData)
+	private static Dictionary<string, ManagedObject> Sets(ManagedObject staticArtifactData)
 	{
 		var sets = new Dictionary<string, ManagedObject>(StringComparer.Ordinal);
-		foreach (var set in staticData
-			.Object("ArtifactData", "SharedModel.Meta.Artifacts.StaticArtifactData")
+		foreach (var set in staticArtifactData
 			.List("SetInfos", $"System.Collections.Generic.List`1<{SetInfo}>")
 			.Objects(SetInfo))
 		{
@@ -212,4 +237,4 @@ internal static class ArtifactReader
 /// The Account's Artifacts: those each Champion wears, by the Champion's id, in the game's order of slots, and those no
 /// Champion wears, by id, with what the static data's sets give a Champion for the pieces it wears.
 /// </summary>
-internal sealed record AccountArtifacts(IReadOnlyDictionary<int, IReadOnlyList<Artifact>> WornBy, IReadOnlyList<Artifact> Unworn, ArtifactSetBonuses Sets);
+internal sealed record AccountArtifacts(IReadOnlyDictionary<int, IReadOnlyList<Artifact>> WornBy, IReadOnlyList<Artifact> Unworn, ArtifactCapacity Capacity, ArtifactSetBonuses Sets);

@@ -603,8 +603,10 @@ public sealed partial class SyntheticGameClient : IDisposable
 			"StaticArtifactData",
 			systemObject,
 			"System.Object",
-			("SetInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo>", GenericInstanceTypeCode, 0x10));
-		var staticArtifactDataObject = _runtime.Object(staticArtifactData, 0x18);
+			("SetInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo>", GenericInstanceTypeCode, 0x10),
+			("MaxArtifactsCount", "System.Int32", Int32TypeCode, 0x18));
+		var staticArtifactDataObject = _runtime.Object(staticArtifactData, 0x20);
+		_heap.Int32(staticArtifactDataObject + 0x18, artifactData.MaxArtifactsCount);
 		_heap.Pointer(staticArtifactDataObject + 0x10, _runtime.List(_runtime.ListType(setInfo, "ArtifactSetInfo", sizeof(ulong)), [.. artifactData.Sets.Select(set =>
 		{
 			var setInfoObject = _runtime.Object(setInfo, 0x38);

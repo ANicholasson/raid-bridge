@@ -42,6 +42,23 @@ public sealed class LiveSnapshotTests : IDisposable
 	}
 
 	/// <summary>
+	/// The Artifact capacity is 1 or more, and its counts split the Unworn Artifacts written by their slots, which the
+	/// maintainer's Accounts have, so the check can't pass by reading zeros (https://github.com/ANicholasson/raid-bridge/issues/27).
+	/// </summary>
+	[Fact]
+	public void Reads_the_artifact_capacity()
+	{
+		using var json = Snapshot();
+
+		var capacity = json.RootElement.GetProperty("account").GetProperty("artifactCapacity");
+		var slots = json.RootElement.GetProperty("unwornArtifacts").EnumerateArray().Select(artifact => artifact.GetProperty("slot").GetString()).ToList();
+		var accessories = slots.Count(slot => slot is "Ring" or "Cloak" or "Banner");
+		Assert.NotEmpty(slots);
+		Assert.InRange(capacity.GetProperty("limit").GetInt32(), 1, int.MaxValue);
+		Assert.Equal((slots.Count - accessories, accessories), (capacity.GetProperty("artifacts").GetInt32(), capacity.GetProperty("accessories").GetInt32()));
+	}
+
+	/// <summary>
 	/// Every Champion has its Artifacts filed by slot, and the secondary Account's Champions wear at least one, so the
 	/// check can't pass by reading none (#26).
 	/// </summary>

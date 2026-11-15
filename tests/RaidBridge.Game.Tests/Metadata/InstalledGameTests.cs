@@ -84,6 +84,8 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.Heroes.StaticHeroData", "HeroTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Heroes.HeroType>", false },
 		{ "SharedModel.Meta.ClientStaticData", "ArtifactData", "SharedModel.Meta.Artifacts.StaticArtifactData", false },
 		{ "SharedModel.Meta.Artifacts.StaticArtifactData", "SetInfos", "System.Collections.Generic.List`1<SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo>", false },
+		// The Artifact capacity (https://github.com/ANicholasson/raid-bridge/issues/27).
+		{ "SharedModel.Meta.Artifacts.StaticArtifactData", "MaxArtifactsCount", "System.Int32", false },
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "ArtifactSetKindId", "SharedModel.Meta.Artifacts.Sets.ArtifactSetKindId", false },
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetInfo", "Name", "SharedModel.Common.Localization.SharedLTextKey", false },
 		{ "SharedModel.Meta.ClientStaticData", "SkillData", "SharedModel.Meta.Skills.StaticSkillData", false },
@@ -433,6 +435,11 @@ public class InstalledGameTests
 		{ "SharedModel.Meta.DoubleAscend.User.DoubleAscendGrade", "Stars1", 1 },
 		{ "SharedModel.Meta.DoubleAscend.Static.BlessingTypeId", "Necromancy", 1101 },
 		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Weapon", 5 },
+		// The accessories' slots, which count against the Artifact capacity apart from the rest
+		// (https://github.com/ANicholasson/raid-bridge/issues/27).
+		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Ring", 7 },
+		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Cloak", 8 },
+		{ "SharedModel.Meta.Artifacts.ArtifactKindId", "Banner", 9 },
 		{ "SharedModel.Meta.Artifacts.ArtifactRankId", "Six", 6 },
 		{ "SharedModel.Meta.ItemRarity", "Legendary", 5 },
 		{ "SharedModel.Meta.Artifacts.Sets.ArtifactSetKindId", "AttackSpeed", 4 },

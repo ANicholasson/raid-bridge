@@ -4,7 +4,7 @@ namespace RaidBridge.Game.Testing.Artifacts;
 
 /// <summary>
 /// The Artifacts a synthetic Game client holds, in the game's own terms: where the Account keeps them, each Artifact,
-/// the Artifact each hero wears in each slot, and the static data's sets that name them. Enum fields hold the game's
+/// the Artifact each hero wears in each slot, and the static data's sets that name them and limit that bounds them. Enum fields hold the game's
 /// numbers, such as 5 for a Weapon, and Fixed values their raw Q32.32 longs. Every id and name is made up (spec #20).
 /// </summary>
 public sealed record SyntheticArtifactData(
@@ -13,6 +13,9 @@ public sealed record SyntheticArtifactData(
 	IReadOnlyDictionary<int, IReadOnlyDictionary<int, int>> SlotsByHeroId,
 	IReadOnlyList<SyntheticArtifactSet> Sets)
 {
+	/// <summary>The static data's <c>StaticArtifactData.MaxArtifactsCount</c>: the most Unworn Artifacts the Account can hold, and as many accessories again.</summary>
+	public int MaxArtifactsCount { get; init; } = 1500;
+
 	/// <summary>
 	/// The knight (hero 3) wears a weapon of the Speed set, and a helmet that was ascended and a ring locked to the Dark
 	/// Elves, which make a complete Life set, with its chest slot empty; the Deep Vault archer (hero 12) has only an empty slot. Nobody wears Artifact 104, plain boots,

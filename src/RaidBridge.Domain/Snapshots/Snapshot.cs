@@ -22,6 +22,7 @@ public sealed record Snapshot(
 	int Level,
 	long Experience,
 	double Power,
+	ArtifactCapacity ArtifactCapacity,
 	IReadOnlyList<Champion> Champions,
 	IReadOnlyList<Artifact> UnwornArtifacts,
 	IReadOnlyList<Relic> UnwornRelics,
