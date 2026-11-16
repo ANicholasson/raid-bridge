@@ -24,7 +24,7 @@ public sealed record Champion(
 	string? Blessing,
 	int Empowerment,
 	IReadOnlyList<Skill> Skills,
-	IReadOnlyList<int> Masteries,
+	IReadOnlyList<Mastery> Masteries,
 	bool Locked,
 	string Marker,
 	ChampionLocation Location,

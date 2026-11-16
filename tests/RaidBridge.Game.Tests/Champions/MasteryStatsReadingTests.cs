@@ -127,10 +127,12 @@ public sealed class MasteryStatsReadingTests : IDisposable
 
 	public void Dispose() => _game.Dispose();
 
+	/// <summary>The knight with <paramref name="masteries"/>, each named by a skill type of its id, as the game names them (https://github.com/ANicholasson/raid-bridge/issues/28).</summary>
 	private static SyntheticGameClient WithMasteries(IReadOnlyList<int> masteries, IReadOnlyList<SyntheticMasteryType> types) =>
 		SyntheticGameClient.Create(heroData: Heroes with
 		{
 			Heroes = [.. Heroes.Heroes.Select(hero => hero.Id == 3 ? hero with { Masteries = masteries } : hero)],
+			SkillTypes = [.. Heroes.SkillTypes, .. types.Select(type => type.Id).Except(Heroes.SkillTypes.Select(type => type.Id)).Select(id => new SyntheticSkillType(id, new($"l10n:skill-type/name?id={id}#static", $"Mastery {id}")) { Visibility = 1 })],
 			MasteryTypes = types,
 		});
 

@@ -50,6 +50,10 @@ public sealed class SnapshotCommandTests : IDisposable
 		Assert.Equal((1500, 1, 1), (capacity.GetProperty("limit").GetInt32(), capacity.GetProperty("artifacts").GetInt32(), capacity.GetProperty("accessories").GetInt32()));
 		Assert.Equal([3, 7, 12], root.GetProperty("champions").EnumerateArray().Select(champion => champion.GetProperty("id").GetInt32()));
 		Assert.Equal("Synthetic Knight", root.GetProperty("champions")[0].GetProperty("name").GetString());
+		Assert.Equal([5, 3], root.GetProperty("champions")[0].GetProperty("skills").EnumerateArray().Select(skill => skill.GetProperty("maxLevel").GetInt32()));
+		Assert.Equal(
+			[(500111, "Synthetic Might"), (500112, "Synthetic Lore")],
+			root.GetProperty("champions")[0].GetProperty("masteryNames").EnumerateArray().Select(mastery => (mastery.GetProperty("id").GetInt32(), mastery.GetProperty("name").GetString())));
 		Assert.Equal([104, 105], root.GetProperty("unwornArtifacts").EnumerateArray().Select(artifact => artifact.GetProperty("id").GetInt32()));
 	}
 

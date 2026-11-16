@@ -329,6 +329,32 @@ public sealed class LiveSnapshotTests : IDisposable
 	}
 
 	/// <summary>
+	/// Every skill is written with a highest level of 1 or more and a level no higher, and every Champion's
+	/// <c>masteryNames</c> names the masteries <c>masteries</c> lists, in the same order, each with a name that isn't the
+	/// game's placeholder text (https://github.com/ANicholasson/raid-bridge/issues/28).
+	/// </summary>
+	[Fact]
+	public void Reads_skill_max_levels_and_mastery_names()
+	{
+		using var json = Snapshot();
+
+		var champions = json.RootElement.GetProperty("champions").EnumerateArray().ToList();
+
+		Assert.All(champions.SelectMany(champion => champion.GetProperty("skills").EnumerateArray()), skill =>
+		{
+			var level = skill.GetProperty("level").GetInt32();
+			Assert.InRange(level, 1, skill.GetProperty("maxLevel").GetInt32());
+		});
+		Assert.All(champions, champion =>
+		{
+			var named = champion.GetProperty("masteryNames").EnumerateArray().ToList();
+			Assert.Equal(champion.GetProperty("masteries").EnumerateArray().Select(id => id.GetInt32()), named.Select(mastery => mastery.GetProperty("id").GetInt32()));
+			// Mastery skill types are hidden ones, the kind the game holds placeholder text for (https://github.com/ANicholasson/raid-bridge/issues/26).
+			Assert.All(named, mastery => Assert.Matches(@"^(?!Skill \d+ name$).+$", mastery.GetProperty("name").GetString()));
+		});
+	}
+
+	/// <summary>
 	/// The Missions are written as finished groups and open groups, each open group in a section, each Mission with
 	/// text from the localization tables, a state the game names, and a count of 1 or more required, with a count
 	/// collected of 0 or more or null where the game holds none. On the main Account (2026-11-13), on Arbiter's Group4
