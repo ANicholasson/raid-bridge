@@ -45,17 +45,29 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
         {
           "typeId": 52401,
           "name": "Synthetic Strike",
-          "level": 4
+          "level": 4,
+          "maxLevel": 5
         },
         {
           "typeId": 52402,
           "name": "Synthetic Guard",
-          "level": 3
+          "level": 3,
+          "maxLevel": 3
         }
       ],
       "masteries": [
         500111,
         500112
+      ],
+      "masteryNames": [
+        {
+          "id": 500111,
+          "name": "Synthetic Might"
+        },
+        {
+          "id": 500112,
+          "name": "Synthetic Lore"
+        }
       ],
       "locked": true,
       "marker": "Favorite",
@@ -290,10 +302,12 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
         {
           "typeId": 60101,
           "name": "Synthetic Volley",
-          "level": 1
+          "level": 1,
+          "maxLevel": 2
         }
       ],
       "masteries": [],
+      "masteryNames": [],
       "locked": false,
       "marker": "None",
       "location": "Vault",
@@ -348,10 +362,12 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
         {
           "typeId": 60101,
           "name": "Synthetic Volley",
-          "level": 2
+          "level": 2,
+          "maxLevel": 2
         }
       ],
       "masteries": [],
+      "masteryNames": [],
       "locked": false,
       "marker": "None",
       "location": "DeepVault",
@@ -652,8 +668,9 @@ A synthetic Account: id `123456789`, hashed with a salt of the bytes `00 01 02 â
   - `rarity`, `affinity`, `faction` and `rank`: such as `"Legendary"`, `"Void"`, `"DarkElves"` and `"Stars6"`.
   - `level` and `empowerment`: numbers, `empowerment` 0 for none.
   - `awakening` and `blessing`: such as `"Stars2"` and `"Necromancy"`, or `null` when the Champion has none.
-  - `skills`: each skill the champion screen shows, with its `typeId`, `name` and `level`, in the order the game keeps them. The game gives some Champions hidden skills too, such as a passive that works behind one the screen shows, and the screen leaves those out; so does the Snapshot, since the game holds no name for them that the player ever sees, only placeholder text such as "Skill 107305 name".
-  - `masteries`: the ids of the masteries the Champion took, in the order the game keeps them, or `[]`, without names: raid-bridge has found no mastery names in the game's data.
+  - `skills`: each skill the champion screen shows, with its `typeId`, `name`, `level` and `maxLevel`, in the order the game keeps them. `maxLevel` is the highest level the skill can reach, as the skill screen shows it, 1 for a skill that can't be raised, so `maxLevel` less `level` is how many more times the skill can be raised. The game gives some Champions hidden skills too, such as a passive that works behind one the screen shows, and the screen leaves those out; so does the Snapshot, since the game holds no name for them that the player ever sees, only placeholder text such as "Skill 107305 name".
+  - `masteries`: the ids of the masteries the Champion took, in the order the game keeps them, or `[]`.
+  - `masteryNames`: the same masteries in the same order, each with its `id` and its `name` as the Game client shows it (below), such as `"Blade Disciple"`, or `[]`. The game keeps no name on a mastery: it shows the name of the skill type with the mastery's id, and so does the Snapshot.
   - `locked`: whether the player locked the Champion.
   - `marker`: the marker the player set, such as `"Favorite"`, or `"None"`.
   - `location`: `"Roster"`, `"Vault"` or `"DeepVault"`.

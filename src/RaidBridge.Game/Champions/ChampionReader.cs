@@ -21,6 +21,7 @@ internal static class ChampionReader
 	private const string HeroForm = "SharedModel.Meta.Heroes.HeroForm";
 	private const string Skill = "SharedModel.Meta.Skills.Skill";
 	private const string SkillType = "SharedModel.Meta.Skills.SkillType";
+	private const string SkillBonuses = "System.Collections.Generic.List`1<SharedModel.Meta.Skills.SkillBonus>";
 	private const string Visible = "Visible";
 
 	/// <summary>The Visibility members SkillType.IsHiddenOnHud counts as hidden, in the game's order.</summary>
@@ -57,12 +58,15 @@ internal static class ChampionReader
 			new Lazy<MasteryBonusReader>(() => MasteryBonusReader.Read(staticData)),
 			new Lazy<AwakeningBonusReader>(() => AwakeningBonusReader.Read(staticData)),
 			new Lazy<EmpowermentBonusReader>(() => EmpowermentBonusReader.Read(staticData)));
+		// Each mastery is named once, not once per Champion that took it.
+		var namedMasteries = new Dictionary<int, Mastery>();
 		var champions = heroes.Select(hero => Champion(
 			hero.Key,
 			hero.Value.Object(Hero),
 			Worn(hero.Key, equipped.GetValueOrDefault(hero.Key, []), sets, relics.GetValueOrDefault(hero.Key, [])),
 			heroTypes,
 			skillTypes,
+			namedMasteries,
 			names,
 			statReaders,
 			accountBonuses)).ToList();
@@ -88,6 +92,7 @@ internal static class ChampionReader
 		Wearing worn,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> heroTypes,
 		IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes,
+		Dictionary<int, Mastery> namedMasteries,
 		LocalizedNames names,
 		StatReaders statReaders,
 		AccountStatBonuses accountBonuses)
@@ -113,6 +118,8 @@ internal static class ChampionReader
 		IReadOnlyList<int> masteryIds = masteries is null
 			? []
 			: [.. masteries.List("Masteries", "System.Collections.Generic.List`1<System.Int32>").Int32s().Select(mastery => mastery.Where(value => value > 0, "a positive mastery id"))];
+		// Before the names, so a mastery the game doesn't hold is refused as such.
+		var masteryBonuses = masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds);
 
 		return new(
 			Id: id,
@@ -128,7 +135,7 @@ internal static class ChampionReader
 			Blessing: blessing,
 			Empowerment: empowerment,
 			Skills: [.. hero.List("Skills", $"System.Collections.Generic.List`1<{Skill}>").Objects(Skill).Select(skill => ChampionSkill(skill, skillTypes, names)).OfType<Skill>()],
-			Masteries: masteryIds,
+			Masteries: [.. masteryIds.Select(mastery => namedMasteries.TryGetValue(mastery, out var named) ? named : namedMasteries[mastery] = Mastery(id, mastery, skillTypes, names))],
 			Locked: hero.Boolean("Locked").Value,
 			Marker: hero.Enum("Marker", "SharedModel.Meta.Heroes.HeroMarker").Value,
 			Location: Location(hero, id),
@@ -139,7 +146,7 @@ internal static class ChampionReader
 				new ChampionBonuses(
 					worn.ArtifactBonuses,
 					worn.SetBonuses,
-					masteryIds.Count == 0 ? MasteryBonuses.None : statReaders.Masteries.Value.For(id, masteryIds),
+					masteryBonuses,
 					accountBonuses.GreatHall.GetValueOrDefault(affinity, []),
 					accountBonuses.FactionGuardians.GetValueOrDefault((faction, rarity), []),
 					// A Champion with no blessing gets nothing from its Awakening, as the game's InitBlessing gives it nothing.
@@ -201,10 +208,58 @@ internal static class ChampionReader
 		_ = type.Int32("Id").Where(value => value == typeId.Value, $"the id _skillTypeById keeps it under, {typeId.Value}");
 		// Checked for a hidden skill too, so corrupt data there isn't passed over (code review,
 		// https://github.com/ANicholasson/raid-bridge/issues/26).
-		var level = skill.Int32("Level").Where(level => level > 0, "a positive level");
-		return HiddenOnTheChampionScreen(type)
-			? null
-			: new(typeId.Value, names.Of(type, "Name", $"Skill type {typeId.Value}"), level);
+		var level = skill.Int32("Level");
+		_ = level.Where(value => value > 0, "a positive level");
+		if (HiddenOnTheChampionScreen(type))
+		{
+			return null;
+		}
+
+		var maxLevel = MaxLevel(type, typeId.Value, skillTypes);
+		return new(typeId.Value, names.Of(type, "Name", $"Skill type {typeId.Value}"), level.Where(value => value <= maxLevel, $"a level no higher than its skill type's highest, {maxLevel}"), maxLevel);
+	}
+
+	/// <summary>
+	/// The highest level a skill of <paramref name="type"/> can reach, as the game's <c>SkillType.MaxLevel</c> gives it
+	/// at metadata v39: one more than the number of its level bonuses, so 1 when it has none. A skill type whose
+	/// <c>UseLevelOfSkillId</c> has a value takes the level bonuses of the skill type with that id instead of its own,
+	/// and that one may take another's in turn, as <c>SkillType.get_LevelBonuses</c> (RVA 0x2C88840) calls itself on the
+	/// skill type it takes them from (https://github.com/ANicholasson/raid-bridge/issues/28). The game guards against
+	/// no loop; raid-bridge refuses one.
+	/// </summary>
+	private static int MaxLevel(ManagedObject type, int typeId, IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes)
+	{
+		var followed = new List<int> { typeId };
+		while (type.NullableInt32("UseLevelOfSkillId") is { Value: { } borrowed } uses)
+		{
+			if (followed.Contains(borrowed))
+			{
+				throw new GameDataException($"{uses}, which leads back to skill type {borrowed}: skill types {string.Join(", ", followed)} take each other's levels in a loop.");
+			}
+
+			type = skillTypes.TryGetValue(borrowed, out var entry)
+				? entry.Object(SkillType)
+				: throw new GameDataException($"{uses}, which isn't a type in the game's StaticSkillData._skillTypeById.");
+			_ = type.Int32("Id").Where(value => value == borrowed, $"the id _skillTypeById keeps it under, {borrowed}");
+			followed.Add(borrowed);
+		}
+
+		return (type.ListOrNull("SkillLevelBonuses", SkillBonuses)?.Count ?? 0) + 1;
+	}
+
+	/// <summary>
+	/// A mastery with its name. The game keeps no name on a mastery type: it names mastery <paramref name="id"/> with the
+	/// name of the skill type of the same id, as <c>MasteryTypeExtensions.GetName</c> does at metadata v39
+	/// (https://github.com/ANicholasson/raid-bridge/issues/28). The game shows an empty name when no skill type has the
+	/// id; raid-bridge refuses it, never writing a name the game doesn't hold.
+	/// </summary>
+	private static Mastery Mastery(int championId, int id, IReadOnlyDictionary<int, ManagedDictionary.Entry> skillTypes, LocalizedNames names)
+	{
+		var type = skillTypes.TryGetValue(id, out var entry)
+			? entry.Object(SkillType)
+			: throw new GameDataException($"Champion {championId} has mastery {id}, which has no skill type of the same id in the game's StaticSkillData._skillTypeById to name it.");
+		_ = type.Int32("Id").Where(value => value == id, $"the id _skillTypeById keeps it under, {id}");
+		return new(id, names.Of(type, "Name", $"Mastery {id}"));
 	}
 
 	/// <summary>
