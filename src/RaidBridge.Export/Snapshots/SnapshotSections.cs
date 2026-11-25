@@ -11,6 +11,7 @@ public static class SnapshotSections
 		{
 			OptionalSection.AreaBonuses => "areaBonuses",
 			OptionalSection.LiveArena => "liveArena",
+			OptionalSection.SavedTeams => "savedTeams",
 			OptionalSection.Missions => "missions",
 			_ => throw new ArgumentOutOfRangeException(nameof(section), section, "Not a section a Snapshot may write as null."),
 		};

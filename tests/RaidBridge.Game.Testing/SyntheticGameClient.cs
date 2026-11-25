@@ -395,6 +395,7 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("key", "TKey", false),
 			("value", "TValue", false));
 		_metadata.Class("System.Nullable`1", "System.ValueType", ("hasValue", "System.Boolean", false), ("value", "T", false));
+		_metadata.Class("System.ValueTuple`2", "System.ValueType", ("Item1", "T1", false), ("Item2", "T2", false));
 
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroGrade", ("Stars1", 1), ("Stars2", 2), ("Stars3", 3), ("Stars4", 4), ("Stars5", 5), ("Stars6", 6));
 		_metadata.Enum("SharedModel.Meta.Heroes.HeroRarity", ("Common", 1), ("Uncommon", 2), ("Rare", 3), ("Epic", 4), ("Legendary", 5), ("Mythical", 6));
@@ -439,6 +440,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 			("Undefined", 0), ("Group1", 1), ("Group2", 2), ("Group3", 3), ("Group4", 4), ("Group5", 5), ("Group6", 6), ("Group7", 7));
 		_metadata.Enum("SharedModel.Meta.Quests.RecommendedQuestSectionId", ("Undefined", 0), ("ArbiterSection", 1), ("RamantuSection", 2));
 		_metadata.Enum("SharedModel.Meta.Stages.AreaTypeId", ("Unknown", 0), ("Story", 1), ("Dungeon", 2), ("Arena", 3), ("AllianceBoss", 4));
+		_metadata.Enum(
+			"SharedModel.Meta.Heroes.HeroesAiPresetType",
+			("GeneralPve", 1), ("Pvp", 2), ("Hydra", 3), ("Fractions", 4), ("DoomTower", 5), ("Chimera", 6), ("CooperationEventWorldBoss", 7), ("Siege", 8), ("IronTwins", 9), ("PotionKeeps", 10), ("ArtifactAscendAndMasteries", 11), ("EventDungeon", 12), ("ArtifactDungeons", 13));
 		_metadata.Enum("SharedModel.Meta.Stages.RegionTypeId", ("InDevelopment", -1), ("Region1", 101), ("Arena", 301), ("AllianceBoss", 401), ("Arena3x3", 601));
 	}
 
@@ -505,7 +509,8 @@ public sealed partial class SyntheticGameClient : IDisposable
 			"StaticHeroData",
 			systemObject,
 			"System.Object",
-			("HeroTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Heroes.HeroType>", GenericInstanceTypeCode, 0x10));
+			("HeroTypeById", "System.Collections.Generic.Dictionary`2<System.Int32, SharedModel.Meta.Heroes.HeroType>", GenericInstanceTypeCode, 0x10),
+			("PresetInfoByType", "System.Collections.Generic.Dictionary`2<SharedModel.Meta.Heroes.HeroesAiPresetType, SharedModel.Meta.Heroes.HeroesAiPresetInfo>", GenericInstanceTypeCode, 0x18));
 		var staticSkillData = Declare(
 			"SharedModel.Meta.Skills",
 			"StaticSkillData",
@@ -561,8 +566,9 @@ public sealed partial class SyntheticGameClient : IDisposable
 			})]));
 			return ((ulong)type.Id, heroTypeObject);
 		});
-		var staticHeroDataObject = _runtime.Object(staticHeroData, 0x18);
+		var staticHeroDataObject = _runtime.Object(staticHeroData, 0x20);
 		_heap.Pointer(staticHeroDataObject + 0x10, _runtime.Dictionary(_runtime.DictionaryType(Int32TypeCode, ClassTypeCode), [.. heroTypes]));
+		_heap.Pointer(staticHeroDataObject + 0x18, PresetInfoByType(heroData));
 
 		var skillBonuses = _runtime.ListType(skillBonus, "SkillBonus", sizeof(ulong));
 		var skillTypes = heroData.SkillTypes.Select(type =>

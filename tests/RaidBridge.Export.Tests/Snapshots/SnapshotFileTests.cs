@@ -28,6 +28,7 @@ public sealed class SnapshotFileTests : IDisposable
 		new(null, 0, 0, 0, 0, []),
 		new("BronzeI", 900, 0, 0),
 		new([], []),
+		[],
 		[]);
 
 	private readonly string _directory = Directory.CreateTempSubdirectory("raid-bridge-export-").FullName;

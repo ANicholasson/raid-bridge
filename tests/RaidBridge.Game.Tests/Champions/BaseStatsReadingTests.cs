@@ -65,6 +65,7 @@ public sealed class BaseStatsReadingTests : IDisposable
 				new(5, 6013) { Grade = 3, Level = 15 },
 			],
 			HeroTypes = [.. Heroes.HeroTypes, AscendedArcher],
+			SavedTeams = [],
 		},
 		artifactData: SyntheticArtifactData.Default with { SlotsByHeroId = new Dictionary<int, IReadOnlyDictionary<int, int>>() },
 		relicData: SyntheticRelicData.Default with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() },
@@ -84,7 +85,7 @@ public sealed class BaseStatsReadingTests : IDisposable
 	public void Reads_an_account_without_champions_without_the_multipliers()
 	{
 		using var game = SyntheticGameClient.Create(
-			heroData: Heroes with { Heroes = [], RankMultipliers = null },
+			heroData: Heroes with { Heroes = [], RankMultipliers = null, SavedTeams = [] },
 			artifactData: SyntheticArtifactData.Default with { SlotsByHeroId = new Dictionary<int, IReadOnlyDictionary<int, int>>() },
 			relicData: SyntheticRelicData.Default with { RelicIdsByHeroId = new Dictionary<int, IReadOnlyList<int>>() },
 			guardianData: SyntheticGuardianData.None,
